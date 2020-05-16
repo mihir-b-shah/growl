@@ -1,0 +1,4 @@
+1
+abc+	abc	1	ab	0	abcccc	1
+a?		1
+c?abd+	abdd	1	ccabd	0	cabd	1

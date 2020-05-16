@@ -1,0 +1,203 @@
+<html>
+    <body>
+    <h1>The Growl Programming Language</h1>
+    <p>Growl is a general-purpose language similar to C.</p>
+    <h2>Language Elements</h2>
+    <h3>Types</h3>
+    <ul>
+        <li><b>Char: </b>An unsigned 8-bit integer. Also useful for ASCII storage.</li>
+        <li><b>Int: </b>A signed 32-bit integer.</li>
+        <li><b>Long: </b>An unsigned 64-bit integer, useful for bitfields.</li>
+        <li><b>Bool: </b>A boolean 8-bit value (signed).</li>
+        <li><b>Float: </b>A 64-bit floating point number.</li>
+        <li><b>Struct: </b>A user-defined arbitrary precision type.</li>
+    </ul>
+    <h3>Control Structures</h3>
+    <ul>
+        <li><b>If/Else: </b>If/else statement. An else if statement can currently 
+            only be supported in the nested fashion.</li>
+        <li><b>While: </b>While loop. Just like C. No for loop right now, since a for loop is just
+            synactic sugar over a while loop.</li>
+        <li><b>Goto: </b>Allows jumping to a LABELED BLOCK. Functions cannot be called using Goto.</li>
+        <li><b>Labeled block:</b>A labeled block of code. Goto is used in conjunction with this.</li>
+        <li><b>Function: </b>A C or Java like function.</li>
+        <li><b>Switch: </b>Idential to C.</li>
+    </ul>
+    <h3>Notes about Syntax</h3>
+    <p>It's identical to C. Use curly braces just like C, each statement independent of a control structure's
+        terminator/branching condition must finish in a semicolon.</p>
+    <h3>Literals</h3>
+    <p>Unlike Java or C, octal is not supported. Binary, decimal, and hex are supported. For hex, only
+        lowercase letters a-f are allowed. Suffixes: they may either be S, L, or absent. S denotes a smaller 
+        (8-bit) integer. L denotes a long (64-bit integer). No suffix is needed for a 32-bit integer. The rest
+        of the literals are the same as Java or C. Note, floating point literal suffixes are not supported, since
+        there is only one type. Float is usually 32-bit, however since most recent systems use 64-bit (with the 
+        exception of GPUs), we make Float a 64-bit number. The keyword 'void' is also reserved, for use as a 
+        generic type (similar to C). </p>
+    <h3>Operator (Precedence) Table</h3>
+    <table>
+        <tr>
+            <th>Level</th>
+            <th>Operator</th>
+            <th>Description</th>
+            <th>Associativity</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>.</td>
+            <td>Access</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>$</td>
+            <td>Dereference</td>
+            <td>Right to left</td>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>@</td>
+            <td>Address</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>++</td>
+            <td>Increment</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>--</td>
+            <td>Decrement</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>!</td>
+            <td>Logical not</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>~</td>
+            <td>Bitwise not</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>(?)</td>
+            <td>Cast</td>
+            <td>Right to left</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>*</td>
+            <td>Multiply</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>/</td>
+            <td>Divide</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>%</td>
+            <td>Modulus</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>*</td>
+            <td>Multiply</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>+</td>
+            <td>Addition</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>-</td>
+            <td>Subtraction</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>&lt&lt</td>
+            <td>Bit shift left</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>&gt&gt</td>
+            <td>Signed bit shift right</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>&gt&gt&gt</td>
+            <td>Unsigned bit shift right</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>&lt</td>
+            <td>Less than</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>&gt</td>
+            <td>Greater than</td>
+            <td>None</td>
+        </tr>
+        <tr>
+            <td>9</td>
+            <td>==</td>
+            <td>Equality</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>10</td>
+            <td>&amp</td>
+            <td>Bitwise and</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>11</td>
+            <td>|</td>
+            <td>Bitwise or</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>12</td>
+            <td>^</td>
+            <td>Bitwise xor</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>13</td>
+            <td>&amp&amp</td>
+            <td>Logical and</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>14</td>
+            <td>||</td>
+            <td>Logical or</td>
+            <td>Left to right</td>
+        </tr>
+        <tr>
+            <td>15</td>
+            <td>=</td>
+            <td>Assignment</td>
+            <td>Right to left</td>
+        </tr>
+    </table>
+    </body>
+</html>
