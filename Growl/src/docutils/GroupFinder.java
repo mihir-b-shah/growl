@@ -16,11 +16,17 @@ import lexer.lextypes.Group;
  * @author mihir
  */
 public class GroupFinder {
+    private static GroupFinder instance = null;
+    public static void initialize(List<Lexeme> document) {
+        instance = new GroupFinder(document);
+    }
+    public static GroupFinder getInstance() {
+        return instance;
+    }
     
     private final List<Lexeme> document;
     private final ArrayList<Integer> positions;
     private final HashMap<Integer, Integer> lookup;
-    private static GroupFinder instance = null;
 
     private GroupFinder(List<Lexeme> doc) {
         document = doc;
@@ -94,6 +100,23 @@ public class GroupFinder {
         lookup.remove(-1);
     }
     
+
+    // O(1) lookup on the point
+    public int findMatch(int pos) {
+        return lookup.get(pos);
+    }
+    
+    // O(lg n) lookup within a block
+    public int getBlock(int pos) {
+        int ret = Collections.binarySearch(positions, pos);
+        return ret < 0 ? ~ret-1 : ret == 0 ? -1 : ret;
+    }
+    
+    public int findNextCase(int pos, int stop) {
+        Integer ret = lookup.get(pos);
+        return ret == null || ret >= stop ? stop : ret;
+    }
+    
     class Case {
         final int pos;
         final int lvl;
@@ -103,7 +126,6 @@ public class GroupFinder {
             lvl = l;
         }
     }
-
     class KeywordFinder<T extends Enum> {
         
         final T find;
@@ -128,29 +150,5 @@ public class GroupFinder {
         int next() {
             return pos;
         }
-    }
-    
-    public static void initialize(List<Lexeme> document) {
-        instance = new GroupFinder(document);
-    }
-
-    // O(1) lookup on the point
-    public int findMatch(int pos) {
-        return lookup.get(pos);
-    }
-    
-    // O(lg n) lookup within a block
-    public int getBlock(int pos) {
-        int ret = Collections.binarySearch(positions, pos);
-        return ret < 0 ? ~ret-1 : ret == 0 ? -1 : ret;
-    }
-    
-    public int findNextCase(int pos, int stop) {
-        Integer ret = lookup.get(pos);
-        return ret == null || ret >= stop ? stop : ret;
-    }
-    
-    public static GroupFinder getInstance() {
-        return instance;
     }
 }

@@ -10,24 +10,7 @@ public class IntToken extends Token {
     public long token;
     public int size;
     public boolean bool;
-    
-    private void parse(String s, int radix) {
-        switch(s.charAt(s.length()-1)) {
-            case 'S':
-                size = Limits.CHAR_SIZE;
-                token = Long.parseLong(s.substring(0, s.length()-1), radix);
-                break;
-            case 'L':
-                size = Limits.LONG_SIZE;
-                token = Long.parseLong(s.substring(0, s.length()-1), radix);
-                break;
-            default:
-                size = Limits.INT_SIZE;
-                token = Long.parseLong(s, radix);
-                break;
-        }
-    }
-    
+        
     public IntToken(String val) {
         switch(val.charAt(0)) {
             case 't':
@@ -69,9 +52,30 @@ public class IntToken extends Token {
                 break;
         }
     }
+    private void parse(String s, int radix) {
+        switch(s.charAt(s.length()-1)) {
+            case 'S':
+                size = Limits.CHAR_SIZE;
+                token = Long.parseLong(s.substring(0, s.length()-1), radix);
+                break;
+            case 'L':
+                size = Limits.LONG_SIZE;
+                token = Long.parseLong(s.substring(0, s.length()-1), radix);
+                break;
+            default:
+                size = Limits.INT_SIZE;
+                token = Long.parseLong(s, radix);
+                break;
+        }
+    }
     
     @Override
     public Number getValue() {
         return token;
+    }
+    
+    @Override
+    public String toString() {
+        return Long.toString(token);
     }
 }

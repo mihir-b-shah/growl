@@ -3,7 +3,18 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/mihir/files/misc-files/projects/Growl/src/parser/Parser.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/toyprog.txt</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/lexer/LexType.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/lexer/Lexer.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/lexer/token/StringToken.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/lexer/Lexeme.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/parser/parsetypes/ast/Bool.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/lexer/token/FloatToken.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/lexer/token/Token.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/Compiler.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/docutils/GroupFinder.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/parser/parsetypes/ast/Op.java</file>
+            <file>file:/C:/Users/mihir/files/growl/Growl/src/lexer/lextypes/Operator.java</file>
         </group>
     </open-files>
 </project-private>

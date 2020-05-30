@@ -21,6 +21,7 @@ public abstract class Token {
     }
     
     public static Token genToken(String str) {
+        System.out.println(str);
         if(isInt(str)) {
             return new IntToken(str);
         } else if(isFloat(str)) {

@@ -10,11 +10,11 @@ import lexer.token.Token;
  */
 public class Lexeme {
 
-    public LexType type;
+    public final LexType type;
     public Object subType; // either class or enum
-    public Token token;
-    int start;
-    int end;
+    public final Token token;
+    final int start;
+    final int end;
 
     Lexeme(LexType type, Token token, int start, int end) {
         this.type = type;
@@ -25,7 +25,7 @@ public class Lexeme {
 
     @Override
     public String toString() {
-        return String.format("%s-%s, %s", type.toString(), subType != null
-                ? subType.toString() : "Id", token);
+        return String.format("%s %s, %s", type.toString(), subType != null
+                ? subType.toString() : "Id", token.toString());
     }
 }

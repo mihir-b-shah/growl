@@ -20,4 +20,9 @@ public class StringToken extends Token {
     public Number getValue() {
         throw new Parser.ParseError();
     }
+    
+    @Override
+    public String toString() {
+        return token;
+    }
 }

@@ -17,4 +17,9 @@ public class FloatToken extends Token {
     public Double getValue() {
         return token;
     }
+    
+    @Override
+    public String toString() {
+        return Double.toString(token);
+    }
 }
