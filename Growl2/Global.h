@@ -1,4 +1,7 @@
 
+#ifndef GLOBAL_H
+#define GLOBAL_H
+
 namespace Global {
     const int InvalidEscapeSequence = 0x10;
     const int InvalidCharacter = 0x11;
@@ -6,3 +9,5 @@ namespace Global {
     const int InvalidIdentifier = 0x13; // this could also point to an invalid literal
                                         // see the TokenGenerator.cpp where its thrown
 }
+
+#endif
