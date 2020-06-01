@@ -9,9 +9,13 @@ namespace Global {
     const int InvalidIdentifier = 0x13; // this could also point to an invalid literal
                                         // see the TokenGenerator.cpp where its thrown
 
-    const int ERROR_BUFFER_SIZE = 200;
+    const int ERROR_BUFFER_SIZE = 255;
+    const int ERROR_REFERENCE_SIZE = 31;
+
+    extern char errorMsg[ERROR_REFERENCE_SIZE];
 
     void genError(char buffer[ERROR_BUFFER_SIZE], int error);
+    void specifyError(const char* spec);
 }
 
 #endif

@@ -2,8 +2,8 @@
 int len(char* str) {
     int ct = 0;
     while(!(*str == '\0')) {
-        ++str;
-        ++ct;
+        str = str+1;
+        ct = ct+1;
     }
     return ct;
 }
@@ -13,15 +13,16 @@ int main() {
     addr = addr-1;
   
     long len = len(str);
+    long mid = 0;
     long mid = len*(1L << ((int) addr/len));
 
-    while(mid >= len) {
+    while(mid > len) {
         if(addr > mid) {
             addr = addr-1-mid;
         } else if(addr == mid) {
             addr = mid-1;
         }
-        mid = mid >>> 1;
+        mid = mid/2;
     }
     return 0;
 }

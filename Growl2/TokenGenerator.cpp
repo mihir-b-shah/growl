@@ -1,7 +1,6 @@
  
 #include <cstring>
 #include <cctype>
-#include <vector>
 
 #include "Global.h"
 #include "Lex.h"
@@ -14,7 +13,7 @@
  * Data types/modifier: user-def type, int, long, char, float, void, and pointers. (done!)
  * Group: (, ), :, {, }, ',', ';' (done!)
  * Literals: number, char, floating-pt. (done!)
- * Operators: +, -, /, %, ~, ., *, <, >, &, |, ^, = (done!)
+ * Operators: +, -, /, %, ~, ., *, <, >, &, |, ^, =, ==, << (done!)
  * Identifier: letter1/underscore, then any number too. no $. (done!)
  * 
  * Hardcoded token generator.
@@ -38,6 +37,7 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
             ++ct;
         }
         if(ct == 255) {
+            Global::specifyError("Line 40");
             throw Global::InvalidLiteral;
         }
         return data+ct;
@@ -48,6 +48,7 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
             ++ct;
         }
         if(ct == 255 || data[ct] != '.' && !isspace(data[ct])) {
+            Global::specifyError("Line 51");
             throw Global::InvalidLiteral;
         } else if(data[ct] == '.') {
             // use a float 
@@ -57,6 +58,7 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
                 ++ct;
             }
             if(ct == 255 || !isspace(data[ct])) {
+                Global::specifyError("Line 61.");
                 throw Global::InvalidLiteral;
             }
             long double res = 0;
@@ -91,6 +93,7 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
             return ret;
         }
     } else {
+        Global::specifyError(data);
         throw Global::InvalidIdentifier;
     }
 }
@@ -132,9 +135,11 @@ static char* const parseCharLiteral(Lex::LitValue::VHolder* holder, char* const 
             case '\\':
                 holder->ival = '\\';
             default:
+                Global::specifyError(ptr);
                 throw Global::InvalidEscapeSequence;
         }
     } else {
+        Global::specifyError(ptr);
         throw Global::InvalidCharacter;
     }
 }
@@ -215,6 +220,12 @@ static char* const parse(Lex::Token* base, char* const data) {
             base->value.iof = Lex::IOF::UNDEFINED;
             return data+1;
         case '<':
+            if(data[1] == '<') {
+                base->type = Lex::Type::OPERATOR;
+                base->subType = Lex::SubType::SHIFT;
+                base->value.iof = Lex::IOF::UNDEFINED;
+                return data+2;
+            }
             base->type = Lex::Type::OPERATOR;
             base->subType = Lex::SubType::LESS;
             base->value.iof = Lex::IOF::UNDEFINED;
@@ -240,6 +251,12 @@ static char* const parse(Lex::Token* base, char* const data) {
             base->value.iof = Lex::IOF::UNDEFINED;
             return data+1;
         case '=':
+            if(data[1] == '=') {
+                base->type = Lex::Type::OPERATOR;
+                base->subType = Lex::SubType::EQUAL;
+                base->value.iof = Lex::IOF::UNDEFINED;
+                return data+2;
+            }
             base->type = Lex::Type::OPERATOR;
             base->subType = Lex::SubType::ASSN;
             base->value.iof = Lex::IOF::UNDEFINED;

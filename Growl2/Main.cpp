@@ -30,6 +30,7 @@ int main(int argc, char** argv) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
         printf("%s\n", buffer);
+        printf("%s\n", Global::errorMsg);
         return EXIT_FAILURE;
     } 
 }
