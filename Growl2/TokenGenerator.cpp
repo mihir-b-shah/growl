@@ -73,7 +73,7 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
                 ++dotPtr;
                 power *= 0.1;
             }
-            base->value.iof = Lex::IOF::FLOAT;
+            base->value.iof = Lex::IOF::FLOAT_VAL;
             base->value.holder.ival = res;
             return dotPtr;
         } else {
@@ -86,7 +86,7 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
                 res += *readPtr;
                 --readPtr;
             }
-            base->value.iof = Lex::IOF::INT;
+            base->value.iof = Lex::IOF::INT_VAL;
             base->value.holder.ival = res;
             return ret;
         }
@@ -248,7 +248,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             // char literal
             base->type = Lex::Type::LITERAL;
             base->subType = Lex::SubType::CHAR_LITERAL;
-            base->value.iof = Lex::IOF::INT;
+            base->value.iof = Lex::IOF::INT_VAL;
             return parseCharLiteral(&(base->value.holder), data);
         // for all keywords, check for whitespace or EOF at end.
         case 'b':
@@ -402,10 +402,13 @@ static char* const parse(Lex::Token* base, char* const data) {
     }
 }
 
-void lex(Lex::LexStream& tokens, char* const program) {
+void Lex::lex(Lex::LexStream& tokens, char* const program) {
     char* moving = program;
     while(*moving != '\0') {
         Lex::Token* token = tokens.allocate();
+        while(isspace(*moving)) {
+            ++moving;
+        }
         moving = parse(token, moving);
     }
 }

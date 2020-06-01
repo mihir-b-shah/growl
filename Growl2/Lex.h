@@ -18,7 +18,7 @@ namespace Lex {
     };
 
     enum IOF {
-        UNDEFINED, PTRLVL, INT, FLOAT
+        UNDEFINED, PTRLVL, INT_VAL, FLOAT_VAL
     };
 
     // tagged union
@@ -48,6 +48,7 @@ namespace Lex {
             LexStream(int fileSize);
             ~LexStream();
             Lex::Token* allocate();
+            void persist(const char* const file);      
     };  
 
     void lex(Lex::LexStream& tokens, char* const program); 
