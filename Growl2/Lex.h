@@ -14,7 +14,7 @@ namespace Lex {
         UNSIGNED, INT, LONG, CHAR, FLOAT, BOOL, VOID, OPAREN, CPAREN, 
         COLON, OBRACK, CBRACK, COMMA, SEMICOLON, INT_LITERAL, FLT_LITERAL,
         CHAR_LITERAL, PLUS, MINUS, ASTK, DIV, MOD, NEG, DOT, GREATER, LESS,
-        EQUAL, AMP, OR, CARET, ASSN, SHIFT
+        EQUAL, AMP, OR, CARET, ASSN, SHIFT, NAME
     };
 
     enum IOF {
@@ -50,6 +50,13 @@ namespace Lex {
             Lex::Token* allocate();
             void persist(const char* const file);      
     };  
+
+    const char* const subtypeStrings[] = {"IF", "ELSE", "GOTO", "RETURN", 
+        "WHILE", "SWITCH", "CASE", "DEFAULT", "BREAK", "UNSIGNED", "INT", 
+        "LONG", "CHAR", "FLOAT", "BOOL", "VOID", "OPAREN", "CPAREN", "COLON", 
+        "OBRACK", "CBRACK", "COMMA", "SEMICOLON", "INT_LITERAL", "FLT_LITERAL", 
+        "CHAR_LITERAL", "PLUS", "MINUS", "ASTK", "DIV", "MOD", "NEG", "DOT", 
+        "GREATER", "LESS", "EQUAL", "AMP", "OR", "CARET", "ASSN", "SHIFT", "NAME"};
 
     void lex(Lex::LexStream& tokens, char* const program); 
 }

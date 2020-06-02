@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
-        printf("%s\n", buffer);
+        printf("\n%s\n", buffer);
         printf("%s\n", Global::errorMsg);
         return EXIT_FAILURE;
     } 

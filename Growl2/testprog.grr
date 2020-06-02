@@ -1,7 +1,7 @@
 
 int len(char* str) {
     int ct = 0;
-    while(!(*str == '\0')) {
+    while(~(*str == '\0')) {
         str = str+1;
         ct = ct+1;
     }
@@ -14,7 +14,7 @@ int main() {
   
     long len = len(str);
     long mid = 0;
-    long mid = len*(1L << ((int) addr/len));
+    long mid = len*(1 << ((int) addr/len));
 
     while(mid > len) {
         if(addr > mid) {

@@ -27,7 +27,8 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
     }
 }
 
-char Global::errorMsg[Global::ERROR_REFERENCE_SIZE]; // define it once, declared in header file
+// define it once, declared in header file
+char Global::errorMsg[Global::ERROR_REFERENCE_SIZE];
 void Global::specifyError(const char* spec) {
     std::strncpy(Global::errorMsg, spec, Global::ERROR_REFERENCE_SIZE);
 }

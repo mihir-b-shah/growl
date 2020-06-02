@@ -1,6 +1,7 @@
  
 #include <cstring>
 #include <cctype>
+#include <iostream>
 
 #include "Global.h"
 #include "Lex.h"
@@ -33,31 +34,34 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
         int ct = 0;
         // if u actually have a 255 character identifier.... something is very wrong
         // also hopefully this gets vectorized or unrolled....
-        while(__builtin_expect(ct < 255 && !isspace(data[ct]), true)) {
+        while(ct < 255 && std::isalnum(data[ct])) {
             ++ct;
         }
         if(ct == 255) {
             Global::specifyError("Line 40");
             throw Global::InvalidLiteral;
         }
+        base->value.iof = Lex::IOF::UNDEFINED;
+        base->type = Lex::Type::ID;
+        base->subType = Lex::SubType::NAME;
         return data+ct;
     } else if(std::isdigit(data[0])) {
         // int/float
         int ct = 0;
-        while(ct < 255 && isdigit(data[ct]) && data[ct] != '.') {
+        while(ct < 255 && std::isdigit(data[ct]) && data[ct] != '.') {
             ++ct;
         }
-        if(ct == 255 || data[ct] != '.' && !isspace(data[ct])) {
+        if(ct == 255 || validLetter(data[ct])) {
             Global::specifyError("Line 51");
             throw Global::InvalidLiteral;
         } else if(data[ct] == '.') {
             // use a float 
             ++ct;
             char* dotPtr = data+ct;
-            while(ct < 255 && isdigit(data[ct])) {
+            while(ct < 255 && std::isdigit(data[ct])) {
                 ++ct;
             }
-            if(ct == 255 || !isspace(data[ct])) {
+            if(ct == 255 || !std::isspace(data[ct])) {
                 Global::specifyError("Line 61.");
                 throw Global::InvalidLiteral;
             }
@@ -75,6 +79,8 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
                 ++dotPtr;
                 power *= 0.1;
             }
+            base->type = Lex::Type::LITERAL;
+            base->subType = Lex::SubType::FLT_LITERAL;
             base->value.iof = Lex::IOF::FLOAT_VAL;
             base->value.holder.ival = res;
             return dotPtr;
@@ -88,18 +94,17 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
                 res += *readPtr;
                 --readPtr;
             }
+            base->type = Lex::Type::LITERAL;
+            base->subType = Lex::SubType::INT_LITERAL;
             base->value.iof = Lex::IOF::INT_VAL;
             base->value.holder.ival = res;
             return ret;
         }
     } else {
+        std::printf("bad char %d\n", data[0]);
         Global::specifyError(data);
         throw Global::InvalidIdentifier;
     }
-}
-
-static inline bool checkEnd(const char data) {
-    return std::isspace(data) || data == '\0';
 }
 
 static inline int scanPtrLvl(char* const ptr) {
@@ -120,24 +125,37 @@ static char* const parseCharLiteral(Lex::LitValue::VHolder* holder, char* const 
         switch(*(ptr+2)) {
             case 't':
                 holder->ival = '\t';
+                break;
             case 'b':
                 holder->ival = '\b';
+                break;
             case 'n':
                 holder->ival = '\n';
+                break;
             case 'r':
                 holder->ival = '\r';
+                break;
             case 'f':
                 holder->ival = '\t';
+                break;
+            case '0':
+                holder->ival = '\0';
+                break;
             case '\'':
                 holder->ival = '\'';
+                break;
             case '\"':
                 holder->ival = '\"';
+                break;
             case '\\':
                 holder->ival = '\\';
+                break;
             default:
                 Global::specifyError(ptr);
                 throw Global::InvalidEscapeSequence;
+                break;
         }
+        return ptr+4;
     } else {
         Global::specifyError(ptr);
         throw Global::InvalidCharacter;
@@ -147,7 +165,6 @@ static char* const parseCharLiteral(Lex::LitValue::VHolder* holder, char* const 
 static char* const parse(Lex::Token* base, char* const data) {
     base->size = 1;
     base->pos = data;
-
     switch(data[0]) {
         case '(':
             base->type = Lex::Type::GROUP;
@@ -270,7 +287,7 @@ static char* const parse(Lex::Token* base, char* const data) {
         // for all keywords, check for whitespace or EOF at end.
         case 'b':
             // break
-            if(std::strncmp("break", data, 5) == 0 && checkEnd(data[5])) {
+            if(std::strncmp("break", data, 5) == 0 && !validLetter(data[5])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::BREAK;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -282,7 +299,7 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'c':
             // case
             // char
-            if(std::strncmp("case", data, 4) == 0 && checkEnd(data[4])) {
+            if(std::strncmp("case", data, 4) == 0 && !validLetter(data[4])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::CASE;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -299,7 +316,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'd':
             // default
-            if(std::strncmp("default", data, 7) == 0 && checkEnd(data[7])) {
+            if(std::strncmp("default", data, 7) == 0 && !validLetter(data[7])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::DEFAULT;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -310,7 +327,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'e':
             // else
-            if(std::strncmp("else", data, 4) == 0 && checkEnd(data[4])) {
+            if(std::strncmp("else", data, 4) == 0 && !validLetter(data[4])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::ELSE;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -321,7 +338,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'f':
             // float
-            if(std::strncmp("float", data, 5) == 0 && checkEnd(data[5])) {
+            if(std::strncmp("float", data, 5) == 0 && !validLetter(data[5])) {
                 base->type = Lex::Type::DATATYPE;
                 base->subType = Lex::SubType::FLOAT;
                 base->value.iof = Lex::IOF::PTRLVL;
@@ -332,7 +349,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'g':
             // goto
-            if(std::strncmp("goto", data, 4) == 0 && checkEnd(data[4])) {
+            if(std::strncmp("goto", data, 4) == 0 && !validLetter(data[4])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::GOTO;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -344,13 +361,13 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'i':
             // if
             // int
-            if(std::strncmp("if", data, 2) == 0 && checkEnd(data[2])) {
+            if(std::strncmp("if", data, 2) == 0 && !validLetter(data[2])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::IF;
                 base->value.iof = Lex::IOF::UNDEFINED;
                 base->size = 2;
                 return data+2;
-            } else if(std::strncmp("int", data, 3) == 0 && checkEnd(data[3])) {
+            } else if(std::strncmp("int", data, 3) == 0 && !validLetter(data[3])) {
                 base->type = Lex::Type::DATATYPE;
                 base->subType = Lex::SubType::INT;
                 base->value.iof = Lex::IOF::PTRLVL;
@@ -361,7 +378,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'l':
             // long
-            if(std::strncmp("long", data, 4) == 0 && checkEnd(data[4])) {
+            if(std::strncmp("long", data, 4) == 0 && !validLetter(data[4])) {
                 base->type = Lex::Type::DATATYPE;
                 base->subType = Lex::SubType::LONG;
                 base->value.iof = Lex::IOF::PTRLVL;
@@ -372,7 +389,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'r':
             // return
-            if(std::strncmp("return", data, 6) == 0 && checkEnd(data[6])) {
+            if(std::strncmp("return", data, 6) == 0 && !validLetter(data[6])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::RETURN;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -383,7 +400,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 's':
             // switch
-            if(std::strncmp("switch", data, 6) == 0 && checkEnd(data[6])) {
+            if(std::strncmp("switch", data, 6) == 0 && !validLetter(data[6])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::SWITCH;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -394,7 +411,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'v':
             // void
-            if(std::strncmp("void", data, 4) == 0 && checkEnd(data[4])) {
+            if(std::strncmp("void", data, 4) == 0 && !validLetter(data[4])) {
                 base->type = Lex::Type::DATATYPE;
                 base->subType = Lex::SubType::VOID;
                 base->value.iof = Lex::IOF::PTRLVL;
@@ -405,7 +422,7 @@ static char* const parse(Lex::Token* base, char* const data) {
             }
         case 'w':
             // while
-            if(std::strncmp("while", data, 5) == 0 && checkEnd(data[5])) {
+            if(std::strncmp("while", data, 5) == 0 && !validLetter(data[5])) {
                 base->type = Lex::Type::CONTROL;
                 base->subType = Lex::SubType::WHILE;
                 base->value.iof = Lex::IOF::UNDEFINED;
@@ -426,6 +443,10 @@ void Lex::lex(Lex::LexStream& tokens, char* const program) {
         while(isspace(*moving)) {
             ++moving;
         }
+        if(!isgraph(*moving)) {
+            break;
+        }
         moving = parse(token, moving);
+        std::cout << Lex::subtypeStrings[token->subType] << ' ';
     }
 }

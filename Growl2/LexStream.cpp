@@ -4,10 +4,17 @@
 #include <cstring>
 #include <fstream>
 
+static const int INIT_MIN = 4;
+
+static inline int max(int a, int b) {
+    return a>b?a:b;
+}
+
 Lex::LexStream::LexStream(const int fileSize) {
-    stream = new Lex::Token[fileSize/6];
+    const int len = max(INIT_MIN, fileSize/6);
+    stream = new Lex::Token[len];
     curr = stream;
-    end = stream + fileSize/6;
+    end = stream + len;
 }
 
 Lex::LexStream::~LexStream() {
@@ -15,33 +22,24 @@ Lex::LexStream::~LexStream() {
 }
 
 Lex::Token* Lex::LexStream::allocate() {
-    if(curr == end) {
+    if(__builtin_expect(curr == end, false)) {
         // allocate more
-        Lex::Token* aux = new Lex::Token[2*(end-stream)];
-        std::memcpy(aux, stream, (end-stream)*sizeof(Lex::Token));
+        const int size = end-stream;
+        Lex::Token* aux = new Lex::Token[2*size];
+        std::memcpy(aux, stream, size*sizeof(Lex::Token));
         delete [] stream;
-        curr = aux+(end-stream);
+        curr = aux+size;
         stream = aux;
-        end = stream + 2*(end-stream);
-        return curr++;
-    } else {
-        return curr++;
+        end = aux + 2*size;   
     }
+    return curr++;
 }
-
-static const char* const table[] = {"IF", "ELSE", "GOTO", "RETURN", 
-"WHILE", "SWITCH", "CASE", "DEFAULT", "BREAK", "UNSIGNED", "INT", "LONG", 
-"CHAR", "FLOAT", "BOOL", "VOID", "OPAREN", "CPAREN", "COLON", "OBRACK", 
-"CBRACK", "COMMA", "SEMICOLON", "INT_LITERAL", "FLT_LITERAL", "CHAR_LITERAL", 
-"PLUS", "MINUS", "ASTK", "DIV", "MOD", "NEG", "DOT", "GREATER", "LESS", "AMP", 
-"OR", "CARET", "ASSN"};
-
 
 void Lex::LexStream::persist(const char* const file) {
     std::ofstream fout(file);
     Lex::Token* ptr = stream;
-    while(ptr != end) {
-        fout << stream->subType << '\n';
+    while(ptr != curr) {
+        fout << subtypeStrings[ptr->subType] << '\n';
         ++ptr;
     }
     fout.flush();
