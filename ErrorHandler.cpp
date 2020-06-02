@@ -1,5 +1,5 @@
 
-#include "Global.h"
+#include "Global.hpp"
 #include <cstring>
 
 void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {

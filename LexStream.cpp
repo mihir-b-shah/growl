@@ -1,6 +1,6 @@
 
 #include "Lex.h"
-#include "Global.h"
+#include "Global.hpp"
 #include <cstring>
 #include <fstream>
 

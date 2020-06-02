@@ -1,8 +1,7 @@
  
 #include <cstring>
 #include <cctype>
-
-#include "Global.h"
+#include "Global.hpp"
 #include "Lex.h"
 
 /**

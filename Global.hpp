@@ -2,6 +2,9 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <cstdlib>
+#include <cstring>
+
 namespace Global {
     const int DeveloperError = 0xF;
     const int InvalidEscapeSequence = 0x10;
@@ -29,7 +32,21 @@ namespace Global {
             ~Alloc();
 
             template<typename T>
-            T* allocate(int N);
+            T* allocate(int N) {
+                if(__builtin_expect(sizeof(T)*N+Alloc::length > Alloc::capacity, false)) {
+                    // reallocate
+                    // should NEVER happen
+                    int newsize = static_cast<int>(capacity*1.5);
+                    void* alloc = std::malloc(newsize);
+                    std::memcpy(alloc, Alloc::begin, length);
+                    Alloc::capacity = newsize;
+                    std::free(Alloc::begin);
+                    Alloc::begin = alloc;
+                }
+                void* ret = static_cast<unsigned char*>(begin)+length;
+                length += N;
+                return static_cast<T*>(ret);
+            }
     };
 
     Alloc* getAllocator();
