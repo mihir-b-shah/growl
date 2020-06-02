@@ -17,9 +17,7 @@ int main(int argc, char** argv) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
     }
-    char filebuf[100];
-    std::sprintf(filebuf, "Tests/%s", argv[1]);
-    std::FILE* file = std::fopen(filebuf, "r");
+    std::FILE* file = std::fopen(argv[1], "r");
     std::fseek(file, 0L, SEEK_END);
     long size = std::ftell(file);
     std::rewind(file);
@@ -38,7 +36,7 @@ int main(int argc, char** argv) {
     Lex::LexStream tokens(size/sizeof(char));
     try {
         Lex::lex(tokens, program);
-        tokens.persist("Tests/test.txt");
+        tokens.persist("test.txt");
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
