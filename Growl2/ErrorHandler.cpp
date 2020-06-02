@@ -21,11 +21,11 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
                         Global::ERROR_BUFFER_SIZE);
             break;
         case Global::InvalidOperator:
-        std::strncpy(buffer, "Lex error: Invalid operator encountered.", 
+            std::strncpy(buffer, "Lex error: Invalid operator encountered.", 
                         Global::ERROR_BUFFER_SIZE);
             break;
         case Global::DeveloperError:
-        std::strncpy(buffer, "Developer error, see details.", 
+            std::strncpy(buffer, "Developer error, see details.", 
                         Global::ERROR_BUFFER_SIZE);
             break;
         default:
