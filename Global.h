@@ -18,6 +18,21 @@ namespace Global {
 
     void genError(char buffer[ERROR_BUFFER_SIZE], int error);
     void specifyError(const char* spec);
+
+    class Alloc {
+        private:
+            void* begin;
+            int length;
+            int capacity;
+        public:
+            Alloc(int size);
+            ~Alloc();
+
+            template<typename T>
+            T* allocate(int N);
+    };
+
+    Alloc* getAllocator();
 }
 
 #endif

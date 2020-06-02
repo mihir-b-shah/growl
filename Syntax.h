@@ -1,4 +1,7 @@
 
+#ifndef SYNTAX_H
+#define SYNTAX_H
+
 #include "Lex.h"
 
 namespace Syntax {
@@ -16,3 +19,5 @@ namespace Syntax {
     Assoc associate(Lex::SubType type, OpType optype);
     int precedence(Lex::SubType type, Syntax::OpType opType);
 }
+
+#endif

@@ -4,6 +4,14 @@
 #include "Lex.h"
 #include "Global.h"
 
+// allocator constructed before lexing, freed when compilation ends
+Global::Alloc* allocator = nullptr;
+Global::Alloc* getAllocator() {
+    return allocator;
+}
+
+static const int FILE_SIZE_MULTIPLIER = 10;
+
 int main(int argc, char** argv) {
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");
@@ -13,8 +21,12 @@ int main(int argc, char** argv) {
     std::fseek(file, 0L, SEEK_END);
     long size = std::ftell(file);
     std::rewind(file);
-    // only to avoid doing in terms of char new.
-    char* program = static_cast<char*>(std::malloc(size+sizeof(char)));
+   
+    Global::Alloc alloc = Global::Alloc(FILE_SIZE_MULTIPLIER*size);
+    allocator = &alloc;
+    
+    char* program = alloc.allocate<char>(size/sizeof(char)+1);
+
     std::fread(program, 1, size, file);
     std::fflush(file);
     std::fclose(file);
