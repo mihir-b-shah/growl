@@ -9,7 +9,7 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
                         Global::ERROR_BUFFER_SIZE);
             break;
         case Global::InvalidCharacter:
-            std::strncpy(buffer, "Lex error: Invalid character encountered.", 
+            std::strncpy(buffer, "Lex error: Invalid ASCII character encountered. Note- this could be anything.", 
                         Global::ERROR_BUFFER_SIZE);
             break;
         case Global::InvalidLiteral:
@@ -18,6 +18,14 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
             break;
         case Global::InvalidIdentifier:
             std::strncpy(buffer, "Lex error: Invalid identifier/literal encountered.", 
+                        Global::ERROR_BUFFER_SIZE);
+            break;
+        case Global::InvalidOperator:
+        std::strncpy(buffer, "Lex error: Invalid operator encountered.", 
+                        Global::ERROR_BUFFER_SIZE);
+            break;
+        case Global::DeveloperError:
+        std::strncpy(buffer, "Developer error, see details.", 
                         Global::ERROR_BUFFER_SIZE);
             break;
         default:

@@ -1,7 +1,6 @@
  
 #include <cstring>
 #include <cctype>
-#include <iostream>
 
 #include "Global.h"
 #include "Lex.h"
@@ -101,7 +100,6 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
             return ret;
         }
     } else {
-        std::printf("bad char %d\n", data[0]);
         Global::specifyError(data);
         throw Global::InvalidIdentifier;
     }
@@ -447,6 +445,5 @@ void Lex::lex(Lex::LexStream& tokens, char* const program) {
             break;
         }
         moving = parse(token, moving);
-        std::cout << Lex::subtypeStrings[token->subType] << ' ';
     }
 }
