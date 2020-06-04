@@ -4,14 +4,16 @@
 #include <cstring>
 #include <fstream>
 
-static const int INIT_MIN = 4;
+static const int INIT_MIN = 10;
+static const int AVG_CHARS_PER_TOKEN = 3;
+static const int GROWTH_FACTOR = 2;
 
 static inline int max(int a, int b) {
     return a>b?a:b;
 }
 
 Lex::LexStream::LexStream(const int fileSize) {
-    const int len = max(INIT_MIN, fileSize/6);
+    const int len = max(INIT_MIN, fileSize/AVG_CHARS_PER_TOKEN);
     Lex::LexStream::stream = Global::getAllocator()->allocate<Lex::Token>(len);
     Lex::LexStream::curr = stream;
     Lex::LexStream::end = stream + len;
@@ -25,11 +27,11 @@ Lex::Token* Lex::LexStream::allocate() {
     if(__builtin_expect(curr == end, false)) {
         // allocate more
         const int size = Lex::LexStream::end-Lex::LexStream::stream;
-        Lex::Token* aux = Global::getAllocator()->allocate<Lex::Token>(2*size);
+        Lex::Token* aux = Global::getAllocator()->allocate<Lex::Token>(GROWTH_FACTOR*size);
         std::memcpy(aux, Lex::LexStream::stream, size*sizeof(Lex::Token));
         Lex::LexStream::curr = aux+size;
         Lex::LexStream::stream = aux;
-        Lex::LexStream::end = aux + 2*size;   
+        Lex::LexStream::end = aux + GROWTH_FACTOR*size;   
     }
     return curr++;
 }

@@ -25,16 +25,22 @@ int main(int argc, char** argv) {
     Global::Alloc alloc = Global::Alloc(FILE_SIZE_MULTIPLIER*size);
     allocator = &alloc;
     
+    allocator->printDebug("MAIN");
+    // problem is here, my allocator is screwing up
     char* program = alloc.allocate<char>(size/sizeof(char)+1);
+    std::printf("Amount requested: %d\n", size/sizeof(char)+1);
+    allocator->printDebug("MAIN");
 
     std::fread(program, 1, size, file);
     std::fflush(file);
     std::fclose(file);
     program[size] = '\0';
 
+    std::printf("at line %d in main: %s\n", __LINE__, program);
     // lex
     Lex::LexStream tokens(size/sizeof(char));
     try {
+        std::printf("at line %d in main: %s\n", __LINE__, program);
         Lex::lex(tokens, program);
         tokens.persist("test.txt");
         return EXIT_SUCCESS;
