@@ -1,7 +1,7 @@
  
 #include <cstring>
 #include <cctype>
-#include "Global.hpp"
+#include "Error.h"
 #include "Lex.h"
 #include <cstdio>
 
@@ -436,7 +436,6 @@ static char* const parse(Lex::Token* base, char* const data) {
 
 void Lex::lex(Lex::LexStream& tokens, char* const program) {
     char* moving = program;
-    std::printf("Moving at line %d: %d", __LINE__, *moving);
     while(*moving != '\0') {
         Lex::Token* token = tokens.allocate();
         while(isspace(*moving)) {
@@ -446,6 +445,5 @@ void Lex::lex(Lex::LexStream& tokens, char* const program) {
             break;
         }
         moving = parse(token, moving);
-        std::printf("%s", Lex::subtypeStrings[token->subType]);
     }
 }

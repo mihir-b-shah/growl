@@ -1,6 +1,6 @@
 
 #include "Lex.h"
-#include "Global.hpp"
+#include "Allocator.h"
 #include <cstring>
 #include <fstream>
 
@@ -14,22 +14,23 @@ static inline int max(int a, int b) {
 
 Lex::LexStream::LexStream(const int fileSize) {
     const int len = max(INIT_MIN, fileSize/AVG_CHARS_PER_TOKEN);
-    Lex::LexStream::stream = Global::getAllocator()->allocate<Lex::Token>(len);
+    Lex::LexStream::stream = new Lex::Token[len];
     Lex::LexStream::curr = stream;
     Lex::LexStream::end = stream + len;
 }
 
 Lex::LexStream::~LexStream() {
-    // the heap will get unallocated at the end.
+    delete [] stream;
 }
 
 Lex::Token* Lex::LexStream::allocate() {
     if(__builtin_expect(curr == end, false)) {
         // allocate more
         const int size = Lex::LexStream::end-Lex::LexStream::stream;
-        Lex::Token* aux = Global::getAllocator()->allocate<Lex::Token>(GROWTH_FACTOR*size);
+        Lex::Token* aux = new Lex::Token[GROWTH_FACTOR*size];
         std::memcpy(aux, Lex::LexStream::stream, size*sizeof(Lex::Token));
         Lex::LexStream::curr = aux+size;
+        delete [] stream;
         Lex::LexStream::stream = aux;
         Lex::LexStream::end = aux + GROWTH_FACTOR*size;   
     }

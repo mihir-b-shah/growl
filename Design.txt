@@ -1,0 +1,35 @@
+Parser:
+
+Abstract Syntax Tree (AST), using composition (instead of polymorphic behavior)
+- Params: (Type, Identifier OR Expression). Type=Int. Id=String
+- Behavior: AST
+- Return: (Type, Variable). Type=Int. Variable=Ptr to symbol table
+- Flags: Int
+
+All current types:
+
+Function def:
+- Params: List(Type, Id)
+
+Switch:
+- Params: (Type, Expression)
+
+Branch:
+- Params: (Type=Bool, Expression)
+
+Label:
+- Params: (Type=Void, Expression=None)
+
+Loop:
+- Params: (Type=Bool, Expression)
+
+Unary Op:
+- Params: (Type, Expression)
+
+Binary Op:
+- Params: (Type, Expression)
+
+Function call:
+Literal:
+Variable:
+

@@ -1,6 +1,6 @@
 
 #include "Syntax.h"
-#include "Global.hpp"
+#include "Error.h"
 
 Syntax::OpType Syntax::opType(Lex::SubType type) {
     using namespace Lex;
