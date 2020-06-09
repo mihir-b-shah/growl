@@ -17,10 +17,10 @@ namespace Parse {
     };
 
     class FuncDef : public Control {
-		private:
-			int numArgs;
-		public:
-			int arity() const;
+        private:
+            int numArgs;
+        public:
+            int arity() const;
     };
 
     class Branch : public Control {
@@ -45,31 +45,31 @@ namespace Parse {
     enum IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, 
                   DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, 
                   ASSN, SHIFT};
-	Syntax::OpType detOpType(); // does not return of type AMBIG.
-	  
+    Syntax::OpType detOpType(); // does not return of type AMBIG.
+      
     class Op : public Expr {
         private:
-			// small size optimization, avoid a heap allocation
+            // small size optimization, avoid a heap allocation
             union {
-				Expr* arg;
-				struct {
-					Expr* arg1;
-					Expr* arg2;
-				} twoArgs;
-				Expr** args;
-			} inputs;
-			// tag the union
-			bool intrinsic;
-			union {
-				FuncDef* func;
-				IntrOps intr;
-			} driver;
-		public:
-			Op(FuncDef* def, int argc, Expr** argv);
-			Op(Lex::SubType op, Expr* e1);
-			Op(Lex::SubType op, Expr* e1, Expr* e2);
-			~Op();
-			int arity() const;
+                Expr* arg;
+                struct {
+                    Expr* arg1;
+                    Expr* arg2;
+                } twoArgs;
+                Expr** args;
+            } inputs;
+            // tag the union
+            bool intrinsic;
+            union {
+                FuncDef* func;
+                IntrOps intr;
+            } driver;
+        public:
+            Op(FuncDef* def, int argc, Expr** argv);
+            Op(Lex::SubType op, Expr* e1);
+            Op(Lex::SubType op, Expr* e1, Expr* e2);
+            ~Op();
+            int arity() const;
     };
 
     class Literal : public Expr {

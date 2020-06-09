@@ -10,8 +10,8 @@ namespace Global {
     const int InvalidIdentifier = 0x13; // this could also point to an invalid literal
                                         // see the TokenGenerator.cpp where its thrown
     const int InvalidOperator = 0x14; 
-	const int InvalidFunctionCall = 0x15;
-	const int InvalidOperatorInvocation = 0x16;
+    const int InvalidFunctionCall = 0x15;
+    const int InvalidOperatorInvocation = 0x16;
 
     const int ERROR_BUFFER_SIZE = 255;
     const int ERROR_REFERENCE_SIZE = 31;
