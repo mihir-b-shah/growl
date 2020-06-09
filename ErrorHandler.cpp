@@ -28,6 +28,14 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
             std::strncpy(buffer, "Developer error, see details.", 
                         Global::ERROR_BUFFER_SIZE);
             break;
+		case Global::InvalidFunctionCall:
+            std::strncpy(buffer, "Parse error, error in func. call invocation.", 
+                        Global::ERROR_BUFFER_SIZE);
+            break;
+		case Global::InvalidOperatorInvocation:
+            std::strncpy(buffer, "Parse error, operator called with an incorrect number of args.", 
+                        Global::ERROR_BUFFER_SIZE);
+            break;
         default:
             std::strncpy(buffer, "Unnamed exception encountered.", 
                         Global::ERROR_BUFFER_SIZE);
