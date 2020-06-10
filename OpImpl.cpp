@@ -32,7 +32,7 @@ Parse::Op::Op(Parse::FuncDef* def, int argc, Parse::Expr** argv){
 }
 
 // unary
-Parse::Op(Lex::SubType op, Parse::Expr* e1){
+Parse::Op::Op(Lex::SubType op, Parse::Expr* e1){
     Parse::Op::inputs.arg = e1;
     Parse::Op::intrinsic = true;
     switch(op) {
@@ -55,9 +55,9 @@ Parse::Op(Lex::SubType op, Parse::Expr* e1){
 }    
 
 // binary 
-Parse::Op(Lex::SubType op, Parse::Expr* e1, Parse::Expr* e2){
-    Parse::Op::inputs.twoArgs.e1 = e1;
-    Parse::Op::inputs.twoArgs.e2 = e2;
+Parse::Op::Op(Lex::SubType op, Parse::Expr* e1, Parse::Expr* e2){
+    Parse::Op::inputs.twoArgs.arg1 = e1;
+    Parse::Op::inputs.twoArgs.arg2 = e2;
     Parse::Op::intrinsic = true;
     switch(op) {
         case Lex::SubType::PLUS:
@@ -105,12 +105,13 @@ Parse::Op(Lex::SubType op, Parse::Expr* e1, Parse::Expr* e2){
         default:
             Global::specifyError("Invalid invocation of operator.");
             throw Global::InvalidOperatorInvocation;
+	}
 }
 
 Parse::Op::~Op(){
-}
+};
 
-static inline Syntax::OpType detOpType(Parse::IntrOps type) const {
+static inline Syntax::OpType detOpType(Parse::IntrOps type) {
     switch(type) {
         case Parse::IntrOps::NEG:
         case Parse::IntrOps::ADDRESS:

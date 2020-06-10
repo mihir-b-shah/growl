@@ -1,5 +1,5 @@
 
-#ifdef AST_H
+#ifndef AST_H
 #define AST_H
 
 #include "Lex.h"
@@ -13,40 +13,34 @@ namespace Parse {
     };
 
     class Control : public AST {
-
     };
 
     class FuncDef : public Control {
         private:
             int numArgs;
         public:
-            int arity() const;
+            int arity() const {
+				return 0;
+			}
     };
 
     class Branch : public Control {
-
     };
 
     /*
     later...
         class Switch : Control {
-
         };
 
         class Label : Control {
-
         };
     */
 
     class Loop : public Control {
-
     };
 
-    enum IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, 
-                  DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, 
-                  ASSN, SHIFT};
-    Syntax::OpType detOpType(); // does not return of type AMBIG.
-      
+    enum IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
+
     class Op : public Expr {
         private:
             // small size optimization, avoid a heap allocation
@@ -73,11 +67,9 @@ namespace Parse {
     };
 
     class Literal : public Expr {
-
     };
 
     class Var : public Expr {
-
     };
 }
 
