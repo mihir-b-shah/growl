@@ -45,14 +45,14 @@ int main(int argc, char** argv) {
     try {
         Lex::lex(tokens, program);
         tokens.persist("test.txt");
-		delete program;
+        delete program;
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
         printf("\n%s\n", buffer);
         printf("%s\n", Global::errorMsg);
-		delete program;
+        delete program;
         return EXIT_FAILURE;
     }
 }

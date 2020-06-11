@@ -105,7 +105,7 @@ Parse::Op::Op(Lex::SubType op, Parse::Expr* e1, Parse::Expr* e2){
         default:
             Global::specifyError("Invalid invocation of operator.");
             throw Global::InvalidOperatorInvocation;
-	}
+    }
 }
 
 Parse::Op::~Op(){

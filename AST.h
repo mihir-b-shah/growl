@@ -4,6 +4,7 @@
 
 #include "Lex.h"
 #include "Syntax.h"
+#include "Error.h"
 
 namespace Parse {
     class AST {
@@ -20,8 +21,9 @@ namespace Parse {
             int numArgs;
         public:
             int arity() const {
-				return 0;
-			}
+                Global::specifyError("Unimplemented function call.");
+                throw Global::DeveloperError;
+            }
     };
 
     class Branch : public Control {

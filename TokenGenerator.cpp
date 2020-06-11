@@ -177,7 +177,7 @@ static char* const parse(Lex::Token* base, char* const data) {
         case ':':
             base->type = Lex::Type::GROUP;
             base->subType = Lex::SubType::COLON;
-			base->value.iof = Lex::IOF::UNDEFINED;
+            base->value.iof = Lex::IOF::UNDEFINED;
             return data+1;
         case '{':
             base->type = Lex::Type::GROUP;
