@@ -21,7 +21,8 @@ void Utils::SmallVector<T,N>::push_back(T& val){
         // switch over to the heap
         Utils::SmallVector<T,N>::heap = true;
         Utils::SmallVector<T,N>::data.vi.resize(Utils::SmallVector<T,N>::data.alloc.size);
-        std::copy(Utils::SmallVector<T,N>::data.alloc.begin, Utils::SmallVector<T,N>::data.alloc.begin+Utils::SmallVector<T,N>::data.alloc.size, Utils::SmallVector<T,N>::vi.begin()); 
+        std::copy(Utils::SmallVector<T,N>::data.alloc.begin, 
+            Utils::SmallVector<T,N>::data.alloc.begin+Utils::SmallVector<T,N>::data.alloc.size, Utils::SmallVector<T,N>::vi.begin()); 
     } else if(heap){
         // stay on the heap
         Utils::SmallVector<T,N>::data.vi.push_back(val);
