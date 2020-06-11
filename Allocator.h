@@ -23,18 +23,18 @@ namespace Global {
             template<typename T>
             T* allocate(int N) {
                 const int offset = ((unsigned long long) (static_cast<unsigned char*>
-                                    (Alloc::begin)+Alloc::length))%sizeof(T);
-                if(__builtin_expect(sizeof(T)*N+Alloc::length+offset > Alloc::capacity, false)) {
+                                    (begin)+length))%sizeof(T);
+                if(__builtin_expect(sizeof(T)*N+length+offset > capacity, false)) {
                     // reallocate
                     // should NEVER happen
-                    int newsize = static_cast<int>((sizeof(T)*N+Alloc::length)*GROWTH_FACTOR);
+                    int newsize = static_cast<int>((sizeof(T)*N+length)*GROWTH_FACTOR);
                     void* alloc = std::malloc(newsize);
-                    std::memcpy(alloc, Alloc::begin, Alloc::length);
-                    Alloc::capacity = newsize;
-                    std::free(Alloc::begin);
-                    Alloc::begin = alloc;
+                    std::memcpy(alloc, begin, length);
+                    capacity = newsize;
+                    std::free(begin);
+                    begin = alloc;
                 }
-                void* ret = static_cast<unsigned char*>(Alloc::begin)+Alloc::length+offset;
+                void* ret = static_cast<unsigned char*>(begin)+length+offset;
                 length += offset+N*sizeof(T);
                 return static_cast<T*>(ret);
             }
