@@ -5,6 +5,8 @@
 #include "Lex.h"
 #include <cstdio>
 
+using namespace Lex;
+
 /**
  * Defines a set of keywords. copied from my deformed java code.
  * This is bare bones
@@ -27,7 +29,7 @@ static inline bool validLetter(const char letter) {
     right now... only a decimal int literal of arbitrary size
     and a float of arbitrary size. no suffixes either.
     all of this will be handled by a regex enabled preprocessor. */
-static inline char* const parseWord(Lex::Token* base, char* const data) {
+static inline char* const parseWord(Token* base, char* const data) {
     if(validLetter(data[0])) {
         // identifier
         int ct = 0;
@@ -40,9 +42,9 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
             Global::specifyError("Line 40");
             throw Global::InvalidLiteral;
         }
-        base->value.iof = Lex::IOF::UNDEFINED;
-        base->type = Lex::Type::ID;
-        base->subType = Lex::SubType::NAME;
+        base->value.iof = IOF::UNDEFINED;
+        base->type = Type::ID;
+        base->subType = SubType::NAME;
         return data+ct;
     } else if(std::isdigit(data[0])) {
         // int/float
@@ -78,9 +80,9 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
                 ++dotPtr;
                 power *= 0.1;
             }
-            base->type = Lex::Type::LITERAL;
-            base->subType = Lex::SubType::FLT_LITERAL;
-            base->value.iof = Lex::IOF::FLOAT_VAL;
+            base->type = Type::LITERAL;
+            base->subType = SubType::FLT_LITERAL;
+            base->value.iof = IOF::FLOAT_VAL;
             base->value.holder.ival = res;
             return dotPtr;
         } else {
@@ -93,9 +95,9 @@ static inline char* const parseWord(Lex::Token* base, char* const data) {
                 res += *readPtr;
                 --readPtr;
             }
-            base->type = Lex::Type::LITERAL;
-            base->subType = Lex::SubType::INT_LITERAL;
-            base->value.iof = Lex::IOF::INT_VAL;
+            base->type = Type::LITERAL;
+            base->subType = SubType::INT_LITERAL;
+            base->value.iof = IOF::INT_VAL;
             base->value.holder.ival = res;
             return ret;
         }
@@ -113,7 +115,7 @@ static inline int scanPtrLvl(char* const ptr) {
     return ct;
 }
 
-static char* const parseCharLiteral(Lex::LitValue::VHolder* holder, char* const ptr) {
+static char* const parseCharLiteral(LitValue::VHolder* holder, char* const ptr) {
     if(*(ptr+2) == '\'') {
         // a proper character
         holder->ival = *(ptr+1);
@@ -160,135 +162,135 @@ static char* const parseCharLiteral(Lex::LitValue::VHolder* holder, char* const 
     }
 }
 
-static char* const parse(Lex::Token* base, char* const data) {
+static char* const parse(Token* base, char* const data) {
     base->size = 1;
     base->pos = data;
     switch(data[0]) {
         case '(':
-            base->type = Lex::Type::GROUP;
-            base->subType = Lex::SubType::OPAREN;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::GROUP;
+            base->subType = SubType::OPAREN;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case ')':
-            base->type = Lex::Type::GROUP;
-            base->subType = Lex::SubType::CPAREN;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::GROUP;
+            base->subType = SubType::CPAREN;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case ':':
-            base->type = Lex::Type::GROUP;
-            base->subType = Lex::SubType::COLON;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::GROUP;
+            base->subType = SubType::COLON;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '{':
-            base->type = Lex::Type::GROUP;
-            base->subType = Lex::SubType::OBRACK;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::GROUP;
+            base->subType = SubType::OBRACK;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '}':
-            base->type = Lex::Type::GROUP;
-            base->subType = Lex::SubType::CBRACK;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::GROUP;
+            base->subType = SubType::CBRACK;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case ',':
-            base->type = Lex::Type::GROUP;
-            base->subType = Lex::SubType::COMMA;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::GROUP;
+            base->subType = SubType::COMMA;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case ';':
-            base->type = Lex::Type::GROUP;
-            base->subType = Lex::SubType::SEMICOLON;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::GROUP;
+            base->subType = SubType::SEMICOLON;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '+':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::PLUS;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::PLUS;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '-':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::MINUS;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::MINUS;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '*':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::ASTK;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::ASTK;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '/':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::DIV;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::DIV;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '%':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::MOD;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::MOD;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '~':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::NEG;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::NEG;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '.':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::DOT;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::DOT;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '<':
             if(data[1] == '<') {
-                base->type = Lex::Type::OPERATOR;
-                base->subType = Lex::SubType::SHIFT;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::OPERATOR;
+                base->subType = SubType::SHIFT;
+                base->value.iof = IOF::UNDEFINED;
                 return data+2;
             }
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::LESS;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::LESS;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '>':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::GREATER;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::GREATER;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '&':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::AMP;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::AMP;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '|':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::OR;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::OR;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '^':
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::CARET;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::CARET;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '=':
             if(data[1] == '=') {
-                base->type = Lex::Type::OPERATOR;
-                base->subType = Lex::SubType::EQUAL;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::OPERATOR;
+                base->subType = SubType::EQUAL;
+                base->value.iof = IOF::UNDEFINED;
                 return data+2;
             }
-            base->type = Lex::Type::OPERATOR;
-            base->subType = Lex::SubType::ASSN;
-            base->value.iof = Lex::IOF::UNDEFINED;
+            base->type = Type::OPERATOR;
+            base->subType = SubType::ASSN;
+            base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '\'':
             // char literal
-            base->type = Lex::Type::LITERAL;
-            base->subType = Lex::SubType::CHAR_LITERAL;
-            base->value.iof = Lex::IOF::INT_VAL;
+            base->type = Type::LITERAL;
+            base->subType = SubType::CHAR_LITERAL;
+            base->value.iof = IOF::INT_VAL;
             return parseCharLiteral(&(base->value.holder), data);
         // for all keywords, check for whitespace or EOF at end.
         case 'b':
             // break
             if(std::strncmp("break", data, 5) == 0 && !validLetter(data[5])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::BREAK;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::BREAK;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 5;
                 return data+5;
             } else {
@@ -298,15 +300,15 @@ static char* const parse(Lex::Token* base, char* const data) {
             // case
             // char
             if(std::strncmp("case", data, 4) == 0 && !validLetter(data[4])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::CASE;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::CASE;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 4;
                 return data+4;
             } else if(std::strncmp("char", data, 4) == 0) {
-                base->type = Lex::Type::DATATYPE;
-                base->subType = Lex::SubType::CHAR;
-                base->value.iof = Lex::IOF::PTRLVL;
+                base->type = Type::DATATYPE;
+                base->subType = SubType::CHAR;
+                base->value.iof = IOF::PTRLVL;
                 base->size = 4+(base->value.holder.ptrLvl = scanPtrLvl(data+4));
                 return data+4;
             } else {
@@ -315,9 +317,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'd':
             // default
             if(std::strncmp("default", data, 7) == 0 && !validLetter(data[7])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::DEFAULT;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::DEFAULT;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 7;
                 return data+7;
             } else {
@@ -326,9 +328,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'e':
             // else
             if(std::strncmp("else", data, 4) == 0 && !validLetter(data[4])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::ELSE;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::ELSE;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 4;
                 return data+4;
             } else {
@@ -337,9 +339,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'f':
             // float
             if(std::strncmp("float", data, 5) == 0 && !validLetter(data[5])) {
-                base->type = Lex::Type::DATATYPE;
-                base->subType = Lex::SubType::FLOAT;
-                base->value.iof = Lex::IOF::PTRLVL;
+                base->type = Type::DATATYPE;
+                base->subType = SubType::FLOAT;
+                base->value.iof = IOF::PTRLVL;
                 base->size = 5+(base->value.holder.ptrLvl = scanPtrLvl(data+5));
                 return data+5;
             } else {
@@ -348,9 +350,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'g':
             // goto
             if(std::strncmp("goto", data, 4) == 0 && !validLetter(data[4])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::GOTO;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::GOTO;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 4;
                 return data+4;
             } else {
@@ -360,15 +362,15 @@ static char* const parse(Lex::Token* base, char* const data) {
             // if
             // int
             if(std::strncmp("if", data, 2) == 0 && !validLetter(data[2])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::IF;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::IF;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 2;
                 return data+2;
             } else if(std::strncmp("int", data, 3) == 0 && !validLetter(data[3])) {
-                base->type = Lex::Type::DATATYPE;
-                base->subType = Lex::SubType::INT;
-                base->value.iof = Lex::IOF::PTRLVL;
+                base->type = Type::DATATYPE;
+                base->subType = SubType::INT;
+                base->value.iof = IOF::PTRLVL;
                 base->size = 3+(base->value.holder.ptrLvl = scanPtrLvl(data+3));
                 return data+3;
             } else {
@@ -377,9 +379,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'l':
             // long
             if(std::strncmp("long", data, 4) == 0 && !validLetter(data[4])) {
-                base->type = Lex::Type::DATATYPE;
-                base->subType = Lex::SubType::LONG;
-                base->value.iof = Lex::IOF::PTRLVL;
+                base->type = Type::DATATYPE;
+                base->subType = SubType::LONG;
+                base->value.iof = IOF::PTRLVL;
                 base->size = 4+(base->value.holder.ptrLvl = scanPtrLvl(data+4));
                 return data+4;
             } else {
@@ -388,9 +390,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'r':
             // return
             if(std::strncmp("return", data, 6) == 0 && !validLetter(data[6])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::RETURN;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::RETURN;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 6;
                 return data+6;
             } else {
@@ -399,9 +401,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 's':
             // switch
             if(std::strncmp("switch", data, 6) == 0 && !validLetter(data[6])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::SWITCH;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::SWITCH;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 6;
                 return data+6;
             } else {
@@ -410,9 +412,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'v':
             // void
             if(std::strncmp("void", data, 4) == 0 && !validLetter(data[4])) {
-                base->type = Lex::Type::DATATYPE;
-                base->subType = Lex::SubType::VOID;
-                base->value.iof = Lex::IOF::PTRLVL;
+                base->type = Type::DATATYPE;
+                base->subType = SubType::VOID;
+                base->value.iof = IOF::PTRLVL;
                 base->size = 4+(base->value.holder.ptrLvl = scanPtrLvl(data+4));
                 return data+4;
             } else {
@@ -421,9 +423,9 @@ static char* const parse(Lex::Token* base, char* const data) {
         case 'w':
             // while
             if(std::strncmp("while", data, 5) == 0 && !validLetter(data[5])) {
-                base->type = Lex::Type::CONTROL;
-                base->subType = Lex::SubType::WHILE;
-                base->value.iof = Lex::IOF::UNDEFINED;
+                base->type = Type::CONTROL;
+                base->subType = SubType::WHILE;
+                base->value.iof = IOF::UNDEFINED;
                 base->size = 5;
                 return data+5;
             } else {
@@ -434,10 +436,10 @@ static char* const parse(Lex::Token* base, char* const data) {
     }
 }
 
-void Lex::lex(Lex::LexStream& tokens, char* const program) {
+void Lex::lex(LexStream& tokens, char* const program) {
     char* moving = program;
     while(*moving != '\0') {
-        Lex::Token* token = tokens.allocate();
+        Token* token = tokens.allocate();
         while(isspace(*moving)) {
             ++moving;
         }

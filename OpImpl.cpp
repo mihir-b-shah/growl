@@ -1,13 +1,17 @@
 
+#include "Lex.h"
 #include "AST.h"
 #include "Error.h"
 #include "Syntax.h"
+
+using namespace Parse;
+using Lex::SubType;
 
 /**
 argv is expected to be heap-allocated prior to the invocation
 of this method. it will not be freed by this method either.
 */
-Parse::Op::Op(Parse::FuncDef* def, int argc, Parse::Expr** argv){
+Op::Op(FuncDef* def, int argc, Expr** argv){
     // throw error if the number of args give != argc(def).
     if(def->arity() != argc) {
         Global::specifyError("Function call args not match def.");
@@ -16,37 +20,37 @@ Parse::Op::Op(Parse::FuncDef* def, int argc, Parse::Expr** argv){
     
     switch(argc) {
         case 1:
-            Parse::Op::inputs.arg = *argv;
+            Op::inputs.arg = *argv;
             break;
         case 2:
-            Parse::Op::inputs.twoArgs.arg1 = *argv;
-            Parse::Op::inputs.twoArgs.arg2 = *(argv+1);
+            inputs.twoArgs.arg1 = *argv;
+            inputs.twoArgs.arg2 = *(argv+1);
             break;
         default:
-            Parse::Op::inputs.args = argv;
+            inputs.args = argv;
             break;
     }
     
-    Parse::Op::intrinsic = false;
-    Parse::Op::driver.func = def;
+    Op::intrinsic = false;
+    Op::driver.func = def;
 }
 
 // unary
-Parse::Op::Op(Lex::SubType op, Parse::Expr* e1){
-    Parse::Op::inputs.arg = e1;
-    Parse::Op::intrinsic = true;
+Op::Op(SubType op, Expr* e1){
+    Op::inputs.arg = e1;
+    Op::intrinsic = true;
     switch(op) {
-        case Lex::SubType::MINUS:
-            Parse::Op::driver.intr = Parse::IntrOps::NEG;
+        case SubType::MINUS:
+            driver.intr = NEG;
             break;
-        case Lex::SubType::ASTK:
-            Parse::Op::driver.intr = Parse::IntrOps::DEREF;
+        case SubType::ASTK:
+            driver.intr = DEREF;
             break;
-        case Lex::SubType::NEG:
-            Parse::Op::driver.intr = Parse::IntrOps::FLIP;
+        case SubType::NEG:
+            driver.intr = FLIP;
             break;
-        case Lex::SubType::AMP:
-            Parse::Op::driver.intr = Parse::IntrOps::ADDRESS;
+        case SubType::AMP:
+            driver.intr = ADDRESS;
             break;
         default:
             Global::specifyError("Invalid invocation of operator.");
@@ -55,52 +59,52 @@ Parse::Op::Op(Lex::SubType op, Parse::Expr* e1){
 }    
 
 // binary 
-Parse::Op::Op(Lex::SubType op, Parse::Expr* e1, Parse::Expr* e2){
-    Parse::Op::inputs.twoArgs.arg1 = e1;
-    Parse::Op::inputs.twoArgs.arg2 = e2;
-    Parse::Op::intrinsic = true;
+Op::Op(SubType op, Expr* e1, Expr* e2){
+    Op::inputs.twoArgs.arg1 = e1;
+    inputs.twoArgs.arg2 = e2;
+    Op::intrinsic = true;
     switch(op) {
-        case Lex::SubType::PLUS:
-            Parse::Op::driver.intr = Parse::IntrOps::ADD;
+        case SubType::PLUS:
+            driver.intr = ADD;
             break;
-        case Lex::SubType::MINUS:
-            Parse::Op::driver.intr = Parse::IntrOps::MINUS;
+        case SubType::MINUS:
+            driver.intr = MINUS;
             break;
-        case Lex::SubType::ASTK:
-            Parse::Op::driver.intr = Parse::IntrOps::MULT;
+        case SubType::ASTK:
+            driver.intr = MULT;
             break;
-        case Lex::SubType::DIV:
-            Parse::Op::driver.intr = Parse::IntrOps::DIV;
+        case SubType::DIV:
+            driver.intr = DIV;
             break;
-        case Lex::SubType::MOD:
-            Parse::Op::driver.intr = Parse::IntrOps::MOD;
+        case SubType::MOD:
+            driver.intr = MOD;
             break;
-        case Lex::SubType::DOT:
-            Parse::Op::driver.intr = Parse::IntrOps::DOT;
+        case SubType::DOT:
+            driver.intr = DOT;
             break;
-        case Lex::SubType::GREATER:
-            Parse::Op::driver.intr = Parse::IntrOps::GREATER;
+        case SubType::GREATER:
+            driver.intr = GREATER;
             break;
-        case Lex::SubType::LESS:
-            Parse::Op::driver.intr = Parse::IntrOps::LESS;
+        case SubType::LESS:
+            driver.intr = LESS;
             break;
-        case Lex::SubType::EQUAL:
-            Parse::Op::driver.intr = Parse::IntrOps::EQUAL;
+        case SubType::EQUAL:
+            driver.intr = EQUAL;
             break;
-        case Lex::SubType::AMP:
-            Parse::Op::driver.intr = Parse::IntrOps::AND;
+        case SubType::AMP:
+            driver.intr = AND;
             break;
-        case Lex::SubType::OR:
-            Parse::Op::driver.intr = Parse::IntrOps::OR;
+        case SubType::OR:
+            driver.intr = OR;
             break;
-        case Lex::SubType::CARET:
-            Parse::Op::driver.intr = Parse::IntrOps::XOR;
+        case SubType::CARET:
+            driver.intr = XOR;
             break;
-        case Lex::SubType::ASSN:
-            Parse::Op::driver.intr = Parse::IntrOps::ASSN;
+        case SubType::ASSN:
+            driver.intr = ASSN;
             break;
-        case Lex::SubType::SHIFT:
-            Parse::Op::driver.intr = Parse::IntrOps::SHIFT;
+        case SubType::SHIFT:
+            driver.intr = SHIFT;
             break;
         default:
             Global::specifyError("Invalid invocation of operator.");
@@ -108,30 +112,30 @@ Parse::Op::Op(Lex::SubType op, Parse::Expr* e1, Parse::Expr* e2){
     }
 }
 
-Parse::Op::~Op(){
+Op::~Op(){
 };
 
-static inline Syntax::OpType detOpType(Parse::IntrOps type) {
+static inline Syntax::OpType detOpType(IntrOps type) {
     switch(type) {
-        case Parse::IntrOps::NEG:
-        case Parse::IntrOps::ADDRESS:
-        case Parse::IntrOps::FLIP:
-        case Parse::IntrOps::DEREF:
+        case NEG:
+        case ADDRESS:
+        case FLIP:
+        case DEREF:
             return Syntax::OpType::UNARY;
-        case Parse::IntrOps::ADD:
-        case Parse::IntrOps::MINUS:
-        case Parse::IntrOps::MULT:
-        case Parse::IntrOps::DIV:
-        case Parse::IntrOps::MOD:
-        case Parse::IntrOps::DOT:
-        case Parse::IntrOps::GREATER:
-        case Parse::IntrOps::LESS:
-        case Parse::IntrOps::EQUAL:
-        case Parse::IntrOps::AND:
-        case Parse::IntrOps::OR:
-        case Parse::IntrOps::XOR:
-        case Parse::IntrOps::ASSN:
-        case Parse::IntrOps::SHIFT:
+        case ADD:
+        case MINUS:
+        case MULT:
+        case DIV:
+        case MOD:
+        case DOT:
+        case GREATER:
+        case LESS:
+        case EQUAL:
+        case AND:
+        case OR:
+        case XOR:
+        case ASSN:
+        case SHIFT:
             return Syntax::OpType::BINARY;
         default:
             Global::specifyError("Invalid operator encountered.");
@@ -139,10 +143,10 @@ static inline Syntax::OpType detOpType(Parse::IntrOps type) {
     }
 }
 
-int Parse::Op::arity() const {
-    if(Parse::Op::intrinsic) {
-        return detOpType(Parse::Op::driver.intr);
+int Op::arity() const {
+    if(Op::intrinsic) {
+        return detOpType(Op::driver.intr);
     } else {
-        return Parse::Op::driver.func->arity();
+        return driver.func->arity();
     }
 }

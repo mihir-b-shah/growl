@@ -4,6 +4,8 @@
 
 #include "Lex.h"
 
+using Lex::SubType;
+
 namespace Syntax {
     enum OpType {
         AMBIG_TYPE, UNARY, BINARY
@@ -15,9 +17,9 @@ namespace Syntax {
         AMBIG, NONE, RIGHT, LEFT // ambigious between two...
     };
 
-    OpType opType(Lex::SubType type);
-    Assoc associate(Lex::SubType type, OpType optype);
-    int precedence(Lex::SubType type, Syntax::OpType opType);
+    OpType opType(SubType type);
+    Assoc associate(SubType type, OpType optype);
+    int precedence(SubType type, OpType opType);
 }
 
 #endif

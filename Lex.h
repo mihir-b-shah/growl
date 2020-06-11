@@ -41,13 +41,13 @@ namespace Lex {
 
     class LexStream {
         private:
-            Lex::Token* stream;
-            Lex::Token* curr;
-            Lex::Token* end;
+            Token* stream;
+            Token* curr;
+            Token* end;
         public:
             LexStream(int fileSize);
             ~LexStream();
-            Lex::Token* allocate();
+            Token* allocate();
             void persist(const char* const file);      
     };  
 
@@ -58,7 +58,7 @@ namespace Lex {
         "CHAR_LITERAL", "PLUS", "MINUS", "ASTK", "DIV", "MOD", "NEG", "DOT", 
         "GREATER", "LESS", "EQUAL", "AMP", "OR", "CARET", "ASSN", "SHIFT", "NAME"};
 
-    void lex(Lex::LexStream& tokens, char* const program); 
+    void lex(LexStream& tokens, char* const program); 
 }
 
 #endif
