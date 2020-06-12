@@ -37,17 +37,17 @@ namespace Utils {
                 if(heap && length == data.alloc.capacity) {
                     T* aux = Global::getAllocator()->allocate<T>(
                         data.alloc.capacity = length*2);
-                    std::copy(data.alloc.begin, N, aux); 
+                    std::copy(data.alloc.begin, data.alloc.begin+length, aux); 
                     Global::getAllocator()->deallocate<T>(data.alloc.begin); 
                     (data.alloc.begin = aux)[length++] = val; 
                 } else if(heap) {
                     data.alloc.begin[length++] = val; 
-                } else if(length == data.alloc.capacity) {
+                } else if(length == N) {
                     heap = true;
-                    T* aux = Global::getAllocator()->allocate<T>(
-                        data.alloc.capacity = length*2);
-                    std::copy(data.buffer, N, aux); 
+                    T* aux = Global::getAllocator()->allocate<T>(length*2);
+                    std::copy(data.buffer, data.buffer+N, aux); 
                     data.alloc.begin = aux;
+                    data.alloc.capacity = length*2;
                     data.alloc.begin[length++] = val; 
                 } else {
                     data.buffer[length++] = val;
@@ -56,17 +56,17 @@ namespace Utils {
             void pop_back(){
                 --length;
             }
-            T operator [] (int idx) const {
-                return heap ? data.alloc.begin[idx] : data.buffer[idx];
-            }
             int size() const {
                 return length;
             }
-            T* begin() const {
+            const T* begin() const {
                 return heap ? data.alloc.begin : data.buffer;
             }
-            T* end() const {
-                return size+(heap ? data.alloc.begin : data.buffer);
+            const T* end() const {
+                return length+begin();
+            }
+            T operator [] (int idx) const {
+                return *(begin()+idx);
             }
     };
 }

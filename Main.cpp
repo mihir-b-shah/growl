@@ -13,10 +13,12 @@ Global::Alloc* Global::getAllocator() {
     return allocator;
 }
 
-
 static const int FILE_SIZE_MULTIPLIER = 10;
 
 int main(int argc, char** argv) {
+    Global::Alloc alloc(0);
+    allocator = &alloc;
+
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
@@ -26,11 +28,6 @@ int main(int argc, char** argv) {
     long size = std::ftell(file);
     
     std::rewind(file);
-
-    Utils::SmallVector<int,50> sv;
-    
-    Global::Alloc alloc(0);
-    allocator = &alloc;
     char* program = Global::getAllocator()->allocate<char>(size+1);
 
     std::fread(program, 1, size, file);
