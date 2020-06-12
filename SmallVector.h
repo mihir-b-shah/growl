@@ -2,7 +2,7 @@
 #ifndef SMALL_VECTOR_H
 #define SMALL_VECTOR_H
 
-#include <vector>
+#include <cstddef>
 
 namespace Utils {
     /*based on Chandler Carruth's talk at CppCon 2016 */
@@ -12,21 +12,22 @@ namespace Utils {
         private:
             bool heap;
             union {
-                std::vector<T> vi;
+                T buffer[N];
                 struct {
                     T* begin;
-                    int size;
+                    int capacity;
                 } alloc;
             } data;
+            int length;
         public:
             /* I usually try to use consistent case, but here I'll
                try to mimic the standard. */ 
-            SmallVector(T* ptr);
+            SmallVector();
             ~SmallVector();
-            void push_back(T& val);
+            void push_back(T val);
             void pop_back();
-            T& operator [] (size_t idx) const; 
-            size_t size() const;
+            T operator [] (int idx) const; 
+            int size() const;
             T* begin() const;
             T* end() const;
     };

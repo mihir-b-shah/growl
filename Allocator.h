@@ -14,29 +14,22 @@ namespace Global {
             int capacity;
             static const int GROWTH_FACTOR = 2;
         public:
-            Alloc(int size);
+            Alloc(int size); // for now just pass 0.
             ~Alloc();
             void printDebug(const char* tag) {
                 std::printf("%s:: front: %d length: %d capacity: %d\n", tag, begin, length, capacity);
             }
             
+            // will give these good implementations later.
+            // right now, i just want a global point of access.
             template<typename T>
             T* allocate(int N) {
-                const int offset = ((unsigned long long) (static_cast<unsigned char*>
-                                    (begin)+length))%sizeof(T);
-                if(__builtin_expect(sizeof(T)*N+length+offset > capacity, false)) {
-                    // reallocate
-                    // should NEVER happen
-                    int newsize = static_cast<int>((sizeof(T)*N+length)*GROWTH_FACTOR);
-                    void* alloc = std::malloc(newsize);
-                    std::memcpy(alloc, begin, length);
-                    capacity = newsize;
-                    std::free(begin);
-                    begin = alloc;
-                }
-                void* ret = static_cast<unsigned char*>(begin)+length+offset;
-                length += offset+N*sizeof(T);
-                return static_cast<T*>(ret);
+                return new int[N];
+            }
+            
+            template<typename T>
+            void deallocate(T* data) {
+                delete [] data;
             }
     };
 

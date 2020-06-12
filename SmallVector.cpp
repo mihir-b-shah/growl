@@ -1,86 +1,70 @@
 
-#include <vector>
 #include <algorithm>
-#include <iostream>
+#include <cstddef>
 #include "SmallVector.h"
+#include "Allocator.h"
 
 using namespace Utils;
 
 template<typename T, size_t N>
-SmallVector<T,N>::SmallVector(T* ptr){
+SmallVector<T,N>::SmallVector(){
     heap = false;
-    data.alloc.begin = ptr;
-    data.alloc.size = 0;
+    length = 0;
 }
 
 template<typename T, size_t N>
 SmallVector<T,N>::~SmallVector(){
-}
-
-template<typename T, size_t N>
-void SmallVector<T,N>::push_back(T& val){
-    if(__builtin_expect(size == N, false)) {
-        // switch over to the heap
-        heap = true;
-        data.vi.resize(data.alloc.size);
-        std::copy(data.alloc.begin, data.alloc.begin+data.alloc.size, data.vi.begin()); 
-    } else if(heap){
-        // stay on the heap
-        data.vi.push_back(val);
-    } else {
-        // stay on the stack
-        data.alloc.begin[size] = val;
+    if(heap){
+        Global::getAllocator()->deallocate<T>(data.alloc.begin);
     }
 }
 
+template<typename T, size_t N>
+void SmallVector<T,N>::push_back(T val){
+    if(heap && length == data.alloc.capacity) {
+        T* aux = Global::getAllocator()->allocate<T>(
+            data.alloc.capacity = length*2);
+        std::copy(data.alloc.begin, N, aux); 
+        Global::getAllocator()->deallocate<T>(data.alloc.begin); 
+        (data.alloc.begin = aux)[length++] = val; 
+    } else if(heap) {
+        data.alloc.begin[length++] = val; 
+    } else if(length == data.alloc.capacity) {
+        heap = true;
+        T* aux = Global::getAllocator()->allocate<T>(
+            data.alloc.capacity = length*2);
+        std::copy(data.buffer, N, aux); 
+        data.alloc.begin = aux;
+        data.alloc.begin[length++] = val; 
+    } else {
+        data.buffer[length++] = val;
+    }
+}
+
+/** 
+Does not call the destructor on the object at the back.
+*/
 template<typename T, size_t N>
 void SmallVector<T,N>::pop_back(){
-    if(heap) {
-        data.vi.pop_back();
-    } else {
-        --data.alloc.size;
-    }
+    --length;
 }
 
 template<typename T, size_t N>
-T& SmallVector<T,N>::operator [] (size_t idx) const {
-    if(heap) {
-        return data.vi[idx];
-    } else {
-        return data.alloc.begin[idx];
-    }
+T SmallVector<T,N>::operator [] (int idx) const {
+    return heap ? data.alloc.begin[idx] : data.buffer[idx];
 }
 
 template<typename T, size_t N>
-size_t SmallVector<T,N>::size() const {
-    if(heap) {
-        return data.vi.size();
-    } else {
-        return data.alloc.size;
-    }
+int SmallVector<T,N>::size() const {
+    return length;
 }
 
 template<typename T, size_t N>
 T* SmallVector<T,N>::begin() const {
-    if(heap) {
-        return data.vi.begin();
-    } else {
-        return data.alloc.begin;
-    }
+    return heap ? data.alloc.begin : data.buffer;
 }
 
 template<typename T, size_t N>
 T* SmallVector<T,N>::end() const {
-    if(heap) {
-        return data.vi.end();
-    } else {
-        return data.alloc.begin+data.alloc.size;
-    }
+    return size+(heap ? data.alloc.begin : data.buffer);
 }
-/*
-int main() {
-    SmallVector<int,50> vect;
-    vect.push_back(1);
-    vect.push_back(2);
-    vect.push_back(3);
-}*/

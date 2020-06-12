@@ -6,13 +6,15 @@
 // this is prob horribly inefficient
 using Global::Alloc;
 
+// for now, the allocator is just a placeholder.
 Alloc::Alloc(int size) {
+    /*
     void* alloc = std::malloc(size);
     begin = alloc;
     length = 0;
-    capacity = size;
+    capacity = size;*/
 }
 
 Alloc::~Alloc() {
-    std::free(begin);
+    //std::free(begin);
 }

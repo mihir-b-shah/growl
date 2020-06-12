@@ -27,15 +27,9 @@ int main(int argc, char** argv) {
     long size = std::ftell(file);
     
     std::rewind(file);
-    /*
-    Global::Alloc alloc = Global::Alloc(FILE_SIZE_MULTIPLIER*size);
-    allocator = &alloc;
-    
-    allocator->printDebug("MAIN");
-    */
-    // problem is here, my allocator is screwing up
-    char* program = new char[size/sizeof(char)+1];
-   
+
+    char* program = Global::getAllocator->allocate<char>(size+1);
+
     std::fread(program, 1, size, file);
     std::fflush(file);
     std::fclose(file);
@@ -45,14 +39,14 @@ int main(int argc, char** argv) {
     try {
         Lex::lex(tokens, program);
         tokens.persist("test.txt");
-        delete program;
+        Global::getAllocator->deallocate<char>(program);
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
         printf("\n%s\n", buffer);
         printf("%s\n", Global::errorMsg);
-        delete program;
+        Global::getAllocator->deallocate<char>(program);
         return EXIT_FAILURE;
     }
 }
