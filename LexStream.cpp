@@ -17,7 +17,7 @@ static inline int max(int a, int b) {
 
 LexStream::LexStream(const int fileSize) {
     const int len = max(INIT_MIN, fileSize/AVG_CHARS_PER_TOKEN);
-    stream = Global::getAllocator->allocate<Token>(len);
+    stream = Global::getAllocator()->allocate<Token>(len);
     curr = stream;
     end = stream + len;
 }
@@ -30,10 +30,10 @@ Token* LexStream::allocate() {
     if(__builtin_expect(curr == end, false)) {
         // allocate more
         const int size = end-stream;
-        Token* aux = Global::getAllocator->allocate<Token>(GROWTH_FACTOR*size);
+        Token* aux = Global::getAllocator()->allocate<Token>(GROWTH_FACTOR*size);
         std::memcpy(aux, stream, size*sizeof(Token));
         curr = aux+size;
-        Global::getAllocator->deallocate<Token>(stream);
+        Global::getAllocator()->deallocate<Token>(stream);
         stream = aux;
         end = aux + GROWTH_FACTOR*size;   
     }

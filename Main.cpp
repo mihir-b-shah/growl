@@ -4,16 +4,15 @@
 #include "Lex.h"
 #include "Error.h"
 #include "AST.h"
-
-//#include "Allocator.h"
+#include "Allocator.h"
+#include "SmallVector.hpp"
 
 // allocator constructed before lexing, freed when compilation ends
-/*
 Global::Alloc* allocator = nullptr;
 Global::Alloc* Global::getAllocator() {
     return allocator;
 }
-*/
+
 
 static const int FILE_SIZE_MULTIPLIER = 10;
 
@@ -28,7 +27,11 @@ int main(int argc, char** argv) {
     
     std::rewind(file);
 
-    char* program = Global::getAllocator->allocate<char>(size+1);
+    Utils::SmallVector<int,50> sv;
+    
+    Global::Alloc alloc(0);
+    allocator = &alloc;
+    char* program = Global::getAllocator()->allocate<char>(size+1);
 
     std::fread(program, 1, size, file);
     std::fflush(file);
@@ -39,14 +42,14 @@ int main(int argc, char** argv) {
     try {
         Lex::lex(tokens, program);
         tokens.persist("test.txt");
-        Global::getAllocator->deallocate<char>(program);
+        Global::getAllocator()->deallocate<char>(program);
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
         printf("\n%s\n", buffer);
         printf("%s\n", Global::errorMsg);
-        Global::getAllocator->deallocate<char>(program);
+        Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }
 }
