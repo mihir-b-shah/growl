@@ -41,7 +41,7 @@ namespace Parse {
     class Loop : public Control {
     };
 
-    enum IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
+    enum class IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
 
     class Op : public Expr {
         private:
@@ -68,7 +68,24 @@ namespace Parse {
             int arity() const;
     };
 
+    
     class Literal : public Expr {
+        private:
+            enum {
+                INT,
+                FLOAT
+            } type;
+            union {
+                long long intVal;
+                long double fltVal;
+            } value;
+        public:
+            Literal();
+            ~Literal();
+            long long getInt();
+            long double getFlt();
+            bool isInt();
+            bool isFloat();
     };
 
     class Var : public Expr {

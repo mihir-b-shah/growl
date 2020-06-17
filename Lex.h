@@ -5,11 +5,11 @@
 namespace Lex {
     typedef unsigned char byte;
 
-    enum Type {
+    enum class Type {
         CONTROL, DATATYPE, GROUP, LITERAL, OPERATOR, ID
     };
 
-    enum SubType {
+    enum class SubType {
         IF, ELSE, GOTO, RETURN, WHILE, SWITCH, CASE, DEFAULT, BREAK,
         UNSIGNED, INT, LONG, CHAR, FLOAT, BOOL, VOID, OPAREN, CPAREN, 
         COLON, OBRACK, CBRACK, COMMA, SEMICOLON, INT_LITERAL, FLT_LITERAL,
@@ -17,7 +17,7 @@ namespace Lex {
         EQUAL, AMP, OR, CARET, ASSN, SHIFT, NAME
     };
 
-    enum IOF {
+    enum class IOF {
         UNDEFINED, PTRLVL, INT_VAL, FLOAT_VAL
     };
 

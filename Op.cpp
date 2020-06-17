@@ -41,16 +41,16 @@ Op::Op(SubType op, Expr* e1){
     Op::intrinsic = true;
     switch(op) {
         case SubType::MINUS:
-            driver.intr = NEG;
+            driver.intr = IntrOps::NEG;
             break;
         case SubType::ASTK:
-            driver.intr = DEREF;
+            driver.intr = IntrOps::DEREF;
             break;
         case SubType::NEG:
-            driver.intr = FLIP;
+            driver.intr = IntrOps::FLIP;
             break;
         case SubType::AMP:
-            driver.intr = ADDRESS;
+            driver.intr = IntrOps::ADDRESS;
             break;
         default:
             Global::specifyError("Invalid invocation of operator.");
@@ -65,46 +65,46 @@ Op::Op(SubType op, Expr* e1, Expr* e2){
     Op::intrinsic = true;
     switch(op) {
         case SubType::PLUS:
-            driver.intr = ADD;
+            driver.intr = IntrOps::ADD;
             break;
         case SubType::MINUS:
-            driver.intr = MINUS;
+            driver.intr = IntrOps::MINUS;
             break;
         case SubType::ASTK:
-            driver.intr = MULT;
+            driver.intr = IntrOps::MULT;
             break;
         case SubType::DIV:
-            driver.intr = DIV;
+            driver.intr = IntrOps::DIV;
             break;
         case SubType::MOD:
-            driver.intr = MOD;
+            driver.intr = IntrOps::MOD;
             break;
         case SubType::DOT:
-            driver.intr = DOT;
+            driver.intr = IntrOps::DOT;
             break;
         case SubType::GREATER:
-            driver.intr = GREATER;
+            driver.intr = IntrOps::GREATER;
             break;
         case SubType::LESS:
-            driver.intr = LESS;
+            driver.intr = IntrOps::LESS;
             break;
         case SubType::EQUAL:
-            driver.intr = EQUAL;
+            driver.intr = IntrOps::EQUAL;
             break;
         case SubType::AMP:
-            driver.intr = AND;
+            driver.intr = IntrOps::AND;
             break;
         case SubType::OR:
-            driver.intr = OR;
+            driver.intr = IntrOps::OR;
             break;
         case SubType::CARET:
-            driver.intr = XOR;
+            driver.intr = IntrOps::XOR;
             break;
         case SubType::ASSN:
-            driver.intr = ASSN;
+            driver.intr = IntrOps::ASSN;
             break;
         case SubType::SHIFT:
-            driver.intr = SHIFT;
+            driver.intr = IntrOps::SHIFT;
             break;
         default:
             Global::specifyError("Invalid invocation of operator.");
@@ -117,25 +117,25 @@ Op::~Op(){
 
 static inline Syntax::OpType detOpType(IntrOps type) {
     switch(type) {
-        case NEG:
-        case ADDRESS:
-        case FLIP:
-        case DEREF:
+        case IntrOps::NEG:
+        case IntrOps::ADDRESS:
+        case IntrOps::FLIP:
+        case IntrOps::DEREF:
             return Syntax::OpType::UNARY;
-        case ADD:
-        case MINUS:
-        case MULT:
-        case DIV:
-        case MOD:
-        case DOT:
-        case GREATER:
-        case LESS:
-        case EQUAL:
-        case AND:
-        case OR:
-        case XOR:
-        case ASSN:
-        case SHIFT:
+        case IntrOps::ADD:
+        case IntrOps::MINUS:
+        case IntrOps::MULT:
+        case IntrOps::DIV:
+        case IntrOps::MOD:
+        case IntrOps::DOT:
+        case IntrOps::GREATER:
+        case IntrOps::LESS:
+        case IntrOps::EQUAL:
+        case IntrOps::AND:
+        case IntrOps::OR:
+        case IntrOps::XOR:
+        case IntrOps::ASSN:
+        case IntrOps::SHIFT:
             return Syntax::OpType::BINARY;
         default:
             Global::specifyError("Invalid operator encountered.");
@@ -145,7 +145,7 @@ static inline Syntax::OpType detOpType(IntrOps type) {
 
 int Op::arity() const {
     if(Op::intrinsic) {
-        return detOpType(Op::driver.intr);
+        return static_cast<int>(detOpType(Op::driver.intr));
     } else {
         return driver.func->arity();
     }

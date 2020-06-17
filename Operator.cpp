@@ -9,23 +9,23 @@ using Syntax::Assoc;
 
 OpType Syntax::opType(SubType type) {
     switch(type) {
-        case AMP:
-        case ASTK:
-        case MINUS:
+        case SubType::AMP:
+        case SubType::ASTK:
+        case SubType::MINUS:
             return OpType::AMBIG_TYPE;
-        case NEG:
+        case SubType::NEG:
             return OpType::UNARY;
-        case ASSN:
-        case CARET:
-        case DIV:
-        case DOT:
-        case EQUAL:
-        case GREATER:
-        case LESS:
-        case MOD:
-        case OR:
-        case PLUS:
-        case SHIFT:
+        case SubType::ASSN:
+        case SubType::CARET:
+        case SubType::DIV:
+        case SubType::DOT:
+        case SubType::EQUAL:
+        case SubType::GREATER:
+        case SubType::LESS:
+        case SubType::MOD:
+        case SubType::OR:
+        case SubType::PLUS:
+        case SubType::SHIFT:
             return OpType::BINARY;
         default:
             throw Global::InvalidOperator;
@@ -34,34 +34,34 @@ OpType Syntax::opType(SubType type) {
 
 Syntax::Assoc Syntax::associate(SubType type, OpType opType) {
     switch(type) {
-        case NEG:
-        case GREATER:
-        case LESS:
+        case SubType::NEG:
+        case SubType::GREATER:
+        case SubType::LESS:
             return Assoc::NONE;
-        case AMP:
-        case ASTK:
-        case MINUS:
+        case SubType::AMP:
+        case SubType::ASTK:
+        case SubType::MINUS:
             switch(opType) {
-                case UNARY:
-                    return NONE;
-                case AMBIG_TYPE:
-                    return AMBIG;
-                case BINARY:
-                    return LEFT;
+                case OpType::UNARY:
+                    return Assoc::NONE;
+                case OpType::AMBIG_TYPE:
+                    return Assoc::AMBIG;
+                case OpType::BINARY:
+                    return Assoc::LEFT;
                 default:
                     throw Global::DeveloperError;
             }
-        case ASSN:
-            return RIGHT;
-        case CARET:
-        case DIV:
-        case DOT:
-        case EQUAL:
-        case MOD:
-        case OR:
-        case PLUS:
-        case SHIFT:
-            return LEFT;
+        case SubType::ASSN:
+            return Assoc::RIGHT;
+        case SubType::CARET:
+        case SubType::DIV:
+        case SubType::DOT:
+        case SubType::EQUAL:
+        case SubType::MOD:
+        case SubType::OR:
+        case SubType::PLUS:
+        case SubType::SHIFT:
+            return Assoc::LEFT;
         default:
             throw Global::InvalidOperator;
     }
@@ -71,57 +71,57 @@ Syntax::Assoc Syntax::associate(SubType type, OpType opType) {
 int Syntax::precedence(SubType type, OpType opType) {
     using namespace Lex;
     switch(type) {
-        case DOT:
+        case SubType::DOT:
             return 11;
-        case NEG:
+        case SubType::NEG:
             return 10;
-        case ASTK:
+        case SubType::ASTK:
             switch(opType) {
-                case UNARY:
+                case OpType::UNARY:
                     return 10;
-                case BINARY:
+                case OpType::BINARY:
                     return 9;
-                case AMBIG_TYPE:
+                case OpType::AMBIG_TYPE:
                 default:
                     throw Global::DeveloperError;
             }
-        case DIV:
-        case MOD:
+        case SubType::DIV:
+        case SubType::MOD:
             return 9;
-        case MINUS:
+        case SubType::MINUS:
             switch(opType) {
-                case UNARY:
+                case OpType::UNARY:
                     return 10;
-                case BINARY:
+                case OpType::BINARY:
                     return 8;
-                case AMBIG_TYPE:
+                case OpType::AMBIG_TYPE:
                 default:
                     throw Global::DeveloperError;
             }
-        case PLUS:
+        case SubType::PLUS:
             return 8;
-        case SHIFT:
+        case SubType::SHIFT:
             return 7;
-        case GREATER:
-        case LESS:
+        case SubType::GREATER:
+        case SubType::LESS:
             return 6;
-        case EQUAL:
+        case SubType::EQUAL:
             return 5;
-        case AMP:
+        case SubType::AMP:
             switch(opType) {
-                case UNARY:
+                case OpType::UNARY:
                     return 10;
-                case BINARY:
+                case OpType::BINARY:
                     return 4;
-                case AMBIG_TYPE:
+                case OpType::AMBIG_TYPE:
                 default:
                     throw Global::DeveloperError;
             }
-        case CARET:
+        case SubType::CARET:
             return 3;
-        case OR:
+        case SubType::OR:
             return 2;
-        case ASSN:
+        case SubType::ASSN:
             return 1;
         default:
             throw Global::InvalidOperator;

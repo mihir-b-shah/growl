@@ -33,8 +33,10 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
                         Global::ERROR_BUFFER_SIZE);
             break;
         case Global::InvalidOperatorInvocation:
-            std::strncpy(buffer, "Parse error, operator called with an incorrect number of args.", 
-                        Global::ERROR_BUFFER_SIZE);
+            std::strncpy(buffer, "Parse error, operator called with an incorrect number of args.", Global::ERROR_BUFFER_SIZE);
+            break;
+        case Global::InvalidExpression:
+            std::strncpy(buffer, "Invalid expression encountered in parsing", Global::ERROR_BUFFER_SIZE);
             break;
         default:
             std::strncpy(buffer, "Unnamed exception encountered.", 

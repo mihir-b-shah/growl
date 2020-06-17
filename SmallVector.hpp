@@ -68,6 +68,9 @@ namespace Utils {
             T operator [] (int idx) const {
                 return *(begin()+idx);
             }
+            const T* back() const {
+                return length-1+begin();
+            }
     };
 }
 

@@ -44,7 +44,7 @@ void LexStream::persist(const char* const file) {
     std::ofstream fout(file);
     Token* ptr = stream;
     while(ptr != curr) {
-        fout << subtypeStrings[ptr->subType] << '\n';
+        fout << subtypeStrings[static_cast<int>(ptr->subType)] << '\n';
         ++ptr;
     }
     fout.flush();

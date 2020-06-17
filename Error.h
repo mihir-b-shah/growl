@@ -12,6 +12,7 @@ namespace Global {
     const int InvalidOperator = 0x14; 
     const int InvalidFunctionCall = 0x15;
     const int InvalidOperatorInvocation = 0x16;
+    const int InvalidExpression = 0x17;
 
     const int ERROR_BUFFER_SIZE = 255;
     const int ERROR_REFERENCE_SIZE = 31;
