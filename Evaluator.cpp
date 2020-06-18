@@ -35,22 +35,24 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
     }
 }
 
-static inline void construct(Utils::SmallVector<Expr*,100>& output, SubType top){
-    Expr* op1, op2;
+static inline void construct(Utils::SmallVector<Expr*,N>& output, SubType top){
+    Expr* op1; Expr* op2;
+    Op* ins;
+    
     switch(Syntax::opType(top)){
         case Syntax::OpType::UNARY:
-            op1 = output.back();
+            op1 = output.eback();
             output.pop_back();
-            Op* unary = new Op(top, op1);
-            output.push_back(unary);
+            ins = new Op(top, op1);
+            output.push_back(ins);
             break;
         case Syntax::OpType::BINARY:
-            op1 = output.back();
+            op1 = output.eback();
             output.pop_back();
-            op2 = output.back();
+            op2 = output.eback();
             output.pop_back();
-            Op* binary = new Op(top, op1, op2);
-            output.push_back(binary);
+            ins = new Op(top, op1, op2);
+            output.push_back(ins);
             break;
         default:
             Global::specifyError("Invalid operator 'arity'.");
@@ -69,9 +71,10 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
                 stack.push_back(tk);
                 break;
             case SubType::CPAREN:
+            {
                 bool parenFlg = false;
-                while(stack.size() > 0 && (stack.back()->subType != SubType::OPAREN)) {
-                    SubType th = stack.back()->subType;
+                while(stack.size() > 0 && (stack.eback()->subType != SubType::OPAREN)){
+                    SubType th = stack.eback()->subType;
                     parenFlg = true;
                     stack.pop_back();
                     construct(output, th);
@@ -85,6 +88,7 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
                     throw Global::InvalidExpression;
                 }
                 break;
+            }
             case SubType::COLON:
             case SubType::OBRACK:
             case SubType::CBRACK:
@@ -94,17 +98,21 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
                 throw Global::InvalidExpression;
             case SubType::INT_LITERAL:
             case SubType::CHAR_LITERAL:
+            {
                 Literal* intlit = Global::getAllocator()->allocate<Literal>(1);
                 intlit->type = Literal::INT;
                 intlit->value.intVal = v;
                 output.push_back(intlit);
                 break;
+            }
             case SubType::FLT_LITERAL:
+            {
                 Literal* fltlit = Global::getAllocator()->allocate<Literal>(1);
                 intlit->type = Literal::FLOAT;
                 intlit->value.intVal = v;
                 output.push_back(fltlit);
                 break;
+            }
             case SubType::PLUS:
             case SubType::MINUS:
             case SubType::ASTK:
@@ -120,14 +128,20 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
             case SubType::CARET:
             case SubType::ASSN:
             case SubType::SHIFT:
+            {
                 SubType me = tk->subType;
                 Syntax::OpType myType = Syntax::opType(me);
+                if(tk == begin) {
+                    myType = Syntax::OpType::UNARY;
+                } else {
+                    bind(tk-1, myType);
+                }
                 bool assoc = Syntax::assoc(myType, me) == Syntax::Assoc::LEFT;
                 SubType top;
                 // watch out for associative
                 while(true){
                     // just easier control flow for me
-                    if(stack.size() <= 0 || stack.back()->type != Type::OPERATOR){
+                    if(stack.size() <= 0 || stack.eback()->type != Type::OPERATOR){
                         break;
                     }
                     top = stack.back()->subType;
@@ -141,14 +155,15 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
                 }
                 stack.push(tk); 
                 break;
+            }
         }
     }
     while(stack.size() > 0) {
-        SubType me = stack.back()->subType;
+        SubType me = stack.eback()->subType;
         construct(output, me);
     }
     assert(output.size() == 1);
-    Expr* ret = output.back();
+    Expr* ret = output.eback();
     output.pop_back();
     return ret;
 }

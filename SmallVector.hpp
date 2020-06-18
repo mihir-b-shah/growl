@@ -7,10 +7,27 @@
 #include "Allocator.h"
 
 namespace Utils {
+    
+    template<typename T>
+    class Vector {
+        public:
+            virtual void push_back(T val);
+            virtual void pop_back();
+            virtual int size() const;
+            virtual const T* cbegin() const;
+            virtual const T* cend() const;
+            virtual T* begin() const;
+            virtual T* end() const;
+            virtual T operator [] (int idx) const;
+            virtual T* back() const;
+            virtual T eback() const;
+            virtual const T* cback() const;
+    };
+    
     /*based on Chandler Carruth's talk at CppCon 2016 */
     /** Type T, threshold for stack allocation N.*/
     template<typename T, size_t N>
-    class SmallVector {
+    class SmallVector : public Vector<T> {
         private:
             bool heap;
             union {
@@ -76,6 +93,9 @@ namespace Utils {
             }
             T* back() const {
                 return length-1+begin();
+            }
+            T eback() const {
+                return *back();
             }
             const T* cback() const {
                 return length-1+begin();
