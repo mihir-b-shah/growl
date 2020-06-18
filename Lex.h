@@ -43,12 +43,14 @@ namespace Lex {
         private:
             Token* stream;
             Token* curr;
-            Token* end;
+            Token* _end;
         public:
             LexStream(int fileSize);
             ~LexStream();
             Token* allocate();
-            void persist(const char* const file);      
+            void persist(const char* const file);   
+            Token* begin();
+            Token* end();
     };  
 
     const char* const subtypeStrings[] = {"IF", "ELSE", "GOTO", "RETURN", 

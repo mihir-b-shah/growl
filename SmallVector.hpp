@@ -59,16 +59,25 @@ namespace Utils {
             int size() const {
                 return length;
             }
-            const T* begin() const {
+            const T* cbegin() const {
                 return heap ? data.alloc.begin : data.buffer;
             }
-            const T* end() const {
+            const T* cend() const {
+                return length+begin();
+            }
+            T* begin() const {
+                return heap ? data.alloc.begin : data.buffer;
+            }
+            T* end() const {
                 return length+begin();
             }
             T operator [] (int idx) const {
                 return *(begin()+idx);
             }
-            const T* back() const {
+            T* back() const {
+                return length-1+begin();
+            }
+            const T* cback() const {
                 return length-1+begin();
             }
     };

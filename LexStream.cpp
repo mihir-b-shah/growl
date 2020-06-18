@@ -19,7 +19,7 @@ LexStream::LexStream(const int fileSize) {
     const int len = max(INIT_MIN, fileSize/AVG_CHARS_PER_TOKEN);
     stream = Global::getAllocator()->allocate<Token>(len);
     curr = stream;
-    end = stream + len;
+    _end = stream + len;
 }
 
 LexStream::~LexStream() {
@@ -27,15 +27,15 @@ LexStream::~LexStream() {
 }
 
 Token* LexStream::allocate() {
-    if(__builtin_expect(curr == end, false)) {
+    if(__builtin_expect(curr == _end, false)) {
         // allocate more
-        const int size = end-stream;
+        const int size = _end-stream;
         Token* aux = Global::getAllocator()->allocate<Token>(GROWTH_FACTOR*size);
         std::memcpy(aux, stream, size*sizeof(Token));
         curr = aux+size;
         Global::getAllocator()->deallocate<Token>(stream);
         stream = aux;
-        end = aux + GROWTH_FACTOR*size;   
+        _end = aux + GROWTH_FACTOR*size;   
     }
     return curr++;
 }
@@ -49,4 +49,12 @@ void LexStream::persist(const char* const file) {
     }
     fout.flush();
     fout.close();
+}
+
+Lex::Token* LexStream::begin() {
+    return stream;
+}
+
+Lex::Token* LexStream::end() {
+    return _end;
 }
