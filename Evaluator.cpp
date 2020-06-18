@@ -5,6 +5,7 @@
 #include "Error.h"
 #include "SmallVector.hpp"
 #include "Syntax.h"
+#include "Parse.h"
 #include <cassert>
 
 /**
@@ -63,7 +64,7 @@ static inline void construct(Utils::Vector<Expr*>& output, SubType top){
     }
 }
 
-Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
+Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
     Utils::SmallVector<Token*,100> stack;
     Utils::SmallVector<Expr*,200> output;
     

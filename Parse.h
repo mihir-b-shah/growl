@@ -6,7 +6,7 @@
 #include "Lex.h"
 
 namespace Parse {
-    Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
+    Parse::Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
 }
 
 #endif
