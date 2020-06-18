@@ -37,6 +37,26 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
 
 static inline void construct(Utils::SmallVector<Expr*,100>& output, SubType top){
     Expr* op1, op2;
+    switch(Syntax::opType(top)){
+        case Syntax::OpType::UNARY:
+            op1 = output.back();
+            output.pop_back();
+            Op* unary = new Op(top, op1);
+            output.push_back(unary);
+            break;
+        case Syntax::OpType::BINARY:
+            op1 = output.back();
+            output.pop_back();
+            op2 = output.back();
+            output.pop_back();
+            Op* binary = new Op(top, op1, op2);
+            output.push_back(binary);
+            break;
+        default:
+            Global::specifyError("Invalid operator 'arity'.");
+            throw Global::InvalidExpression;
+            
+    }
 }
 
 Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
@@ -51,8 +71,10 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
             case SubType::CPAREN:
                 bool parenFlg = false;
                 while(stack.size() > 0 && (stack.back()->subType != SubType::OPAREN)) {
+                    SubType th = stack.back()->subType;
                     parenFlg = true;
-                    // TO BE IMPL: construct(output, (Operator) stack.pop().subType);
+                    stack.pop_back();
+                    construct(output, th);
                 }
                 // only case, if hit paren
                 if(stack.size() > 0) {
@@ -114,13 +136,21 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
                     const bool c2 = precedence(me, myType) == precedence(top, topType) && assoc;
                     if(c1 || c2) {
                         stack.pop_back();
-                        // TO IMPL construct(output, top);
+                        construct(output, top);
                     }
                 }
                 stack.push(tk); 
                 break;
         }
     }
+    while(stack.size() > 0) {
+        SubType me = stack.back()->subType;
+        construct(output, me);
+    }
+    assert(output.size() == 1);
+    Expr* ret = output.back();
+    output.pop_back();
+    return ret;
 }
  
 /*
