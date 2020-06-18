@@ -1,9 +1,11 @@
 
+
 #include "Lex.h"
 #include "AST.h"
 #include "Error.h"
 #include "SmallVector.hpp"
 #include "Syntax.h"
+#include <cassert>
 
 /**
  * Implement the shunting yard algorithm.
@@ -35,7 +37,7 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
     }
 }
 
-static inline void construct(Utils::SmallVector<Expr*,N>& output, SubType top){
+static inline void construct(Utils::Vector<Expr*>& output, SubType top){
     Expr* op1; Expr* op2;
     Op* ins;
     
@@ -100,16 +102,14 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
             case SubType::CHAR_LITERAL:
             {
                 Literal* intlit = Global::getAllocator()->allocate<Literal>(1);
-                intlit->type = Literal::INT;
-                intlit->value.intVal = v;
+                intlit->setInt(tk->value.holder.ival);
                 output.push_back(intlit);
                 break;
             }
             case SubType::FLT_LITERAL:
             {
                 Literal* fltlit = Global::getAllocator()->allocate<Literal>(1);
-                intlit->type = Literal::FLOAT;
-                intlit->value.intVal = v;
+                fltlit->setFlt(tk->value.holder.fval);
                 output.push_back(fltlit);
                 break;
             }
@@ -134,9 +134,9 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
                 if(tk == begin) {
                     myType = Syntax::OpType::UNARY;
                 } else {
-                    bind(tk-1, myType);
+                    bind(tk-1, &myType);
                 }
-                bool assoc = Syntax::assoc(myType, me) == Syntax::Assoc::LEFT;
+                bool assoc = Syntax::associate(me, myType) == Syntax::Assoc::LEFT;
                 SubType top;
                 // watch out for associative
                 while(true){
@@ -144,16 +144,16 @@ Expr* parseExpr(Lex::Token* begin, Lex::Token* end) {
                     if(stack.size() <= 0 || stack.eback()->type != Type::OPERATOR){
                         break;
                     }
-                    top = stack.back()->subType;
+                    top = stack.eback()->subType;
                     Syntax::OpType topType = Syntax::opType(top);
-                    const bool c1 = precedence(me, myType) > precedence(top, topType));
+                    const bool c1 = precedence(me, myType) > precedence(top, topType);
                     const bool c2 = precedence(me, myType) == precedence(top, topType) && assoc;
                     if(c1 || c2) {
                         stack.pop_back();
                         construct(output, top);
                     }
                 }
-                stack.push(tk); 
+                stack.push_back(tk); 
                 break;
             }
         }

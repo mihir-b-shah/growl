@@ -68,7 +68,6 @@ namespace Parse {
             int arity() const;
     };
 
-    
     class Literal : public Expr {
         private:
             enum {
@@ -80,12 +79,20 @@ namespace Parse {
                 long double fltVal;
             } value;
         public:
-            Literal();
-            ~Literal();
-            long long getInt();
-            long double getFlt();
-            bool isInt();
-            bool isFloat();
+            Literal(){}
+            ~Literal(){}
+            long long getInt(){ return value.intVal;}
+            long double getFlt(){ return value.fltVal;}
+            bool isInt(){ return type == INT;}
+            bool isFloat(){ return type == FLOAT;}
+            void setInt(long long v){
+                type = INT;
+                value.intVal = v;
+            }
+            void setFlt(long double v){
+                type = FLOAT;
+                value.fltVal = v;
+            }
     };
 
     class Var : public Expr {

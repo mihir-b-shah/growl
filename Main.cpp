@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include "Lex.h"
@@ -39,7 +40,7 @@ int main(int argc, char** argv) {
     Lex::LexStream tokens(size/sizeof(char));
     try {
         Lex::lex(tokens, program);
-        Parse::parseExpr(tokens);
+        //Parse::parseExpr(tokens.begin(), tokens.end());
         tokens.persist("test.txt");
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_SUCCESS;

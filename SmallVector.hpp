@@ -8,66 +8,46 @@
 
 namespace Utils {
     
+    // slightly less memory efficient but dont really care
+    // convenience and removing possibility of code bloat w/ templates is more imp.
     template<typename T>
     class Vector {
-        public:
-            virtual void push_back(T val);
-            virtual void pop_back();
-            virtual int size() const;
-            virtual const T* cbegin() const;
-            virtual const T* cend() const;
-            virtual T* begin() const;
-            virtual T* end() const;
-            virtual T operator [] (int idx) const;
-            virtual T* back() const;
-            virtual T eback() const;
-            virtual const T* cback() const;
-    };
-    
-    /*based on Chandler Carruth's talk at CppCon 2016 */
-    /** Type T, threshold for stack allocation N.*/
-    template<typename T, size_t N>
-    class SmallVector : public Vector<T> {
         private:
-            bool heap;
-            union {
-                T buffer[N];
-                struct {
-                    T* begin;
-                    int capacity;
-                } alloc;
-            } data;
-            int length;
+            static const int FLAG_POS = sizeof(size_t)-1;
+            static const long long FLAG_SFT = 1ULL << FLAG_POS;
+        protected:
+            T* front;
+            size_t length;
+            size_t capacity; // bit manipulation to encode stack/heap.
+            Vector(T* st, size_t l, size_t c){
+                front = st;
+                length = l;
+                capacity = c;
+            }
+            ~Vector(){
+            }
         public:
-            /* I usually try to use consistent case, but here I'll
-               try to mimic the standard. */ 
-            SmallVector(){
-                heap = false;
-                length = 0;
-            }
-            ~SmallVector(){
-                if(heap){
-                    Global::getAllocator()->deallocate<T>(data.alloc.begin);
-                }
-            }
             void push_back(T val){
-                if(heap && length == data.alloc.capacity) {
-                    T* aux = Global::getAllocator()->allocate<T>(
-                        data.alloc.capacity = length*2);
-                    std::copy(data.alloc.begin, data.alloc.begin+length, aux); 
-                    Global::getAllocator()->deallocate<T>(data.alloc.begin); 
-                    (data.alloc.begin = aux)[length++] = val; 
+                const bool heap = capacity>>FLAG_POS;
+                if(__builtin_expect(heap && length == capacity&FLAG_SFT,false)) {
+                    //std::cout << "Heap grow.\n";
+                    T* aux = Global::getAllocator()->allocate<T>(capacity = FLAG_SFT+length*2);
+                    std::copy(front, front+length, aux); 
+                    Global::getAllocator()->deallocate<T>(front); 
+                    (front = aux)[length++] = val; 
                 } else if(heap) {
-                    data.alloc.begin[length++] = val; 
-                } else if(length == N) {
-                    heap = true;
+                    //std::cout << "Heap push back.\n";
+                    front[length++] = val; 
+                } else if(__builtin_expect(length == capacity,false)) {
+                    //std::cout << "Stack to heap.\n";
                     T* aux = Global::getAllocator()->allocate<T>(length*2);
-                    std::copy(data.buffer, data.buffer+N, aux); 
-                    data.alloc.begin = aux;
-                    data.alloc.capacity = length*2;
-                    data.alloc.begin[length++] = val; 
+                    std::copy(front, front+capacity, aux); 
+                    front = aux;
+                    capacity = FLAG_SFT+length*2;
+                    front[length++] = val; 
                 } else {
-                    data.buffer[length++] = val;
+                    //std::cout << "Stack grow.\n";
+                    front[length++] = val;
                 }
             }
             void pop_back(){
@@ -77,19 +57,22 @@ namespace Utils {
                 return length;
             }
             const T* cbegin() const {
-                return heap ? data.alloc.begin : data.buffer;
+                return front;
             }
             const T* cend() const {
                 return length+begin();
             }
             T* begin() const {
-                return heap ? data.alloc.begin : data.buffer;
+                return front;
             }
             T* end() const {
-                return length+begin();
+                return end;
+            }
+            T at(int idx) const {
+                return *(begin()+idx);
             }
             T operator [] (int idx) const {
-                return *(begin()+idx);
+                return at(idx);
             }
             T* back() const {
                 return length-1+begin();
@@ -99,6 +82,22 @@ namespace Utils {
             }
             const T* cback() const {
                 return length-1+begin();
+            }
+    };
+    
+    /*based on Chandler Carruth's talk at CppCon 2016 */
+    /** Type T, threshold for stack allocation N.*/
+    template<typename T, size_t N>
+    class SmallVector : public Vector<T> {
+        private:
+            T buffer[N];
+        public:
+            SmallVector() : Vector<T> (buffer, 0, N) {
+            }
+            ~SmallVector(){
+                if(this->capacity > N){
+                    Global::getAllocator()->deallocate<T>(this->front);
+                }
             }
     };
 }
