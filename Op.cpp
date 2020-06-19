@@ -1,9 +1,9 @@
 
 #include "Lex.h"
-#include "AST.h"
+#include "AST.hpp"
 #include "Error.h"
 #include "Syntax.h"
-#include <iostream>
+#include <cstdlib>
 
 using namespace Parse;
 using Lex::SubType;
@@ -150,4 +150,16 @@ int Op::arity() const {
     } else {
         return driver.func->arity();
     }
+}
+
+static const char* opDisplay[] = {"+","-","-u","*","*u","/","%","~",".",">","<","<","==","&u","&","|","^","=","<<"};
+
+// prints max of 3 chars.
+void Op::printRoot(char* buf) const {
+    if(Op::intrinsic) {
+        std::snprintf(buf,3,"%3s",opDisplay[static_cast<int>(Op::driver.intr)]);
+    } else {
+        std::snprintf(buf,3,"%3s","FUN");
+    }
+    
 }

@@ -1,7 +1,8 @@
 
-#ifndef SMALL_VECTOR_HPP
-#define SMALL_VECTOR_HPP
+#ifndef VECTOR_HPP
+#define VECTOR_HPP
 
+#include "Error.h"
 #include <cstddef>
 #include <algorithm>
 #include "Allocator.h"
@@ -13,13 +14,18 @@ namespace Utils {
     template<typename T>
     class Vector {
         private:
-            static const int FLAG_POS = sizeof(size_t)-1;
-            static const long long FLAG_SFT = 1ULL << FLAG_POS;
+            static const int FLAG_POS = (sizeof(size_t)*8)-1;
+            static const size_t FLAG_SFT = 1ULL << FLAG_POS;
+            static const size_t MAX_CAPACITY = (1ULL << FLAG_POS-1)-1;
         protected:
             T* front;
             size_t length;
             size_t capacity; // bit manipulation to encode stack/heap.
             Vector(T* st, size_t l, size_t c){
+                if(__builtin_expect(c > MAX_CAPACITY,false)){
+                    Global::specifyError("Vector requested more than (1 << sizeof(size_t)-2)-1 capacity.");
+                    throw Global::MemoryRequestError;
+                }
                 front = st;
                 length = l;
                 capacity = c;
@@ -29,25 +35,29 @@ namespace Utils {
         public:
             void push_back(T val){
                 const bool heap = capacity>>FLAG_POS;
-                if(__builtin_expect(heap && length == capacity&FLAG_SFT,false)) {
-                    //std::cout << "Heap grow.\n";
-                    T* aux = Global::getAllocator()->allocate<T>(capacity = FLAG_SFT+length*2);
-                    std::copy(front, front+length, aux); 
-                    Global::getAllocator()->deallocate<T>(front); 
-                    (front = aux)[length++] = val; 
-                } else if(heap) {
-                    //std::cout << "Heap push back.\n";
-                    front[length++] = val; 
-                } else if(__builtin_expect(length == capacity,false)) {
-                    //std::cout << "Stack to heap.\n";
-                    T* aux = Global::getAllocator()->allocate<T>(length*2);
-                    std::copy(front, front+capacity, aux); 
-                    front = aux;
-                    capacity = FLAG_SFT+length*2;
-                    front[length++] = val; 
-                } else {
-                    //std::cout << "Stack grow.\n";
-                    front[length++] = val;
+                const bool leqc = length == (capacity&FLAG_SFT-1);
+                enum {STACK_PUSH, STACK_MOVE_HEAP, HEAP_PUSH, HEAP_GROW};
+                switch((heap<<1)+leqc){
+                    case STACK_MOVE_HEAP:
+                    case HEAP_GROW:
+                    {
+                        if(__builtin_expect(length*2 > MAX_CAPACITY,false)){
+                            Global::specifyError("Vector requested more than 1 << sizeof(size_t)-2 capacity.");
+                            throw Global::MemoryRequestError;
+                        }
+                        T* aux = Global::getAllocator()->allocate<T>(length*2);
+                        std::copy(front, front+capacity, aux); 
+                        capacity = FLAG_SFT+length*2;
+                        if(__builtin_expect((heap<<1)+leqc==HEAP_GROW,true)){
+                            Global::getAllocator()->deallocate<T>(front);
+                        }
+                        front = aux;
+                    }
+                    case STACK_PUSH:
+                    case HEAP_PUSH:
+                        front[length++] = val;
+                        break;
+                    // no default case.
                 }
             }
             void pop_back(){

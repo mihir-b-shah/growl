@@ -1,9 +1,9 @@
 
 
 #include "Lex.h"
-#include "AST.h"
+#include "AST.hpp"
 #include "Error.h"
-#include "SmallVector.hpp"
+#include "Vector.hpp"
 #include "Syntax.h"
 #include "Parse.h"
 #include <cassert>
@@ -16,6 +16,16 @@
 
 using namespace Parse;
 using namespace Lex;
+
+struct QueueItem {
+    int bt;
+    int height;
+    int xJust;
+};
+
+void Expr::print(std::ostream& out){
+    
+}
 
 static inline void bind(Token* tkn, Syntax::OpType* top){
     if(__builtin_expect(*top == Syntax::OpType::AMBIG_TYPE, false)){

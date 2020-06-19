@@ -4,6 +4,9 @@
 
 void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
     switch(error) {
+        case Global::MemoryRequestError:
+            std::strncpy(buffer, "Too much memory requested.", Global::ERROR_BUFFER_SIZE);
+            break;
         case Global::InvalidEscapeSequence:
             std::strncpy(buffer, "Lex error: Invalid escape sequence encountered.", 
                         Global::ERROR_BUFFER_SIZE);

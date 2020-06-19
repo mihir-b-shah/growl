@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include "Lex.h"
 #include "Error.h"
-#include "AST.h"
+#include "AST.hpp"
 #include "Allocator.h"
 #include "Parse.h"
 

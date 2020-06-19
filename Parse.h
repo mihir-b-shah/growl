@@ -2,7 +2,7 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include "AST.h"
+#include "AST.hpp"
 #include "Lex.h"
 
 namespace Parse {

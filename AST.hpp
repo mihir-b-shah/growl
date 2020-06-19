@@ -5,12 +5,19 @@
 #include "Lex.h"
 #include "Syntax.h"
 #include "Error.h"
+#include <iostream>
+#include <cstdlib>
 
 namespace Parse {
+        
     class AST {
+        public:
     };
 
     class Expr : public AST {
+        public:
+            virtual void printRoot(char* buf) const;
+            void print(std::ostream& out);
     };
 
     class Control : public AST {
@@ -66,6 +73,7 @@ namespace Parse {
             Op(Lex::SubType op, Expr* e1, Expr* e2);
             ~Op();
             int arity() const;
+            void printRoot(char* buf) const;
     };
 
     class Literal : public Expr {
@@ -92,6 +100,20 @@ namespace Parse {
             void setFlt(long double v){
                 type = FLOAT;
                 value.fltVal = v;
+            }
+            void printRoot(char* buf) const {
+                switch(type){
+                    case INT:
+                        // print len 3.
+                        std::snprintf(buf,3,"%lld",value.intVal);
+                        break;
+                    case FLOAT:
+                        std::snprintf(buf,3,"%lf",value.fltVal);
+                        break;
+                    default:
+                        Global::specifyError("Literal of invalid type.\n");
+                        throw Global::DeveloperError;
+                }
             }
     };
 

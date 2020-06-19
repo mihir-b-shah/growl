@@ -3,7 +3,10 @@
 #define ERROR_H
 
 namespace Global {
+    
+    const int MemoryRequestError = 0xE;
     const int DeveloperError = 0xF;
+    
     const int InvalidEscapeSequence = 0x10;
     const int InvalidCharacter = 0x11;
     const int InvalidLiteral = 0x12;
