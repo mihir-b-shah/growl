@@ -3,6 +3,7 @@
 #include "AST.h"
 #include "Error.h"
 #include "Syntax.h"
+#include <iostream>
 
 using namespace Parse;
 using Lex::SubType;

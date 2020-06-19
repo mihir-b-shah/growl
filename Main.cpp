@@ -6,7 +6,6 @@
 #include "Error.h"
 #include "AST.h"
 #include "Allocator.h"
-#include "SmallVector.hpp"
 #include "Parse.h"
 
 // allocator constructed before lexing, freed when compilation ends
@@ -40,8 +39,8 @@ int main(int argc, char** argv) {
     Lex::LexStream tokens(size/sizeof(char));
     try {
         Lex::lex(tokens, program);
-        Parse::parseExpr(tokens.begin(), tokens.end());
         tokens.persist("test.txt");
+        Parse::Expr* ast = Parse::parseExpr(tokens.begin(), tokens.end());
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_SUCCESS;
     } catch (int exc) {

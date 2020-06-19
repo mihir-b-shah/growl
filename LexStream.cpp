@@ -56,5 +56,5 @@ Lex::Token* LexStream::begin() {
 }
 
 Lex::Token* LexStream::end() {
-    return _end;
+    return curr;
 }

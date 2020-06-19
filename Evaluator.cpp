@@ -7,6 +7,7 @@
 #include "Syntax.h"
 #include "Parse.h"
 #include <cassert>
+#include <iostream>
 
 /**
  * Implement the shunting yard algorithm.
@@ -41,7 +42,7 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
 static inline void construct(Utils::Vector<Expr*>& output, SubType top){
     Expr* op1; Expr* op2;
     Op* ins;
-    
+
     switch(Syntax::opType(top)){
         case Syntax::OpType::UNARY:
             op1 = output.eback();
@@ -54,7 +55,7 @@ static inline void construct(Utils::Vector<Expr*>& output, SubType top){
             output.pop_back();
             op2 = output.eback();
             output.pop_back();
-            ins = new Op(top, op1, op2);
+            ins = new Op(top, op2, op1);
             output.push_back(ins);
             break;
         default:
@@ -146,12 +147,16 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
                         break;
                     }
                     top = stack.eback()->subType;
+                    
                     Syntax::OpType topType = Syntax::opType(top);
-                    const bool c1 = precedence(me, myType) > precedence(top, topType);
-                    const bool c2 = precedence(me, myType) == precedence(top, topType) && assoc;
+                    const bool c1 = Syntax::precedence(me, myType) < Syntax::precedence(top, topType);
+                    const bool c2 = Syntax::precedence(me, myType) == Syntax::precedence(top, topType) && assoc;
+
                     if(c1 || c2) {
                         stack.pop_back();
                         construct(output, top);
+                    } else {
+                        break;
                     }
                 }
                 stack.push_back(tk); 
@@ -162,8 +167,9 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
     while(stack.size() > 0) {
         SubType me = stack.eback()->subType;
         construct(output, me);
+        stack.pop_back();
     }
-    assert(output.size() == 1);
+    
     Expr* ret = output.eback();
     output.pop_back();
     return ret;

@@ -66,7 +66,7 @@ namespace Utils {
                 return front;
             }
             T* end() const {
-                return end;
+                return front+length;
             }
             T at(int idx) const {
                 return *(begin()+idx);
