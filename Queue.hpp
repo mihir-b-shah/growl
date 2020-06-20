@@ -77,7 +77,7 @@ namespace Utils {
             int size() const {
                 return length;
             }
-            T front() {
+            T front() const {
                 return start[_front];
             }
     };
