@@ -7,17 +7,50 @@
 #include "Error.h"
 #include <iostream>
 #include <cstdlib>
+#include "Iterator.hpp"
 
 namespace Parse {
         
     class AST {
-        public:
     };
 
+    class ExprIterator : public Iterator<Expr> {
+        friend class Expr;
+        private:
+            ExprIterator(Expr* ptr){
+                curr = ptr;
+            }
+        public:
+            Expr* operator*(){
+                return curr;
+            }
+            ExprIterator operator++(){
+                return *this;
+            }
+            ExprIterator operator+(ExprIterator iter){
+                return *this;
+            }
+            ExprIterator operator-(ExprIterator iter){
+                return *this;
+            }
+            void operator+=(ExprIterator iter){
+                
+            }
+            void operator-=(ExprIterator iter){
+                
+            }
+            bool operator==(ExprIterator iter){
+                return true;
+            }
+            bool operator!=(ExprIterator iter){
+                return true;
+            }
+    };
+    
     class Expr : public AST {
         public:
-            virtual void printRoot(char* buf) const;
-            void print(std::ostream& out);
+            virtual int printRoot(char* buf) const;
+            void print(const int width, std::ostream& out);
     };
 
     class Control : public AST {
@@ -73,7 +106,7 @@ namespace Parse {
             Op(Lex::SubType op, Expr* e1, Expr* e2);
             ~Op();
             int arity() const;
-            void printRoot(char* buf) const;
+            int printRoot(char* buf) const;
     };
 
     class Literal : public Expr {
@@ -101,15 +134,13 @@ namespace Parse {
                 type = FLOAT;
                 value.fltVal = v;
             }
-            void printRoot(char* buf) const {
+            int printRoot(char* buf) const {
                 switch(type){
                     case INT:
                         // print len 3.
-                        std::snprintf(buf,3,"%lld",value.intVal);
-                        break;
+                        return std::snprintf(buf,3,"%lld",value.intVal);
                     case FLOAT:
-                        std::snprintf(buf,3,"%lf",value.fltVal);
-                        break;
+                        return std::snprintf(buf,3,"%lf",value.fltVal);
                     default:
                         Global::specifyError("Literal of invalid type.\n");
                         throw Global::DeveloperError;

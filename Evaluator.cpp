@@ -6,6 +6,7 @@
 #include "Vector.hpp"
 #include "Syntax.h"
 #include "Parse.h"
+#include "Queue.hpp"
 #include <cassert>
 #include <iostream>
 
@@ -18,13 +19,45 @@ using namespace Parse;
 using namespace Lex;
 
 struct QueueItem {
-    int bt;
+    Expr* bt;
     int height;
     int xJust;
 };
 
-void Expr::print(std::ostream& out){
+static inline int convert(double w, int h, int j) {
+    return static_cast<int>(w*(2*j+1)/(1 << h+1));
+}
+
+void Expr::print(const int width, std::ostream& out){
+    Utils::SmallQueue<QueueItem,100> queue;
+    QueueItem inp = {this,0,0};
+    queue.push_back(inp);
     
+    int currHeight = -1;
+    int currJustif = 0;
+    
+    while(queue.size() > 0) {
+        QueueItem obj = queue.front();
+        queue.pop_front();
+        
+        if(currHeight != obj.height){
+            out << '\n';
+            currHeight = obj.height;
+            currJustif = 0;
+        }
+        
+        char buf[4] = {'\0'};
+        int count = obj.bt->printRoot(buf)/2;
+        int amt = convert(width, obj.height, obj.xJust);
+        for(int i = 0; i<amt-currJustif-count; ++i){
+            out << ' ';
+        }
+        out << buf;
+        currJustif = amt;
+        
+        
+        
+    }
 }
 
 static inline void bind(Token* tkn, Syntax::OpType* top){

@@ -155,11 +155,11 @@ int Op::arity() const {
 static const char* opDisplay[] = {"+","-","-u","*","*u","/","%","~",".",">","<","<","==","&u","&","|","^","=","<<"};
 
 // prints max of 3 chars.
-void Op::printRoot(char* buf) const {
+int Op::printRoot(char* buf) const {
     if(Op::intrinsic) {
-        std::snprintf(buf,3,"%3s",opDisplay[static_cast<int>(Op::driver.intr)]);
+        return std::snprintf(buf,3,"%3s",opDisplay[static_cast<int>(Op::driver.intr)]);
     } else {
-        std::snprintf(buf,3,"%3s","FUN");
+        return std::snprintf(buf,3,"%3s","FUN");
     }
     
 }
