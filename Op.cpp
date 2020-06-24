@@ -24,8 +24,8 @@ Op::Op(FuncDef* def, int argc, Expr** argv){
             Op::inputs.arg = *argv;
             break;
         case 2:
-            inputs.twoArgs.arg1 = *argv;
-            inputs.twoArgs.arg2 = *(argv+1);
+            inputs.twoArgs[0] = *argv;
+            inputs.twoArgs[1] = *(argv+1);
             break;
         default:
             inputs.args = argv;
@@ -61,8 +61,8 @@ Op::Op(SubType op, Expr* e1){
 
 // binary 
 Op::Op(SubType op, Expr* e1, Expr* e2){
-    Op::inputs.twoArgs.arg1 = e1;
-    inputs.twoArgs.arg2 = e2;
+    Op::inputs.twoArgs[0] = e1;
+    inputs.twoArgs[1] = e2;
     Op::intrinsic = true;
     switch(op) {
         case SubType::PLUS:
@@ -160,6 +160,36 @@ int Op::printRoot(char* buf) const {
         return std::snprintf(buf,3,"%3s",opDisplay[static_cast<int>(Op::driver.intr)]);
     } else {
         return std::snprintf(buf,3,"%3s","FUN");
+    } 
+}
+
+Parse::Expr* OpIterator::operator*(){
+    // kind of inefficient. bc we know this cannot change.
+    switch(handle->arity()){
+        case 1:
+            // unary operator or unary function.
+            return handle->inputs.arg;
+        case 2:
+            // binary operator or binary function.
+            return handle->inputs.twoArgs[pos];
+        default:
+            // a function for sure.
+            return handle->inputs.args[pos];
     }
-    
+}
+
+OpIterator OpIterator::operator++(){
+    ++pos;
+}
+
+bool OpIterator::operator!=(OpIterator iter){
+    return pos != iter.pos;
+}
+
+OpIterator Op::begin(){
+    return OpIterator(this,0);
+}
+
+OpIterator Op::end(){
+    return OpIterator(this,this->arity());
 }
