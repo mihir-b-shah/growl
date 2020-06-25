@@ -16,9 +16,9 @@ namespace Parse {
     class Expr;
     class ExprIterator {
         public:
-            Expr* operator*();
-            ExprIterator operator++();
-            bool operator!=(ExprIterator iter);
+            virtual Expr* operator*();
+            virtual ExprIterator operator++();
+            virtual bool operator!=(ExprIterator iter);
     };
     
     class Expr : public AST {

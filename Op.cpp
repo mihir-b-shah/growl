@@ -180,6 +180,7 @@ Parse::Expr* OpIterator::operator*(){
 
 OpIterator OpIterator::operator++(){
     ++pos;
+	return *this;
 }
 
 bool OpIterator::operator!=(OpIterator iter){

@@ -22,6 +22,15 @@ struct QueueItem {
     Expr* bt;
     int height;
     int xJust;
+	
+	QueueItem(){
+	}
+	
+	QueueItem(Expr* b, int h, int x){
+		bt = b;
+		height = h;
+		xJust = x;
+	}
 };
 
 static inline int convert(double w, int h, int j) {
@@ -55,8 +64,10 @@ void Expr::print(const int width, std::ostream& out){
         out << buf;
         currJustif = amt;
         
-        
-        
+		int ctr = 0;
+		for(auto iter = obj.bt->begin(); iter!=obj.bt->end(); ++iter, ++ctr){
+			queue.push_back(QueueItem(*iter, 1+obj.height, 2*obj.xJust+ctr));
+		}
     }
 }
 
