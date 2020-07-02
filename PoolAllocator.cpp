@@ -18,3 +18,4 @@ Alloc::Alloc(int size) {
 Alloc::~Alloc() {
     //std::free(begin);
 }
+

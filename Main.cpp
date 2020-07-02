@@ -1,6 +1,5 @@
 
 #include <iostream>
-#include <cstdio>
 #include <cstdlib>
 #include "Lex.h"
 #include "Error.h"
@@ -15,6 +14,7 @@ Global::Alloc* Global::getAllocator() {
 }
 
 static const int FILE_SIZE_MULTIPLIER = 10;
+static const int CONSOLE_WIDTH = 40;
 
 int main(int argc, char** argv) {
     Global::Alloc alloc(0);
@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
         Lex::lex(tokens, program);
         tokens.persist("test.txt");
         Parse::Expr* ast = Parse::parseExpr(tokens.begin(), tokens.end());
+		ast->print(CONSOLE_WIDTH, std::cout);
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_SUCCESS;
     } catch (int exc) {

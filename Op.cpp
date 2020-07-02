@@ -3,6 +3,7 @@
 #include "AST.hpp"
 #include "Error.h"
 #include "Syntax.h"
+#include <iostream>
 #include <cstdlib>
 
 using namespace Parse;
@@ -32,6 +33,19 @@ Op::Op(FuncDef* def, int argc, Expr** argv){
             break;
     }
     
+    Op::intrinsic = false;
+    Op::driver.func = def;
+}
+
+Op::Op(FuncDef* def, Expr* e1){
+	Op::inputs.arg = e1;
+    Op::intrinsic = false;
+    Op::driver.func = def;
+}
+
+Op::Op(FuncDef* def, Expr* e1, Expr* e2){
+	Op::inputs.twoArgs[0] = e1;
+	Op::inputs.twoArgs[1] = e2;
     Op::intrinsic = false;
     Op::driver.func = def;
 }
@@ -146,7 +160,7 @@ static inline Syntax::OpType detOpType(IntrOps type) {
 
 int Op::arity() const {
     if(Op::intrinsic) {
-        return static_cast<int>(detOpType(Op::driver.intr));
+        return optypeInt(detOpType(Op::driver.intr));
     } else {
         return driver.func->arity();
     }
@@ -155,15 +169,15 @@ int Op::arity() const {
 static const char* opDisplay[] = {"+","-","-u","*","*u","/","%","~",".",">","<","<","==","&u","&","|","^","=","<<"};
 
 // prints max of 3 chars.
-int Op::printRoot(char* buf) const {
+int Op::printRoot(char* buf) const {	
     if(Op::intrinsic) {
-        return std::snprintf(buf,3,"%3s",opDisplay[static_cast<int>(Op::driver.intr)]);
+        return std::snprintf(buf,4,"%3s", opDisplay[static_cast<int>(Op::driver.intr)]);
     } else {
-        return std::snprintf(buf,3,"%3s","FUN");
+        return std::snprintf(buf,4,"%3s","FUN");
     } 
 }
 
-Parse::Expr* OpIterator::operator*(){
+Parse::Expr* OpIterator::get(){
     // kind of inefficient. bc we know this cannot change.
     switch(handle->arity()){
         case 1:
@@ -178,19 +192,20 @@ Parse::Expr* OpIterator::operator*(){
     }
 }
 
-OpIterator OpIterator::operator++(){
+OpIterator* OpIterator::nextArg(){
     ++pos;
-	return *this;
+	return this;
 }
 
-bool OpIterator::operator!=(OpIterator iter){
-    return pos != iter.pos;
+bool OpIterator::done(){
+    return pos == this->handle->arity();
 }
 
-OpIterator Op::begin(){
-    return OpIterator(this,0);
+OpIterator* Op::iterator(){
+	//std::cout << "hello. op\n";
+	return new OpIterator(this,0);
+	/*
+	iter->handle = this;
+	iter->pos = 0; */
 }
 
-OpIterator Op::end(){
-    return OpIterator(this,this->arity());
-}

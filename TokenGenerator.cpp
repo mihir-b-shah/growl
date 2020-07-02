@@ -87,13 +87,13 @@ static inline char* const parseWord(Token* base, char* const data) {
             return dotPtr;
         } else {
             // use an int, num ranges from [data, data+ct).
-            char* readPtr = data+ct-1;
+            char* readPtr = data;
             long long res = 0;
             char* ret = readPtr+1;
-            while(readPtr != data) {
+            while(readPtr != ret) {
                 res *= 10;
-                res += *readPtr;
-                --readPtr;
+                res += *readPtr-'0';
+                ++readPtr;
             }
             base->type = Type::LITERAL;
             base->subType = SubType::INT_LITERAL;

@@ -127,3 +127,17 @@ int Syntax::precedence(SubType type, OpType opType) {
             throw Global::InvalidOperator;
     }
 }
+
+// ensure single point of access should the enum's values change.
+int Syntax::optypeInt(OpType optype){
+	switch(optype){
+		case OpType::AMBIG_TYPE:
+			return 0;
+		case OpType::UNARY:
+			return 1;
+		case OpType::BINARY:
+			return 2;
+		default:
+			throw Global::DeveloperError;
+	}
+}

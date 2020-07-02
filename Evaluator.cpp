@@ -1,5 +1,4 @@
 
-
 #include "Lex.h"
 #include "AST.hpp"
 #include "Error.h"
@@ -47,6 +46,7 @@ void Expr::print(const int width, std::ostream& out){
     
     while(queue.size() > 0) {
         QueueItem obj = queue.front();
+		//std::cerr << "xJust: " << obj.xJust << "h: " << obj.height << '\n';
         queue.pop_front();
         
         if(currHeight != obj.height){
@@ -65,9 +65,16 @@ void Expr::print(const int width, std::ostream& out){
         currJustif = amt;
         
 		int ctr = 0;
-		for(auto iter = obj.bt->begin(); iter!=obj.bt->end(); ++iter, ++ctr){
-			queue.push_back(QueueItem(*iter, 1+obj.height, 2*obj.xJust+ctr));
+		auto iter = obj.bt->iterator();
+		
+		while(!(iter->done())){
+			queue.push_back(QueueItem(iter->get(), 1+obj.height, 2*obj.xJust+ctr));
+			iter=iter->nextArg();
+			++ctr;
 		}
+		
+		// fix once using the allocator.
+		delete iter;
     }
 }
 
@@ -97,6 +104,7 @@ static inline void construct(Utils::Vector<Expr*>& output, SubType top){
     Expr* op1; Expr* op2;
     Op* ins;
 
+	// at some point, change the 'new' to Global->alloc. Maybe pass void** as the params.
     switch(Syntax::opType(top)){
         case Syntax::OpType::UNARY:
             op1 = output.eback();

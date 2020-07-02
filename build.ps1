@@ -1,13 +1,10 @@
 ﻿$path = Get-Location
-$myargs = @()
+$args = @()
 $items = Get-ChildItem -path $my_path -Recurse -Filter *.cpp 
 foreach ($file in $items){
-	$myargs += ($file).FullName;
+	$args += ($file).FullName;
 }
-if($args[0] -eq "debug"){
-    $myargs += "-g"
-}
-$myargs += "-Ofast"
-$myargs += "-Iinclude"
+$args += "-Ofast"
+$args += "-g"
 $exepath = "C:/MinGW/bin/g++.exe"
-& $exepath $myargs
+& $exepath $args

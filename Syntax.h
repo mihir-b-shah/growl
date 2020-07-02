@@ -17,6 +17,7 @@ namespace Syntax {
         AMBIG, NONE, RIGHT, LEFT // ambigious between two...
     };
 
+	int optypeInt(OpType optype);
     OpType opType(SubType type);
     Assoc associate(SubType type, OpType optype);
     int precedence(SubType type, OpType opType);

@@ -9,23 +9,23 @@
 #include <cstdlib>
 
 namespace Parse {
-        
+
     class AST {
     };
 
     class Expr;
     class ExprIterator {
         public:
-            virtual Expr* operator*();
-            virtual ExprIterator operator++();
-            virtual bool operator!=(ExprIterator iter);
+            virtual Expr* get() = 0;
+			// std does not allow covariant value, only reference
+            virtual ExprIterator* nextArg() = 0;
+            virtual bool done() = 0;
     };
     
     class Expr : public AST {
         public:
-            virtual int printRoot(char* buf) const;
-            ExprIterator begin();
-            ExprIterator end();
+            virtual int printRoot(char* buf) const = 0;
+            virtual ExprIterator* iterator() = 0;
             void print(const int width, std::ostream& out);
     };
 
@@ -60,7 +60,7 @@ namespace Parse {
     enum class IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
 
     class Op;
-    class OpIterator : ExprIterator {
+    class OpIterator : public ExprIterator {
         private:
             Op* handle;
             int pos;
@@ -69,9 +69,9 @@ namespace Parse {
                 handle = hand;
                 pos = p;
             }
-            Expr* operator*();
-            OpIterator operator++();
-            bool operator!=(OpIterator iter);
+            Expr* get();
+            OpIterator* nextArg();
+            bool done();
     };
     
     class Op : public Expr {
@@ -90,30 +90,33 @@ namespace Parse {
                 IntrOps intr;
             } driver;
         public:
+			/* code is wrong. constructor should accept for unary/binary
+			   the small vector optimization */
             Op(FuncDef* def, int argc, Expr** argv);
+			Op(FuncDef* def, Expr* e1);
+			Op(FuncDef* def, Expr* e1, Expr* e2);
             Op(Lex::SubType op, Expr* e1);
             Op(Lex::SubType op, Expr* e1, Expr* e2);
             ~Op();
             int arity() const;
             int printRoot(char* buf) const;
-            OpIterator begin();
-            OpIterator end();
+            OpIterator* iterator();
     };
     
     class Literal;
-    class LitIterator : ExprIterator {
+    class LitIterator : public ExprIterator {
         public:
             LitIterator(){
             }
-            Literal* operator*(){
+            Expr* get(){
                 return nullptr;
             }
-            LitIterator operator++(){
+            LitIterator* nextArg(){
                 Global::specifyError("LitIterator ++ called. should never.");
                 throw Global::DeveloperError;
             }
-            bool operator!=(LitIterator iter){
-                return false;
+            bool done(){
+                return true;
             }
     };
     class Literal : public Expr {
@@ -135,6 +138,7 @@ namespace Parse {
             bool isInt(){ return type == INT;}
             bool isFloat(){ return type == FLOAT;}
             void setInt(long long v){
+				std::cout << "int lit gen called. " << v << '\n';
                 type = INT;
                 value.intVal = v;
             }
@@ -146,19 +150,17 @@ namespace Parse {
                 switch(type){
                     case INT:
                         // print len 3.
-                        return std::snprintf(buf,3,"%lld",value.intVal);
+                        return std::snprintf(buf,4,"%lld",value.intVal);
                     case FLOAT:
-                        return std::snprintf(buf,3,"%lf",value.fltVal);
+                        return std::snprintf(buf,4,"%lf",value.fltVal);
                     default:
                         Global::specifyError("Literal of invalid type.\n");
                         throw Global::DeveloperError;
                 }
             }
-            LitIterator begin(){
-                return LitIterator();
-            }
-            LitIterator end(){
-                return LitIterator();
+            LitIterator* iterator(){
+				//std::cout << "lit iterator.\n";
+				return nullptr;
             }
     };
 
