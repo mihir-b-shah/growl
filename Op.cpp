@@ -194,6 +194,7 @@ Parse::Expr* OpIterator::get(){
 
 OpIterator* OpIterator::nextArg(){
     ++pos;
+	//std::cout << "POS: " << pos << " ARITY: " << this->handle->arity() << '\n';
 	return this;
 }
 

@@ -14,7 +14,7 @@ Global::Alloc* Global::getAllocator() {
 }
 
 static const int FILE_SIZE_MULTIPLIER = 10;
-static const int CONSOLE_WIDTH = 40;
+static const int CONSOLE_WIDTH = 100;
 
 int main(int argc, char** argv) {
     Global::Alloc alloc(0);

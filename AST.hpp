@@ -158,9 +158,11 @@ namespace Parse {
                         throw Global::DeveloperError;
                 }
             }
+			// i am crying
+			// heap allocating for a useless placeholder object
             LitIterator* iterator(){
 				//std::cout << "lit iterator.\n";
-				return nullptr;
+				return new LitIterator();
             }
     };
 
