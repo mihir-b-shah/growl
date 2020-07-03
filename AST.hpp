@@ -10,12 +10,12 @@
 #include <cstdlib>
 
 namespace Parse {
-	
+    
     class AST {
     };
 
     class Expr : public AST {
-		friend class ArgIterator;
+        friend class ArgIterator;
         public:
             virtual int printRoot(char* buf) const = 0;
             virtual ArgIterator iterator() = 0;
@@ -53,7 +53,7 @@ namespace Parse {
     enum class IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
     
     class Op : public Expr {
-		friend class ArgIterator;
+        friend class ArgIterator;
         private:
             // small size optimization, avoid a heap allocation
             union {
@@ -68,11 +68,11 @@ namespace Parse {
                 IntrOps intr;
             } driver;
         public:
-			/* code is wrong. constructor should accept for unary/binary
-			   the small vector optimization */
+            /* code is wrong. constructor should accept for unary/binary
+               the small vector optimization */
             Op(FuncDef* def, int argc, Expr** argv);
-			Op(FuncDef* def, Expr* e1);
-			Op(FuncDef* def, Expr* e1, Expr* e2);
+            Op(FuncDef* def, Expr* e1);
+            Op(FuncDef* def, Expr* e1, Expr* e2);
             Op(Lex::SubType op, Expr* e1);
             Op(Lex::SubType op, Expr* e1, Expr* e2);
             ~Op();
@@ -82,7 +82,7 @@ namespace Parse {
     };
 
     class Literal : public Expr {
-		friend class ArgIterator;
+        friend class ArgIterator;
         private:
             enum {
                 INT,
@@ -120,7 +120,7 @@ namespace Parse {
                 }
             }
             Parse::ArgIterator iterator(){
-				return ArgIterator(SupportedType::_Lit, this, 0);
+                return ArgIterator(SupportedType::_Lit, this, 0);
             }
     };
 

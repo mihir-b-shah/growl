@@ -29,7 +29,7 @@ OpType Syntax::opType(SubType type) {
         case SubType::SHIFT:
             return OpType::BINARY;
         default:
-			Global::specifyError("Occurred in Operator.cpp. 31");
+            Global::specifyError("Occurred in Operator.cpp. 31");
             throw Global::InvalidOperator;
     }
 }
@@ -51,7 +51,7 @@ Syntax::Assoc Syntax::associate(SubType type, OpType opType) {
                 case OpType::BINARY:
                     return Assoc::LEFT;
                 default:
-					Global::specifyError("Occurred in Operator.cpp. 53");
+                    Global::specifyError("Occurred in Operator.cpp. 53");
                     throw Global::DeveloperError;
             }
         case SubType::ASSN:
@@ -66,14 +66,14 @@ Syntax::Assoc Syntax::associate(SubType type, OpType opType) {
         case SubType::SHIFT:
             return Assoc::LEFT;
         default:
-			Global::specifyError("Occurred in Operator.cpp.");
+            Global::specifyError("Occurred in Operator.cpp.");
             throw Global::InvalidOperator;
     }
 }
 
 // error if called with ambigious opType. must be resolved.
 int Syntax::precedence(SubType type, OpType opType) {
-	// std::cout << "Subtype: " << static_cast<int>(type) << " OpType: " << static_cast<int>(opType) << '\n';
+    // std::cout << "Subtype: " << static_cast<int>(type) << " OpType: " << static_cast<int>(opType) << '\n';
     using namespace Lex;
     switch(type) {
         case SubType::DOT:
@@ -88,7 +88,7 @@ int Syntax::precedence(SubType type, OpType opType) {
                     return 9;
                 case OpType::AMBIG_TYPE:
                 default:
-					Global::specifyError("Occurred in Operator.cpp. 89");
+                    Global::specifyError("Occurred in Operator.cpp. 89");
                     throw Global::DeveloperError;
             }
         case SubType::DIV:
@@ -102,7 +102,7 @@ int Syntax::precedence(SubType type, OpType opType) {
                     return 8;
                 case OpType::AMBIG_TYPE:
                 default:
-					Global::specifyError("Occurred in Operator.cpp. 103");
+                    Global::specifyError("Occurred in Operator.cpp. 103");
                     throw Global::DeveloperError;
             }
         case SubType::PLUS:
@@ -122,7 +122,7 @@ int Syntax::precedence(SubType type, OpType opType) {
                     return 4;
                 case OpType::AMBIG_TYPE:
                 default:
-					Global::specifyError("Occurred in Operator.cpp. 124");
+                    Global::specifyError("Occurred in Operator.cpp. 124");
                     throw Global::DeveloperError;
             }
         case SubType::CARET:
@@ -132,22 +132,22 @@ int Syntax::precedence(SubType type, OpType opType) {
         case SubType::ASSN:
             return 1;
         default:
-			Global::specifyError("Occurred in Operator.cpp. 133");
+            Global::specifyError("Occurred in Operator.cpp. 133");
             throw Global::InvalidOperator;
     }
 }
 
 // ensure single point of access should the enum's values change.
 int Syntax::optypeInt(OpType optype){
-	switch(optype){
-		case OpType::AMBIG_TYPE:
-			return 0;
-		case OpType::UNARY:
-			return 1;
-		case OpType::BINARY:
-			return 2;
-		default:
-			Global::specifyError("Occurred in Operator.cpp. 148");
-			throw Global::DeveloperError;
-	}
+    switch(optype){
+        case OpType::AMBIG_TYPE:
+            return 0;
+        case OpType::UNARY:
+            return 1;
+        case OpType::BINARY:
+            return 2;
+        default:
+            Global::specifyError("Occurred in Operator.cpp. 148");
+            throw Global::DeveloperError;
+    }
 }

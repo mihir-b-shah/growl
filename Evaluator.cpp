@@ -21,15 +21,15 @@ struct QueueItem {
     Expr* bt;
     int height;
     int xJust;
-	
-	QueueItem(){
-	}
-	
-	QueueItem(Expr* b, int h, int x){
-		bt = b;
-		height = h;
-		xJust = x;
-	}
+    
+    QueueItem(){
+    }
+    
+    QueueItem(Expr* b, int h, int x){
+        bt = b;
+        height = h;
+        xJust = x;
+    }
 };
 
 static inline int convert(double w, int h, int j) {
@@ -37,12 +37,12 @@ static inline int convert(double w, int h, int j) {
 }
 
 void Expr::print(const int width, std::ostream& out){
-	out << '\n';
-	for(int i = 0; i<width; ++i){
-		out << '_';
-	}
-	out << '\n';
-	
+    out << '\n';
+    for(int i = 0; i<width; ++i){
+        out << '_';
+    }
+    out << '\n';
+    
     Utils::SmallQueue<QueueItem,100> queue;
     QueueItem inp = {this,0,0};
     queue.push_back(inp);
@@ -52,7 +52,7 @@ void Expr::print(const int width, std::ostream& out){
     
     while(queue.size() > 0) {
         QueueItem obj = queue.front();
-		//std::cerr << "xJust: " << obj.xJust << "h: " << obj.height << '\n';
+        //std::cerr << "xJust: " << obj.xJust << "h: " << obj.height << '\n';
         queue.pop_front();
         
         if(currHeight != obj.height){
@@ -70,28 +70,28 @@ void Expr::print(const int width, std::ostream& out){
         out << buf;
         currJustif = amt;
         
-		int ctr = 0;
-		auto iter = obj.bt->iterator();
-		
-		while(!(iter.done())){
-			queue.push_back(QueueItem(static_cast<Op*>(iter.get()), 1+obj.height, 2*obj.xJust+ctr));
-			iter.next();
-			++ctr;
-		}
+        int ctr = 0;
+        auto iter = obj.bt->iterator();
+        
+        while(!(iter.done())){
+            queue.push_back(QueueItem(static_cast<Op*>(iter.get()), 1+obj.height, 2*obj.xJust+ctr));
+            iter.next();
+            ++ctr;
+        }
     }
-	out << '\n';
-	for(int i = 0; i<width; ++i){
-		out << '_';
-	}
-	out << '\n';
+    out << '\n';
+    for(int i = 0; i<width; ++i){
+        out << '_';
+    }
+    out << '\n';
 }
 
 static inline void bind(Token* tkn, Syntax::OpType* top){
     // std::cout << "Before\n";
-	if(__builtin_expect(*top != Syntax::OpType::AMBIG_TYPE, true)){
+    if(__builtin_expect(*top != Syntax::OpType::AMBIG_TYPE, true)){
         return;
     }
-	// std::cout << "After\n";
+    // std::cout << "After\n";
     switch(tkn->type){
         case Type::LITERAL:
         case Type::ID: // ids are useless for now...
@@ -114,7 +114,7 @@ static inline void construct(Utils::Vector<Expr*>& output, SubType top, Syntax::
     Expr* op1; Expr* op2;
     Op* ins;
 
-	// at some point, change the 'new' to Global->alloc. Maybe pass void** as the params.
+    // at some point, change the 'new' to Global->alloc. Maybe pass void** as the params.
     switch(det){
         case Syntax::OpType::UNARY:
             op1 = output.eback();
@@ -138,22 +138,22 @@ static inline void construct(Utils::Vector<Expr*>& output, SubType top, Syntax::
 }
 
 struct BoundToken {
-	Token* tkn;
-	Syntax::OpType type;
-	
-	// for the use of containers in default construction.
-	BoundToken(){
-	}
-	
-	BoundToken(Token* t){
-		tkn = t;
-		type = Syntax::OpType::AMBIG_TYPE;
-	}
-	
-	BoundToken(Token* t, Syntax::OpType ot){
-		tkn = t;
-		type = ot;
-	}
+    Token* tkn;
+    Syntax::OpType type;
+    
+    // for the use of containers in default construction.
+    BoundToken(){
+    }
+    
+    BoundToken(Token* t){
+        tkn = t;
+        type = Syntax::OpType::AMBIG_TYPE;
+    }
+    
+    BoundToken(Token* t, Syntax::OpType ot){
+        tkn = t;
+        type = ot;
+    }
 };
 
 Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
@@ -170,7 +170,7 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
                 bool parenFlg = false;
                 while(stack.size() > 0 && (stack.eback().tkn->subType != SubType::OPAREN)){
                     SubType th = stack.eback().tkn->subType;
-					Syntax::OpType type = stack.eback().type;
+                    Syntax::OpType type = stack.eback().type;
                     parenFlg = true;
                     stack.pop_back();
                     construct(output, th, type);
@@ -230,7 +230,7 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
                 } else {
                     bind(tk-1, &myType);
                 }
-				
+                
                 bool assoc = Syntax::associate(me, myType) == Syntax::Assoc::LEFT;
                 SubType top;
                 // watch out for associative

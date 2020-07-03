@@ -39,14 +39,14 @@ Op::Op(FuncDef* def, int argc, Expr** argv){
 }
 
 Op::Op(FuncDef* def, Expr* e1){
-	Op::inputs.arg = e1;
+    Op::inputs.arg = e1;
     Op::intrinsic = false;
     Op::driver.func = def;
 }
 
 Op::Op(FuncDef* def, Expr* e1, Expr* e2){
-	Op::inputs.twoArgs[0] = e1;
-	Op::inputs.twoArgs[1] = e2;
+    Op::inputs.twoArgs[0] = e1;
+    Op::inputs.twoArgs[1] = e2;
     Op::intrinsic = false;
     Op::driver.func = def;
 }
@@ -170,7 +170,7 @@ int Op::arity() const {
 static const char* opDisplay[] = {"+","-","-u","*","*u","/","%","~",".",">","<","==","&u","&","|","^","=","<<"};
 
 // prints max of 3 chars.
-int Op::printRoot(char* buf) const {	
+int Op::printRoot(char* buf) const {    
     if(Op::intrinsic) {
         return std::snprintf(buf,4,"%3s", opDisplay[static_cast<int>(Op::driver.intr)]);
     } else {
@@ -179,10 +179,10 @@ int Op::printRoot(char* buf) const {
 }
 
 ArgIterator Op::iterator(){
-	//std::cout << "hello. op\n";
-	return ArgIterator(SupportedType::_Op, this, 0);
-	/*
-	iter->handle = this;
-	iter->pos = 0; */
+    //std::cout << "hello. op\n";
+    return ArgIterator(SupportedType::_Op, this, 0);
+    /*
+    iter->handle = this;
+    iter->pos = 0; */
 }
 

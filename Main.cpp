@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
         Lex::lex(tokens, program);
         tokens.persist("test.txt");
         Parse::Expr* ast = Parse::parseExpr(tokens.begin(), tokens.end());
-		ast->print(CONSOLE_WIDTH, std::cout);
+        ast->print(CONSOLE_WIDTH, std::cout);
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_SUCCESS;
     } catch (int exc) {
