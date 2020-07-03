@@ -1,10 +1,11 @@
 
 #include "Parse.h"
 #include "Error.h"
+#include "AST.hpp"
 
 /*
 Implements a polymorphic iterator.
-Gets around the annoying features for C++.
+Gets around the annoying features for C++ covariance/ avoids heap alloc.
 */
 
 using namespace Parse;
@@ -15,8 +16,7 @@ enum class SupportedType {_Expr, _Op, _Lit};
 class ArgIterator {
 	SupportedType type;
 	Expr* handle;
-	AuxState state;
-	
+
 	union {
 		int pos;
 		void* obj;
@@ -36,7 +36,7 @@ ArgIterator::ArgIterator(SupportedType mType, Expr* mHandle, int mPos){
 }
 
 bool ArgIterator::done(){
-	switch(mType){
+	switch(type){
 		case SupportedType::_Op:
 			return aux.pos == (static_cast<Op*>(handle))->arity();
 		case SupportedType::_Lit:
@@ -48,7 +48,7 @@ bool ArgIterator::done(){
 }
 
 void ArgIterator::next(){
-	switch(mType){
+	switch(type){
 		case SupportedType::_Op:
 			++aux.pos;
 			break;
@@ -60,20 +60,20 @@ void ArgIterator::next(){
 }
 
 Expr* ArgIterator::get(){
-	switch(mType){
+	switch(type){
 		case SupportedType::_Op:
 		{
 			Op* _op = static_cast<Op*>(handle);
-			switch(handle->arity()){
+			switch(_op->arity()){
 				case 1:
 					// unary operator or unary function.
 					return _op->inputs.arg;
 				case 2:
 					// binary operator or binary function.
-					return _op->inputs.twoArgs[pos];
+					return _op->inputs.twoArgs[aux.pos];
 				default:
 					// a function for sure.
-					return _op->inputs.args[pos];
+					return _op->inputs.args[aux.pos];
 			}
 			break;
 		}

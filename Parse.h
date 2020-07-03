@@ -2,13 +2,12 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include "AST.hpp"
 #include "Lex.h"
 
-namespace Parse {
-	
+namespace Parse {	
 	enum class SupportedType {_Expr, _Op, _Lit};
 
+	class Expr;
 	class ArgIterator {
 		SupportedType type;
 		Expr* handle;
@@ -24,8 +23,8 @@ namespace Parse {
 			bool done();
 			void next();
 			Expr* get();
-	}
-	
+	};
+
     Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
 }
 

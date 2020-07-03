@@ -10,23 +10,15 @@
 #include <cstdlib>
 
 namespace Parse {
-
+	
     class AST {
     };
 
-    class Expr;
-    class ExprIterator {
-        public:
-            virtual Expr* get() = 0;
-			// std does not allow covariant value, only reference
-            virtual ExprIterator* nextArg() = 0;
-            virtual bool done() = 0;
-    };
-    
     class Expr : public AST {
+		friend class ArgIterator;
         public:
             virtual int printRoot(char* buf) const = 0;
-            virtual ExprIterator* iterator() = 0;
+            virtual ArgIterator iterator() = 0;
             void print(const int width, std::ostream& out);
     };
 
@@ -59,24 +51,9 @@ namespace Parse {
     };
 
     enum class IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
-
-    class Op;
-    class OpIterator : public ExprIterator {
-        private:
-            Op* handle;
-            int pos;
-        public:
-            OpIterator(Op* hand, int p){
-                handle = hand;
-                pos = p;
-            }
-            Expr* get();
-            OpIterator* nextArg();
-            bool done();
-    };
     
     class Op : public Expr {
-        friend class OpIterator;
+		friend class ArgIterator;
         private:
             // small size optimization, avoid a heap allocation
             union {
@@ -101,27 +78,11 @@ namespace Parse {
             ~Op();
             int arity() const;
             int printRoot(char* buf) const;
-            OpIterator* iterator();
+            ArgIterator iterator();
     };
-    
-    class Literal;
-    class LitIterator : public ExprIterator {
-        public:
-            LitIterator(){
-            }
-            Expr* get(){
-                return nullptr;
-            }
-            LitIterator* nextArg(){
-                Global::specifyError("LitIterator ++ called. should never.");
-                throw Global::DeveloperError;
-            }
-            bool done(){
-                return true;
-            }
-    };
+
     class Literal : public Expr {
-        friend class LitIterator;
+		friend class ArgIterator;
         private:
             enum {
                 INT,
@@ -139,7 +100,6 @@ namespace Parse {
             bool isInt(){ return type == INT;}
             bool isFloat(){ return type == FLOAT;}
             void setInt(long long v){
-				std::cout << "int lit gen called. " << v << '\n';
                 type = INT;
                 value.intVal = v;
             }
@@ -159,11 +119,8 @@ namespace Parse {
                         throw Global::DeveloperError;
                 }
             }
-			// i am crying
-			// heap allocating for a useless placeholder object
-            LitIterator* iterator(){
-				//std::cout << "lit iterator.\n";
-				return new LitIterator();
+            Parse::ArgIterator iterator(){
+				return ArgIterator(SupportedType::_Lit, this, 0);
             }
     };
 

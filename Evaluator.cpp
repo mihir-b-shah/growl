@@ -73,14 +73,11 @@ void Expr::print(const int width, std::ostream& out){
 		int ctr = 0;
 		auto iter = obj.bt->iterator();
 		
-		while(!(iter->done())){
-			queue.push_back(QueueItem(iter->get(), 1+obj.height, 2*obj.xJust+ctr));
-			iter=iter->nextArg();
+		while(!(iter.done())){
+			queue.push_back(QueueItem(static_cast<Op*>(iter.get()), 1+obj.height, 2*obj.xJust+ctr));
+			iter.next();
 			++ctr;
 		}
-		
-		// fix once using the allocator.
-		delete iter;
     }
 	out << '\n';
 	for(int i = 0; i<width; ++i){
@@ -98,7 +95,6 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
     switch(tkn->type){
         case Type::LITERAL:
         case Type::ID: // ids are useless for now...
-			std::cout << "Check.\n";
             *top = Syntax::OpType::BINARY;
             break;
         case Type::OPERATOR:

@@ -1,5 +1,6 @@
 
 #include "Lex.h"
+#include "Parse.h"
 #include "AST.hpp"
 #include "Error.h"
 #include "Syntax.h"
@@ -166,7 +167,7 @@ int Op::arity() const {
     }
 }
 
-static const char* opDisplay[] = {"+","-","-u","*","*u","/","%","~",".",">","<","<","==","&u","&","|","^","=","<<"};
+static const char* opDisplay[] = {"+","-","-u","*","*u","/","%","~",".",">","<","==","&u","&","|","^","=","<<"};
 
 // prints max of 3 chars.
 int Op::printRoot(char* buf) const {	
@@ -177,9 +178,9 @@ int Op::printRoot(char* buf) const {
     } 
 }
 
-OpIterator* Op::iterator(){
+ArgIterator Op::iterator(){
 	//std::cout << "hello. op\n";
-	return new OpIterator(this,0);
+	return ArgIterator(SupportedType::_Op, this, 0);
 	/*
 	iter->handle = this;
 	iter->pos = 0; */
