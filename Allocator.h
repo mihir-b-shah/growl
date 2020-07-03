@@ -26,6 +26,11 @@ namespace Global {
             T* allocate(int N) {
                 return new T[N];
             }
+			
+			template<typename T>
+            T* allocate(int N, void** args) {
+                return new T[N];
+            }
             
             template<typename T>
             void deallocate(T* data) {

@@ -37,6 +37,12 @@ static inline int convert(double w, int h, int j) {
 }
 
 void Expr::print(const int width, std::ostream& out){
+	out << '\n';
+	for(int i = 0; i<width; ++i){
+		out << '_';
+	}
+	out << '\n';
+	
     Utils::SmallQueue<QueueItem,100> queue;
     QueueItem inp = {this,0,0};
     queue.push_back(inp);
@@ -76,15 +82,23 @@ void Expr::print(const int width, std::ostream& out){
 		// fix once using the allocator.
 		delete iter;
     }
+	out << '\n';
+	for(int i = 0; i<width; ++i){
+		out << '_';
+	}
+	out << '\n';
 }
 
 static inline void bind(Token* tkn, Syntax::OpType* top){
-    if(__builtin_expect(*top == Syntax::OpType::AMBIG_TYPE, false)){
+    // std::cout << "Before\n";
+	if(__builtin_expect(*top != Syntax::OpType::AMBIG_TYPE, true)){
         return;
     }
+	// std::cout << "After\n";
     switch(tkn->type){
         case Type::LITERAL:
         case Type::ID: // ids are useless for now...
+			std::cout << "Check.\n";
             *top = Syntax::OpType::BINARY;
             break;
         case Type::OPERATOR:
@@ -100,12 +114,12 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
     }
 }
 
-static inline void construct(Utils::Vector<Expr*>& output, SubType top){
+static inline void construct(Utils::Vector<Expr*>& output, SubType top, Syntax::OpType det){
     Expr* op1; Expr* op2;
     Op* ins;
 
 	// at some point, change the 'new' to Global->alloc. Maybe pass void** as the params.
-    switch(Syntax::opType(top)){
+    switch(det){
         case Syntax::OpType::UNARY:
             op1 = output.eback();
             output.pop_back();
@@ -127,23 +141,43 @@ static inline void construct(Utils::Vector<Expr*>& output, SubType top){
     }
 }
 
+struct BoundToken {
+	Token* tkn;
+	Syntax::OpType type;
+	
+	// for the use of containers in default construction.
+	BoundToken(){
+	}
+	
+	BoundToken(Token* t){
+		tkn = t;
+		type = Syntax::OpType::AMBIG_TYPE;
+	}
+	
+	BoundToken(Token* t, Syntax::OpType ot){
+		tkn = t;
+		type = ot;
+	}
+};
+
 Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
-    Utils::SmallVector<Token*,100> stack;
+    Utils::SmallVector<BoundToken,100> stack;
     Utils::SmallVector<Expr*,200> output;
     
     for(auto tk = begin; tk!=end; ++tk) {
         switch(tk->subType){
             case SubType::OPAREN:
-                stack.push_back(tk);
+                stack.push_back(BoundToken(tk));
                 break;
             case SubType::CPAREN:
             {
                 bool parenFlg = false;
-                while(stack.size() > 0 && (stack.eback()->subType != SubType::OPAREN)){
-                    SubType th = stack.eback()->subType;
+                while(stack.size() > 0 && (stack.eback().tkn->subType != SubType::OPAREN)){
+                    SubType th = stack.eback().tkn->subType;
+					Syntax::OpType type = stack.eback().type;
                     parenFlg = true;
                     stack.pop_back();
-                    construct(output, th);
+                    construct(output, th, type);
                 }
                 // only case, if hit paren
                 if(stack.size() > 0) {
@@ -195,40 +229,41 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
             {
                 SubType me = tk->subType;
                 Syntax::OpType myType = Syntax::opType(me);
-                if(tk == begin) {
+                if(tk == begin && myType != Syntax::OpType::BINARY) {
                     myType = Syntax::OpType::UNARY;
                 } else {
                     bind(tk-1, &myType);
                 }
+				
                 bool assoc = Syntax::associate(me, myType) == Syntax::Assoc::LEFT;
                 SubType top;
                 // watch out for associative
                 while(true){
                     // just easier control flow for me
-                    if(stack.size() <= 0 || stack.eback()->type != Type::OPERATOR){
+                    if(stack.size() <= 0 || stack.eback().tkn->type != Type::OPERATOR){
                         break;
                     }
-                    top = stack.eback()->subType;
+                    top = stack.eback().tkn->subType;
                     
-                    Syntax::OpType topType = Syntax::opType(top);
+                    Syntax::OpType topType = stack.eback().type;
                     const bool c1 = Syntax::precedence(me, myType) < Syntax::precedence(top, topType);
                     const bool c2 = Syntax::precedence(me, myType) == Syntax::precedence(top, topType) && assoc;
 
                     if(c1 || c2) {
                         stack.pop_back();
-                        construct(output, top);
+                        construct(output, top, topType);
                     } else {
                         break;
                     }
                 }
-                stack.push_back(tk); 
+                stack.push_back(BoundToken(tk, myType)); 
                 break;
             }
         }
     }
     while(stack.size() > 0) {
-        SubType me = stack.eback()->subType;
-        construct(output, me);
+        SubType me = stack.eback().tkn->subType;
+        construct(output, me, stack.eback().type);
         stack.pop_back();
     }
     
