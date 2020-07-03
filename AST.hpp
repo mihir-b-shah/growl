@@ -3,6 +3,7 @@
 #define AST_H
 
 #include "Lex.h"
+#include "Parse.h"
 #include "Syntax.h"
 #include "Error.h"
 #include <iostream>

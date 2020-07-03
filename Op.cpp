@@ -177,31 +177,6 @@ int Op::printRoot(char* buf) const {
     } 
 }
 
-Parse::Expr* OpIterator::get(){
-    // kind of inefficient. bc we know this cannot change.
-    switch(handle->arity()){
-        case 1:
-            // unary operator or unary function.
-            return handle->inputs.arg;
-        case 2:
-            // binary operator or binary function.
-            return handle->inputs.twoArgs[pos];
-        default:
-            // a function for sure.
-            return handle->inputs.args[pos];
-    }
-}
-
-OpIterator* OpIterator::nextArg(){
-    ++pos;
-	//std::cout << "POS: " << pos << " ARITY: " << this->handle->arity() << '\n';
-	return this;
-}
-
-bool OpIterator::done(){
-    return pos == this->handle->arity();
-}
-
 OpIterator* Op::iterator(){
 	//std::cout << "hello. op\n";
 	return new OpIterator(this,0);
