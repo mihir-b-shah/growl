@@ -92,6 +92,9 @@ namespace Parse {
                 long long intVal;
                 long double fltVal;
             } value;
+            static inline int min(int a, int b){
+                return a<b?a:b;
+            }
         public:
             Literal(){}
             ~Literal(){}
@@ -111,9 +114,9 @@ namespace Parse {
                 switch(type){
                     case INT:
                         // print len 3.
-                        return std::snprintf(buf,4,"%lld",value.intVal);
+                        return min(std::snprintf(buf,4,"%lld",value.intVal),3);
                     case FLOAT:
-                        return std::snprintf(buf,4,"%lf",value.fltVal);
+                        return min(std::snprintf(buf,4,"%lf",value.fltVal),3);
                     default:
                         Global::specifyError("Literal of invalid type.\n");
                         throw Global::DeveloperError;

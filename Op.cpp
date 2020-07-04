@@ -169,12 +169,16 @@ int Op::arity() const {
 
 static const char* opDisplay[] = {"+","-","-u","*","*u","/","%","~",".",">","<","==","&u","&","|","^","=","<<"};
 
+static inline int min(int a, int b){
+    return a<b?a:b;
+}
+
 // prints max of 3 chars.
 int Op::printRoot(char* buf) const {    
     if(Op::intrinsic) {
-        return std::snprintf(buf,4,"%3s", opDisplay[static_cast<int>(Op::driver.intr)]);
+        return min(std::snprintf(buf,4,"%s", opDisplay[static_cast<int>(Op::driver.intr)]),3);
     } else {
-        return std::snprintf(buf,4,"%3s","FUN");
+        return min(std::snprintf(buf,4,"%s","FUN"),3);
     } 
 }
 

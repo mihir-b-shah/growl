@@ -43,7 +43,7 @@ static inline int min(int a, int b){
 }
 
 int Variable::printRoot(char* buf) const {
-    return std::snprintf(buf,1+min(3,len),"%s",name);
+    return min(std::snprintf(buf,1+min(3,len),"%s",name),3);
 }
 
 Parse::ArgIterator Variable::iterator() {
