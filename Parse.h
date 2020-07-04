@@ -8,6 +8,8 @@ namespace Parse {
     enum class SupportedType:char {_Expr, _Op, _Lit, _Var};
 
     class Expr;
+    class Loop;
+    
     class ArgIterator {
         SupportedType type;
         Expr* handle;
@@ -26,6 +28,7 @@ namespace Parse {
     };
 
     Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
+    Loop* parseLoop(Lex::Token* begin, Lex::Token* end);
 }
 
 #endif

@@ -64,7 +64,7 @@ void Expr::print(const int width, std::ostream& out){
         char buf[4] = {'\0'};
         int count = obj.bt->printRoot(buf)/2;
         int amt = convert(width, obj.height, obj.xJust);
-        for(int i = 0; i<amt-currJustif-count; ++i){
+        for(int i = 0; i<amt-currJustif; ++i){
             out << ' ';
         }
         out << buf;

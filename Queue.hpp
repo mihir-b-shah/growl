@@ -39,7 +39,7 @@ namespace Utils {
             void push_back(T val){
                 const bool heap = capacity>>FLAG_POS;
                 const bool leqc = (length&FLAG_SFT-1) >0 && _front == _back;
-                enum {STACK_PUSH, STACK_MOVE_HEAP, HEAP_PUSH, HEAP_GROW};
+                enum:char {STACK_PUSH, STACK_MOVE_HEAP, HEAP_PUSH, HEAP_GROW};
                 
                 switch((heap<<1)+leqc){
                     case STACK_MOVE_HEAP:
