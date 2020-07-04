@@ -7,13 +7,13 @@
 using Lex::SubType;
 
 namespace Syntax {
-    enum class OpType {
+    enum class OpType:char {
         AMBIG_TYPE, UNARY, BINARY
     };
 
     // garbage in garbage out. if you throw ambigious optype get ambig associativity.
     // in the case where its ambigious in first place.
-    enum class Assoc {
+    enum class Assoc:char {
         AMBIG, NONE, RIGHT, LEFT // ambigious between two...
     };
 

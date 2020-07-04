@@ -40,6 +40,7 @@ bool ArgIterator::done(){
         case SupportedType::_Op:
             return aux.pos == (static_cast<Op*>(handle))->arity();
         case SupportedType::_Lit:
+        case SupportedType::_Var:
             return true;
         default:
             Global::specifyError("Should never happen. PolyIter:done.");
@@ -53,6 +54,7 @@ void ArgIterator::next(){
             ++aux.pos;
             break;
         case SupportedType::_Lit:
+        case SupportedType::_Var:
         default:
             Global::specifyError("Should never happen. PolyIter:next.");
             throw Global::DeveloperError;
@@ -78,6 +80,7 @@ Expr* ArgIterator::get(){
             break;
         }
         case SupportedType::_Lit:
+        case SupportedType::_Var:
         default:
             Global::specifyError("Should never happen. PolyIter:get.");
             throw Global::DeveloperError;

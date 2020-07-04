@@ -50,7 +50,7 @@ namespace Parse {
     class Loop : public Control {
     };
 
-    enum class IntrOps {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
+    enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
     
     class Op : public Expr {
         friend class ArgIterator;
@@ -84,7 +84,7 @@ namespace Parse {
     class Literal : public Expr {
         friend class ArgIterator;
         private:
-            enum {
+            enum:char {
                 INT,
                 FLOAT
             } type;
@@ -124,7 +124,24 @@ namespace Parse {
             }
     };
 
-    class Var : public Expr {
+    enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
+
+    class Variable : public Expr {
+        friend class ArgIterator;
+        
+        typedef unsigned char byte;
+        
+        const char* name;
+        byte len;
+        VarType type;
+        byte ptrLvl;
+        bool _unsigned; // true if so.
+
+        public:
+            Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
+            ~Variable();
+            int printRoot(char* buf) const override;
+            Parse::ArgIterator iterator() override;
     };
 }
 

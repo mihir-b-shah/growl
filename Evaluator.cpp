@@ -94,7 +94,7 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
     // std::cout << "After\n";
     switch(tkn->type){
         case Type::LITERAL:
-        case Type::ID: // ids are useless for now...
+        case Type::ID:
             *top = Syntax::OpType::BINARY;
             break;
         case Type::OPERATOR:
@@ -205,6 +205,14 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
                 Literal* fltlit = Global::getAllocator()->allocate<Literal>(1);
                 fltlit->setFlt(tk->value.holder.fval);
                 output.push_back(fltlit);
+                break;
+            }
+            case SubType::NAME:
+            {
+                // change to Global::getAllocator. just for convenience for now.
+                // the void,0 is also convenience. a symbol table and its propagation is necessaary for typing.
+                Variable* var = new Variable(tk->pos, tk->size, SubType::VOID, 0);
+                output.push_back(var);
                 break;
             }
             case SubType::PLUS:

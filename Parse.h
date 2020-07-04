@@ -5,7 +5,7 @@
 #include "Lex.h"
 
 namespace Parse {    
-    enum class SupportedType {_Expr, _Op, _Lit};
+    enum class SupportedType:char {_Expr, _Op, _Lit, _Var};
 
     class Expr;
     class ArgIterator {

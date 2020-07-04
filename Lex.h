@@ -3,13 +3,12 @@
 #define LEX_H
 
 namespace Lex {
-    typedef unsigned char byte;
-
-    enum class Type {
+    
+    enum class Type:char {
         CONTROL, DATATYPE, GROUP, LITERAL, OPERATOR, ID
     };
 
-    enum class SubType {
+    enum class SubType:char {
         IF, ELSE, GOTO, RETURN, WHILE, SWITCH, CASE, DEFAULT, BREAK,
         UNSIGNED, INT, LONG, CHAR, FLOAT, BOOL, VOID, OPAREN, CPAREN, 
         COLON, OBRACK, CBRACK, COMMA, SEMICOLON, INT_LITERAL, FLT_LITERAL,
@@ -17,7 +16,7 @@ namespace Lex {
         EQUAL, AMP, OR, CARET, ASSN, SHIFT, NAME
     };
 
-    enum class IOF {
+    enum class IOF:char {
         UNDEFINED, PTRLVL, INT_VAL, FLOAT_VAL
     };
 
@@ -32,6 +31,8 @@ namespace Lex {
     };
 
     struct Token {
+        typedef unsigned char byte;
+
         const char* pos;
         byte size;
         Type type;
