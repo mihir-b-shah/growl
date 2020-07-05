@@ -1,14 +1,27 @@
 
+
 #include <iostream>
-#include <chrono>
+/*#include <chrono>
 #include <unordered_set>
 #include <vector>
-#include <cstdlib>
+#include <cstdlib> */
+#include "Set.hpp"
 
-using namespace std;
+//using namespace std;
+
+struct MyTraits{
+    static int emptyVal(){return 0;}
+    static int tombstoneVal(){return -1;}
+    static size_t hash(const int x){return x;}
+    static bool equal(const int x, const int y){return x==y;}
+};
 
 int main(int argc, char** argv)
 {
+    Utils::SmallSet<int,20,MyTraits> set;
+    std::cout << "hi.\n";
+    return 0;
+    /*
     for(int size = 1000; size<100000000; size*=10){
         unordered_set<int> mset;
         vector<int> inserts(size);
@@ -31,4 +44,6 @@ int main(int argc, char** argv)
             << (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/size << '\n';
     }
 	return 0;
+    */
+    
 }
