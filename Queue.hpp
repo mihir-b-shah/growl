@@ -14,6 +14,7 @@ namespace Utils {
             static const int FLAG_POS = (sizeof(size_t)*8)-1;
             static const size_t FLAG_SFT = 1ULL << FLAG_POS;
             static const size_t MAX_CAPACITY = (1ULL << FLAG_POS-1)-1;
+            enum:char {STACK_PUSH, STACK_MOVE_HEAP, HEAP_PUSH, HEAP_GROW};
         protected:
             T* start;
             size_t _front;
@@ -39,8 +40,7 @@ namespace Utils {
             void push_back(T val){
                 const bool heap = capacity>>FLAG_POS;
                 const bool leqc = (length&FLAG_SFT-1) >0 && _front == _back;
-                enum:char {STACK_PUSH, STACK_MOVE_HEAP, HEAP_PUSH, HEAP_GROW};
-                
+
                 switch((heap<<1)+leqc){
                     case STACK_MOVE_HEAP:
                     case HEAP_GROW:

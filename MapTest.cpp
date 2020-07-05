@@ -18,8 +18,27 @@ struct MyTraits{
 
 int main(int argc, char** argv)
 {
-    Utils::SmallSet<int,20,MyTraits> set;
+    Utils::SmallSet<int,3,MyTraits> set;
     std::cout << "hi.\n";
+    
+    int inserts[9] = {3,495,1,15,35,27,80,19,39};
+    for(int ins: inserts){
+        set.printSet(std::cout);
+        set.insert(ins);
+    }
+    
+    int erases[2] = {3,1};
+    for(int er: erases){
+        set.printSet(std::cout);
+        set.erase(er);
+    }
+    set.printSet(std::cout);
+    
+    int checks[9] = {3,37,495,1,949,15,39,35,20};
+    for(int check: checks){
+        std::cout << (set.find(check)!=nullptr) << '\n';
+    }
+    
     return 0;
     /*
     for(int size = 1000; size<100000000; size*=10){
