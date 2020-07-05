@@ -55,7 +55,7 @@ namespace Utils {
             ~Set(){
             }
             
-            bool fastInsert(T key, T* _table, int _capacity){
+            bool fastInsert(T key, T* _table, size_t _capacity){
                 size_t idx = Traits::hash(key)%_capacity;
                 size_t jmp = 0;
                 while(!Traits::equal(_table[idx], key) && _table[idx] != Traits::emptyVal() && _table[idx] != Traits::tombstoneVal()){
@@ -73,6 +73,12 @@ namespace Utils {
         public:
             /* generally if T is big you should store it as a pointer
             anyway, else you should pay the value copy cost. */
+            
+            void printSet(std::ostream& out){
+                for(int i = 0; i<(capacity & FLAG_SFT-1); ++i){
+                    out << front[i] << ' ';
+                } out << '\n';
+            }
             
             bool insert(T key){
                 const bool heap = capacity>>FLAG_POS;
@@ -113,12 +119,13 @@ namespace Utils {
             
             // returns nullptr if not found.
             T* find(T key){
-                size_t idx = Traits::hash(key)%capacity;
+                const size_t realCapacity = capacity & FLAG_SFT-1;
+                size_t idx = Traits::hash(key)%realCapacity;
                 size_t jmp = 0;
                 while(!Traits::equal(front[idx], key) && front[idx] != Traits::emptyVal()){
                     idx += 2*jmp+1;
                     ++jmp;
-                    idx %= capacity; // to optimize away, just getting the easy way first.
+                    idx %= realCapacity; // to optimize away, just getting the easy way first.
                 }
                 return Traits::equal(front[idx], key) ? front+idx : nullptr;
             }
@@ -131,14 +138,6 @@ namespace Utils {
 
             size_t size(){
                 return _size;
-            }
-            
-            void printSet(std::ostream& out){
-                out << "Size: " << _size << " Capacity: " << (capacity & FLAG_SFT-1) << '\n';
-                for(int i = 0; i<(capacity & FLAG_SFT-1); ++i){
-                    out << front[i] << ' ';
-                } out << '\n';
-
             }
     };
     
