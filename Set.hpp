@@ -56,12 +56,12 @@ namespace Utils {
             }
             
             bool fastInsert(T key, T* _table, size_t _capacity){
-                size_t idx = Traits::hash(key)%_capacity;
+                size_t idx = Traits::hash(key) & _capacity-1;
                 size_t jmp = 0;
                 while(!Traits::equal(_table[idx], key) && _table[idx] != Traits::emptyVal() && _table[idx] != Traits::tombstoneVal()){
                     idx += 2*jmp+1;
                     ++jmp;
-                    idx %= _capacity; // to optimize away, just getting the easy way first.
+                    idx &= _capacity-1; // to optimize away, just getting the easy way first.
                 }
                 if(__builtin_expect(Traits::equal(_table[idx], key), false)){
                     return false;
@@ -120,12 +120,12 @@ namespace Utils {
             // returns nullptr if not found.
             T* find(T key){
                 const size_t realCapacity = capacity & FLAG_SFT-1;
-                size_t idx = Traits::hash(key)%realCapacity;
+                size_t idx = Traits::hash(key) & realCapacity-1;
                 size_t jmp = 0;
                 while(!Traits::equal(front[idx], key) && front[idx] != Traits::emptyVal()){
                     idx += 2*jmp+1;
                     ++jmp;
-                    idx %= realCapacity; // to optimize away, just getting the easy way first.
+                    idx &= realCapacity-1; // to optimize away, just getting the easy way first.
                 }
                 return Traits::equal(front[idx], key) ? front+idx : nullptr;
             }
@@ -147,11 +147,20 @@ namespace Utils {
     class SmallSet : public Set<T, Traits> {
         private:
             T buffer[N] = {Traits::emptyVal()};
+            static constexpr size_t nextPow2(const size_t curr){
+                size_t s = curr;
+                --s;
+                s |= s >> 1;
+                s |= s >> 2;
+                s |= s >> 4;
+                s |= s >> 8;
+                return s+1;
+            }
         public:
-            SmallSet() : Set<T, Traits> (buffer, 0, N) {
+            SmallSet() : Set<T, Traits> (buffer, 0, nextPow2(N)) {
             }
             ~SmallSet(){
-                if(this->capacity > N){
+                if(this->capacity > nextPow2(N)){
                     delete this->front;
                 }
             }
