@@ -10,56 +10,43 @@
 
 using namespace std;
 
-long long measureMySet(int seed){
+long long measureMySet(long long size){
     long long accm = 0;
-    for(int size = 1000; size<100000000; size*=10){
-        Utils::SmallSet<int,1000> mset;
-        vector<int> inserts(size);
-        srand(seed);
+    Utils::SmallSet<int,1000> mset;
+    vector<int> inserts(size);
+    srand(302993029);
 
-        for(int i = 0; i<size; ++i){
-            inserts[i] = rand();
-            mset.insert(inserts[i]);
-        }
-        
-        cout << "Starting benchmark.\n";
-        
-        auto start = chrono::steady_clock::now();
-        for(int i = 0; i<size; ++i){
-            accm += mset.find(inserts[i]) == nullptr;
-        }
-        auto end = chrono::steady_clock::now();
-
-        cout << "Elapsed time in nanoseconds for 10 finds, size " << size << ": "
-            << (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/10) << '\n';
+    for(int i = 0; i<size; ++i){
+        inserts[i] = rand();
+        mset.insert(inserts[i]);
     }
-	return accm;
+    
+    auto start = chrono::steady_clock::now();
+    for(int i = 0; i<size; ++i){
+        accm += mset.find(inserts[i]) == nullptr;
+    }
+    auto end = chrono::steady_clock::now();
+    return (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/10);
 }
 
-long long measureStdSet(int seed){
+long long measureStdSet(long long size){
     long long accm = 0;
-    for(int size = 1000; size<100000000; size*=10){
-        std::unordered_set<int> mset;
-        vector<int> inserts(size);
-        srand(seed);
+    std::unordered_set<int> mset;
+    vector<int> inserts(size);
+    srand(302993029);
 
-        for(int i = 0; i<size; ++i){
-            inserts[i] = rand();
-            mset.insert(inserts[i]);
-        }
-
-        cout << "Starting benchmark.\n";
-        
-        auto start = chrono::steady_clock::now();
-        for(int i = 0; i<size; ++i){
-            accm += mset.find(inserts[i]) == mset.end();
-        }
-        auto end = chrono::steady_clock::now();
-
-        cout << "Elapsed time in nanoseconds for 10 finds, size " << size << ": "
-            << (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/10) << '\n';
+    for(int i = 0; i<size; ++i){
+        inserts[i] = rand();
+        mset.insert(inserts[i]);
     }
-	return accm;
+
+    auto start = chrono::steady_clock::now();
+    for(int i = 0; i<size; ++i){
+        accm += mset.find(inserts[i]) == mset.end();
+    }
+    auto end = chrono::steady_clock::now();
+
+    return (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/10);
 }
 
 int main(int argc, char** argv)
@@ -91,7 +78,11 @@ int main(int argc, char** argv)
     //std::cout << "My set: " << measureMySet(argc) << "\n\n";
     //std::cout << "Std set: " << measureStdSet(argc) << '\n';
     
-    Utils::ResultTable<80,4,3> table(NULL, NULL, NULL);
+    size_t sizes[5] = {1000,10000,100000,1000000,10000000};
+    const char* const descrs[2] = {"Std::set", "Utils::set"};
+    long long (*ptrs[2])(long long) = {measureStdSet, measureMySet};
+    
+    Utils::ResultTable<80,5,2> table(sizes, descrs, ptrs);
     table.print(cout);
     
     return 0;
