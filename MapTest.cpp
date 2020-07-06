@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include "Set.hpp"
 #include <unordered_set>
+#include "Benchmark.hpp"
 
 using namespace std;
 
@@ -87,7 +88,11 @@ int main(int argc, char** argv)
     
     return 0;
     */
-    std::cout << "My set: " << measureMySet(argc) << "\n\n";
-    std::cout << "Std set: " << measureStdSet(argc) << '\n';
+    //std::cout << "My set: " << measureMySet(argc) << "\n\n";
+    //std::cout << "Std set: " << measureStdSet(argc) << '\n';
+    
+    Utils::ResultTable<80,4,3> table(NULL, NULL, NULL);
+    table.print(cout);
+    
     return 0;
 }
