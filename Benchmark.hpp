@@ -75,12 +75,12 @@ namespace Utils {
                     char buf[1+layout.offset];
                     for(int i = 0; i<NumMeasure; ++i){
                         ExpForm notation = getNotation(sizes[i]);
-                        
+
                         _Pragma("GCC diagnostic push")
                         _Pragma("GCC diagnostic ignored \"-Wstringop-overflow=\"")
 
                         std::snprintf(buf, 1+layout.offset, " %.2fe%d ", notation.v1, notation.v2);
-                        std::strncpy(table[2+2*i], buf, std::strlen(buf)-1);
+                        std::strncpy(table[2+2*i], buf, min(std::strlen(buf)-1,layout.offset-1));
                         
                         _Pragma("GCC diagnostic pop")
                     }
@@ -106,7 +106,7 @@ namespace Utils {
                         _Pragma("GCC diagnostic ignored \"-Wstringop-overflow=\"")
 
                         std::snprintf(buf, 1+layout.width, " %llu ", benchs[ctr](sizes[m]));
-                        std::strncpy(table[2+2*m]+b+1, buf, std::strlen(buf)-1);
+                        std::strncpy(table[2+2*m]+b+1, buf, min(std::strlen(buf)-1,layout.width-1));
                         
                         _Pragma("GCC diagnostic pop")
                         ++ctr;
