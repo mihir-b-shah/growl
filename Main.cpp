@@ -6,11 +6,17 @@
 #include "AST.hpp"
 #include "Allocator.h"
 #include "Parse.h"
+#include "GroupFinder.hpp"
 
 // allocator constructed before lexing, freed when compilation ends
 Global::Alloc* allocator = nullptr;
 Global::Alloc* Global::getAllocator() {
     return allocator;
+}
+
+Parse::GroupFinder* groupFinder;
+Parse::GroupFinder* Parse::gf(){
+	return groupFinder;
 }
 
 static const int FILE_SIZE_MULTIPLIER = 10;
@@ -38,12 +44,13 @@ int main(int argc, char** argv) {
     // lex
     Lex::LexStream tokens(size/sizeof(char));
     try {
-        Lex::lex(tokens, program);
+        Lex::lex(tokens, size, program);
         tokens.persist("test.txt");
-        Parse::Expr* ast = Parse::parseExpr(tokens.begin(), tokens.end());
-        ast->print(CONSOLE_WIDTH, std::cout);
+		Parse::GroupFinder _gf(tokens.begin(), tokens.end());
+		groupFinder = &_gf;
+		Parse::parseLoop(5, tokens.begin()+5, tokens.end());
         Global::getAllocator()->deallocate<char>(program);
-        return EXIT_SUCCESS;
+		return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);

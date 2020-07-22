@@ -10,8 +10,29 @@
 
 using namespace std;
 
-long long measureMySet(long long size){
-    long long accm = 0;
+/*
+long long __attribute__ ((noinline)) measureOld(long long size){
+    volatile long long accm = 0;
+    Utils::SmallSet2<int,1000> mset;
+    vector<int> inserts(size);
+    srand(302993029);
+
+    for(int i = 0; i<size; ++i){
+        inserts[i] = rand();
+        mset.insert(inserts[i]);
+    }
+    
+    auto start = chrono::steady_clock::now();
+    for(int i = 0; i<size; ++i){
+        accm += mset.find(inserts[i]) == nullptr;
+    }
+    auto end = chrono::steady_clock::now();
+    std::cout << accm << '\n';
+    return (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/100);
+}
+
+long long __attribute__ ((noinline)) measureMySet(long long size){
+    volatile long long accm = 0;
     Utils::SmallSet<int,1000> mset;
     vector<int> inserts(size);
     srand(302993029);
@@ -26,11 +47,12 @@ long long measureMySet(long long size){
         accm += mset.find(inserts[i]) == nullptr;
     }
     auto end = chrono::steady_clock::now();
-    return (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/10);
+    std::cout << accm << '\n';
+    return (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/100);
 }
 
-long long measureStdSet(long long size){
-    long long accm = 0;
+long long __attribute__ ((noinline)) measureStdSet(long long size){
+    volatile long long accm = 0;
     std::unordered_set<int> mset;
     vector<int> inserts(size);
     srand(302993029);
@@ -45,8 +67,9 @@ long long measureStdSet(long long size){
         accm += mset.find(inserts[i]) == mset.end();
     }
     auto end = chrono::steady_clock::now();
+    std::cout << accm << '\n';
 
-    return (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/10);
+    return (chrono::duration_cast<chrono::nanoseconds>(end - start).count())/(size/100);
 }
 
 int main(int argc, char** argv)
@@ -74,16 +97,17 @@ int main(int argc, char** argv)
     }
     
     return 0;
-    */
+    
     //std::cout << "My set: " << measureMySet(argc) << "\n\n";
     //std::cout << "Std set: " << measureStdSet(argc) << '\n';
     
     size_t sizes[5] = {1000,10000,100000,1000000,10000000};
-    const char* const descrs[2] = {"Std::set", "Utils::set"};
-    long long (*ptrs[2])(long long) = {measureStdSet, measureMySet};
+    const char* const descrs[3] = {"Std::set", "Utils::set", "Utils::oldset"};
+    long long (*ptrs[3])(long long) = {measureStdSet, measureMySet, measureOld};
     
-    Utils::ResultTable<80,5,2> table(sizes, descrs, ptrs);
+    Utils::ResultTable<80,5,3> table(sizes, descrs, ptrs);
     table.print(cout);
     
     return 0;
 }
+*/

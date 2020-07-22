@@ -3,6 +3,7 @@
 #define PARSE_H
 
 #include "Lex.h"
+#include "GroupFinder.hpp"
 
 namespace Parse {    
     enum class SupportedType:char {_Expr, _Op, _Lit, _Var};
@@ -28,7 +29,8 @@ namespace Parse {
     };
 
     Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
-    Loop* parseLoop(Lex::Token* begin, Lex::Token* end);
+    Loop* parseLoop(int offset, Lex::Token* begin, Lex::Token* end);
+	GroupFinder* gf();
 }
 
 #endif

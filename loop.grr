@@ -1,0 +1,5 @@
+
+int ctr = 0;
+while(ctr < 5){
+	ctr = ctr + 1;
+}

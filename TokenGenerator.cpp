@@ -312,7 +312,7 @@ static char* const parse(Token* base, char* const data) {
                 base->subType = SubType::CHAR;
                 base->value.iof = IOF::PTRLVL;
                 base->size = 4+(base->value.holder.ptrLvl = scanPtrLvl(data+4));
-                return data+4;
+                return data+4+base->value.holder.ptrLvl;
             } else {
                 return parseWord(base, data); 
             }
@@ -345,7 +345,7 @@ static char* const parse(Token* base, char* const data) {
                 base->subType = SubType::FLOAT;
                 base->value.iof = IOF::PTRLVL;
                 base->size = 5+(base->value.holder.ptrLvl = scanPtrLvl(data+5));
-                return data+5;
+                return data+5+base->value.holder.ptrLvl;
             } else {
                 return parseWord(base, data); 
             }
@@ -374,7 +374,7 @@ static char* const parse(Token* base, char* const data) {
                 base->subType = SubType::INT;
                 base->value.iof = IOF::PTRLVL;
                 base->size = 3+(base->value.holder.ptrLvl = scanPtrLvl(data+3));
-                return data+3;
+                return data+3+base->value.holder.ptrLvl;
             } else {
                 return parseWord(base, data); 
             }
@@ -385,8 +385,8 @@ static char* const parse(Token* base, char* const data) {
                 base->subType = SubType::LONG;
                 base->value.iof = IOF::PTRLVL;
                 base->size = 4+(base->value.holder.ptrLvl = scanPtrLvl(data+4));
-                return data+4;
-            } else {
+            	return data+4+base->value.holder.ptrLvl;
+			} else {
                 return parseWord(base, data); 
             }
         case 'r':
@@ -418,7 +418,7 @@ static char* const parse(Token* base, char* const data) {
                 base->subType = SubType::VOID;
                 base->value.iof = IOF::PTRLVL;
                 base->size = 4+(base->value.holder.ptrLvl = scanPtrLvl(data+4));
-                return data+4;
+                return data+4+base->value.holder.ptrLvl;
             } else {
                 return parseWord(base, data); 
             }
@@ -438,16 +438,19 @@ static char* const parse(Token* base, char* const data) {
     }
 }
 
-void Lex::lex(LexStream& tokens, char* const program) {
+void Lex::lex(LexStream& tokens, int size, char* const program) {
     char* moving = program;
-    while(*moving != '\0') {
+    while(isspace(*moving)) {
+    	++moving;
+    }
+    while(moving-program < size) {
         Token* token = tokens.allocate();
+        moving = parse(token, moving);
         while(isspace(*moving)) {
             ++moving;
         }
         if(!isgraph(*moving)) {
             break;
         }
-        moving = parse(token, moving);
     }
 }

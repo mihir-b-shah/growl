@@ -41,7 +41,10 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
         case Global::InvalidExpression:
             std::strncpy(buffer, "Invalid expression encountered in parsing", Global::ERROR_BUFFER_SIZE);
             break;
-        default:
+		case Global::InvalidLoop:
+            std::strncpy(buffer, "Invalid loop.", Global::ERROR_BUFFER_SIZE);
+            break;
+		default:
             std::strncpy(buffer, "Unnamed exception encountered.", 
                         Global::ERROR_BUFFER_SIZE);
             break;

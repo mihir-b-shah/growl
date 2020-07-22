@@ -61,7 +61,7 @@ namespace Lex {
         "CHAR_LITERAL", "PLUS", "MINUS", "ASTK", "DIV", "MOD", "NEG", "DOT", 
         "GREATER", "LESS", "EQUAL", "AMP", "OR", "CARET", "ASSN", "SHIFT", "NAME"};
 
-    void lex(LexStream& tokens, char* const program); 
+    void lex(LexStream& tokens, int size, char* const program); 
 }
 
 #endif

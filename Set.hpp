@@ -5,7 +5,7 @@
 
 #include <cstddef>
 #include <algorithm>
-#include <iostream>
+#include "Error.h"
 
 /*
 This currently just uses a very simple quadratic-probing scheme.
@@ -46,7 +46,8 @@ namespace Utils {
             
             Set(T* st, size_t s, size_t c){
                 if(__builtin_expect(c > MAX_CAPACITY,false)){
-                    throw GenericError;
+					Global::specifyError("Too much memory req.\n");
+                	throw Global::MemoryRequestError; 
                 }
                 front = st;
                 _size = s;
@@ -58,11 +59,12 @@ namespace Utils {
             bool fastInsert(T key, T* _table, size_t _capacity){
                 size_t idx = Traits::hash(key) & _capacity-1;
                 size_t jmp = 0;
-                while(!Traits::equal(_table[idx], key) && _table[idx] != Traits::emptyVal() && _table[idx] != Traits::tombstoneVal()){
+                while(!Traits::equal(_table[idx], key) && !Traits::equal(_table[idx], Traits::emptyVal()) 
+								&& !Traits::equal(_table[idx], Traits::tombstoneVal())){
                     idx += 2*jmp+1;
                     ++jmp;
-                    idx &= _capacity-1; // to optimize away, just getting the easy way first.
-                }
+                    idx &= _capacity - 1; // to optimize away, just getting the easy way first.
+				}
                 if(__builtin_expect(Traits::equal(_table[idx], key), false)){
                     return false;
                 }
@@ -74,12 +76,6 @@ namespace Utils {
             /* generally if T is big you should store it as a pointer
             anyway, else you should pay the value copy cost. */
             
-            void printSet(std::ostream& out){
-                for(int i = 0; i<(capacity & FLAG_SFT-1); ++i){
-                    out << front[i] << ' ';
-                } out << '\n';
-            }
-            
             bool insert(T key){
                 const bool heap = capacity>>FLAG_POS;
                 const int realCapacity = capacity&FLAG_SFT-1;
@@ -90,12 +86,14 @@ namespace Utils {
                     case HEAP_GROW:
                     {
                         if(__builtin_expect(realCapacity*2 > MAX_CAPACITY,false)){
-                            throw GenericError;
+							Global::specifyError("Too much memory req.\n");
+                			throw Global::MemoryRequestError; 
                         }
                         
                         T* aux = new T[realCapacity*2]{Traits::emptyVal()};
                         for(int i = 0; i<realCapacity; ++i){
-                            if(front[i] != Traits::emptyVal() && front[i] != Traits::tombstoneVal()){
+                            if(!Traits::equal(front[i], Traits::emptyVal()) 
+											&& !Traits::equal(front[i], Traits::tombstoneVal())){
                                 // guaranteed to fit.
                                 fastInsert(front[i], aux, realCapacity*2);
                             }
@@ -122,7 +120,8 @@ namespace Utils {
                 const size_t realCapacity = capacity & FLAG_SFT-1;
                 size_t idx = Traits::hash(key) & realCapacity-1;
                 size_t jmp = 0;
-                while(!Traits::equal(front[idx], key) && front[idx] != Traits::emptyVal()){
+                while(!Traits::equal(front[idx], key) && 
+								!Traits::equal(front[idx], Traits::emptyVal())){
                     idx += 2*jmp+1;
                     ++jmp;
                     idx &= realCapacity-1; // to optimize away, just getting the easy way first.
@@ -147,20 +146,11 @@ namespace Utils {
     class SmallSet : public Set<T, Traits> {
         private:
             T buffer[N] = {Traits::emptyVal()};
-            static constexpr size_t nextPow2(const size_t curr){
-                size_t s = curr;
-                --s;
-                s |= s >> 1;
-                s |= s >> 2;
-                s |= s >> 4;
-                s |= s >> 8;
-                return s+1;
-            }
         public:
-            SmallSet() : Set<T, Traits> (buffer, 0, nextPow2(N)) {
+            SmallSet() : Set<T, Traits> (buffer, 0, N) {
             }
             ~SmallSet(){
-                if(this->capacity > nextPow2(N)){
+                if(this->capacity > N){
                     delete this->front;
                 }
             }
