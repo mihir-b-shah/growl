@@ -59,8 +59,9 @@ namespace Utils {
             bool fastInsert(T key, T* _table, size_t _capacity){
                 size_t idx = Traits::hash(key) & _capacity-1;
                 size_t jmp = 0;
-                while(!Traits::equal(_table[idx], key) && !Traits::equal(_table[idx], Traits::emptyVal()) 
-								&& !Traits::equal(_table[idx], Traits::tombstoneVal())){
+                while(!Traits::equal(_table[idx], Traits::emptyVal()) 
+								&& !Traits::equal(_table[idx], Traits::tombstoneVal()) 
+								&& !Traits::equal(_table[idx], key)){
                     idx += 2*jmp+1;
                     ++jmp;
                     idx &= _capacity - 1; // to optimize away, just getting the easy way first.
@@ -90,7 +91,7 @@ namespace Utils {
                 			throw Global::MemoryRequestError; 
                         }
                         
-                        T* aux = new T[realCapacity*2]{Traits::emptyVal()};
+                        T* aux = new T[realCapacity*2]();
                         for(int i = 0; i<realCapacity; ++i){
                             if(!Traits::equal(front[i], Traits::emptyVal()) 
 											&& !Traits::equal(front[i], Traits::tombstoneVal())){
@@ -120,8 +121,8 @@ namespace Utils {
                 const size_t realCapacity = capacity & FLAG_SFT-1;
                 size_t idx = Traits::hash(key) & realCapacity-1;
                 size_t jmp = 0;
-                while(!Traits::equal(front[idx], key) && 
-								!Traits::equal(front[idx], Traits::emptyVal())){
+                while(!Traits::equal(front[idx], Traits::emptyVal()) && 
+								!Traits::equal(front[idx], key)){
                     idx += 2*jmp+1;
                     ++jmp;
                     idx &= realCapacity-1; // to optimize away, just getting the easy way first.

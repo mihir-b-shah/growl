@@ -22,7 +22,7 @@ namespace Parse {
             void print(const int width, std::ostream& out);
     };
 
-    class Control : public AST {
+	class Control : public AST {
     };
 
     class FuncDef : public Control {
@@ -48,7 +48,30 @@ namespace Parse {
     */
 
     class Loop : public Control {
-        
+		private:
+			Expr* pred;
+			AST* exec;
+		public:
+			Loop(){
+			}
+			Loop(Expr* _pred, AST* _exec){
+				pred = _pred;
+				exec = _exec;
+			}
+			~Loop(){
+			}
+			void setPred(Expr* _pred){
+				pred = _pred;
+			}	
+			void setExec(AST* _exec){
+				exec = _exec;
+			}
+			Expr* getPred(){
+				return pred;
+			}
+			AST* getExec(){
+				return exec;
+			}
     };
 
     enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
@@ -129,7 +152,6 @@ namespace Parse {
     };
 
     enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
-
     class Variable : public Expr {
         friend class ArgIterator;
         
@@ -145,8 +167,12 @@ namespace Parse {
             Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
             ~Variable();
             int printRoot(char* buf) const override;
+			char* namePtr(){return const_cast<char*>(name);}
             Parse::ArgIterator iterator() override;
     };
+
+	extern Variable _emptyVar;
+	extern Variable _tombstoneVar;
 }
 
 #endif

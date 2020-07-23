@@ -17,6 +17,11 @@
 using namespace Parse;
 using namespace Lex;
 
+namespace Parse {
+	Variable _tombstoneVar = Variable("TOMBS_3022", 10, SubType::NAME, 0);
+	Variable _emptyVar = Variable("EMPTY_2930", 10, SubType::NAME, 0);
+}
+
 struct QueueItem {
     Expr* bt;
     int height;

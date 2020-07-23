@@ -9,6 +9,8 @@
 #include <cstddef>
 #include <iostream>
 
+// HUGE WARNING DO NOT USE THIS NAME IN ANY FILES
+// IT HAS NO NAMESPACE
 class Match {
 	private:
 		int _open;
@@ -30,7 +32,7 @@ class Match {
 
 template<>
 struct Utils::SetTraits<Match> {
-	static Match emptyVal(){return Match(-1,-1);}
+	static Match emptyVal(){return Match();}
 	static Match tombstoneVal(){return Match(-2,-2);}
 	static size_t hash(Match m){return m.open();}
 	static bool equal(Match m1, Match m2){

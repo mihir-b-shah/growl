@@ -10,6 +10,7 @@ namespace Parse {
 
     class Expr;
     class Loop;
+	class Variable;
     
     class ArgIterator {
         SupportedType type;
@@ -30,7 +31,12 @@ namespace Parse {
 
     Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
     Loop* parseLoop(int offset, Lex::Token* begin, Lex::Token* end);
+	Variable* parseDecl(Lex::Token* begin);
 	GroupFinder* gf();
+
+	class SymbolTable;
+
+	SymbolTable* st();
 }
 
 #endif
