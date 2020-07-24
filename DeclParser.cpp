@@ -31,6 +31,7 @@ Lex::Token* Parse::parseDecl(Lex::Token* begin, Parse::Variable* var, Parse::Con
 		throw Global::InvalidDeclaration;
 	}
 
+	var->debugPrint(std::cout);
 	Parse::st()->insert(var, cntrl);
 	return begin;
 }

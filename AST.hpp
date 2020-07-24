@@ -6,6 +6,7 @@
 #include "Parse.h"
 #include "Syntax.h"
 #include "Error.h"
+#include "Vector.hpp"
 #include <iostream>
 #include <cstdlib>
 
@@ -183,6 +184,20 @@ namespace Parse {
     };
 	Variable* emptyVar();
 	Variable* tombsVar();
+
+	class Sequence : public AST {
+		private:
+			Utils::SmallVector<AST*, 5> seq;
+		public:
+			Sequence(){
+			}
+			~Sequence(){
+			}
+			void push_back(AST* item){seq.push_back(item);}
+			void pop_back(){seq.pop_back();}
+			AST* operator[](size_t i){return seq.at(i);}
+			size_t size(){return seq.size();}
+	};
 }
 
 #endif

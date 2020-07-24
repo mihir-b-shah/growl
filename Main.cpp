@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <cstdlib>
+
 #include "Lex.h"
 #include "Error.h"
 #include "AST.hpp"
@@ -8,6 +9,7 @@
 #include "Parse.h"
 #include "GroupFinder.hpp"
 #include "SymbolTable.hpp"
+
 
 // allocator constructed before lexing, freed when compilation ends
 Global::Alloc* allocator = nullptr;
@@ -68,8 +70,6 @@ int main(int argc, char** argv) {
     char* program = Global::getAllocator()->allocate<char>(size+1);
 	_program = program;
 	
-	// ScopedVar::setBase(program);
-
     std::fread(program, 1, size, file);
     std::fflush(file);
     std::fclose(file);
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 		Parse::parseAST(0, tokens.begin(), tokens.end(), nullptr);
 		
 		Global::getAllocator()->deallocate<char>(program);
-		return EXIT_SUCCESS;
+//		return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
@@ -97,4 +97,29 @@ int main(int argc, char** argv) {
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }
+
+
+	const char* str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+	Variable* v1 = new Variable(str, 3, Lex::SubType::VOID, 0);
+	Variable* v2 = new Variable(str+4, 3, Lex::SubType::VOID, 0);
+	Variable* v3 = new Variable(str+8, 3, Lex::SubType::VOID, 0);
+	Variable* v4 = new Variable(str+12, 3, Lex::SubType::VOID, 0);
+	Variable* v5 = new Variable(str+16, 3, Lex::SubType::VOID, 0);
+	Variable* v6 = new Variable(str+20, 3, Lex::SubType::VOID, 0);
+
+	Parse::SymbolTable st;
+	st.insert(v1, nullptr);
+	st.insert(v2, nullptr);
+	st.insert(v3, nullptr);
+	st.insert(v4, nullptr);
+	st.insert(v5, nullptr);
+	st.insert(v6, nullptr);
+
+	st.query(3, str)->debugPrint(std::cout);
+	st.query(3, str+4)->debugPrint(std::cout);
+	st.query(3, str+8)->debugPrint(std::cout);
+	st.query(3, str+12)->debugPrint(std::cout);
+	st.query(3, str+16)->debugPrint(std::cout);
+	st.query(3, str+20)->debugPrint(std::cout);
 }
