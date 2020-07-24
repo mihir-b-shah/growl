@@ -47,7 +47,7 @@ namespace Parse {
         };
     */
 
-    class Loop : public Control {
+	class Loop : public Control {
 		private:
 			Expr* pred;
 			AST* exec;
@@ -140,7 +140,7 @@ namespace Parse {
                         // print len 3.
                         return min(std::snprintf(buf,4,"%lld",value.intVal),3);
                     case FLOAT:
-                        return min(std::snprintf(buf,4,"%lf",value.fltVal),3);
+                        return min(std::snprintf(buf,4,"%lf",static_cast<double>(value.fltVal)),3);
                     default:
                         Global::specifyError("Literal of invalid type.\n");
                         throw Global::DeveloperError;
@@ -152,6 +152,7 @@ namespace Parse {
     };
 
     enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
+	static const char* varstrs[6] = {"int", "long", "char", "float", "bool", "void"};
     class Variable : public Expr {
         friend class ArgIterator;
         
@@ -164,15 +165,24 @@ namespace Parse {
         bool _unsigned; // true if so.
 
         public:
+			Variable(){}
             Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
             ~Variable();
-            int printRoot(char* buf) const override;
+			void set(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
 			char* namePtr(){return const_cast<char*>(name);}
+            int printRoot(char* buf) const override;
             Parse::ArgIterator iterator() override;
+			void debugPrint(std::ostream& out){
+				out << "Name: ";
+				out.write(name, len);
+				out << " Len: " << static_cast<int>(len);
+				out << " VarType: " << varstrs[static_cast<int>(type)];
+			   	out << " PtrLvl: " << static_cast<int>(ptrLvl);
+				out << '\n';	
+			}
     };
-
-	extern Variable _emptyVar;
-	extern Variable _tombstoneVar;
+	Variable* emptyVar();
+	Variable* tombsVar();
 }
 
 #endif

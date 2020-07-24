@@ -3,40 +3,34 @@
 #include "Lex.h"
 #include "Error.h"
 #include "Parse.h"
+#include "SymbolTable.hpp"
+#include <iostream>
 
 // WILL CHANGE ONCE WE HAVE OBJECTS
-Parse::Variable* Parse::parseDecl(Lex::Token* begin){
-	if(__builtin_expect(begin->type != Lex::Type::DATATYPE,false)){
-		Global::specifyError("Type not provided.\n");
-		throw Global::InvalidDeclaration;
-	}		
+// guaranteed that *begin is a type.
+Lex::Token* Parse::parseDecl(Lex::Token* begin, Parse::Variable* var, Parse::Control* cntrl){
 	Lex::Token* type = begin;
 	++begin;
 	if(__builtin_expect(begin->type != Lex::Type::ID, false)){
-		Global::specifyError("Identifier not present.\n");
-		throw Global::InvalidDeclaration;
+		return nullptr;
 	}
-	int ptrLvl;
-	switch(begin->value.iof){
-		case Lex::IOF::INT_VAL:
-		case Lex::IOF::FLOAT_VAL:
-			ptrLvl = 0;
-			break;
-		case Lex::IOF::PTRLVL:
-			ptrLvl = type->value.holder.ptrLvl;
-			break;
-		default:
-			Global::specifyError("IOF has undefined value.\n");
-			throw Global::DeveloperError;
-	}
-	
-	auto var = new Parse::Variable(begin->pos, begin->size,	
-					type->subType, ptrLvl);
+	int ptrLvl = type->value.holder.ptrLvl;
+	var->set(begin->pos, begin->size, type->subType, ptrLvl);
 	++begin;
+
+	/**
+	 * 2 ways to declare stuff:
+	 *
+	 * type id;
+	 * type id(args); // right now not supported bc function calls not implemented.
+	 */
+
 	if(__builtin_expect(begin->type != Lex::Type::GROUP 
 			|| begin->subType != Lex::SubType::SEMICOLON, false)){
 		Global::specifyError("Semicolon not found\n");
 		throw Global::InvalidDeclaration;
 	}
-	return var;
+
+	Parse::st()->insert(var, cntrl);
+	return begin;
 }

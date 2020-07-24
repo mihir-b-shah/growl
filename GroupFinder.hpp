@@ -17,8 +17,8 @@ class Match {
 		int _close;
 	public:
 		Match(){
-			_open = -1;
-			_close = -1;
+			_open = -3;
+			_close = -3;
 		}
 
 		Match(int o, int c){
@@ -53,11 +53,13 @@ namespace Parse {
 				char token;
 				int pos;
 			};
+			static constexpr int _firstSemicolon = -1;
 		public:
 			GroupFinder(Lex::Token* begin, Lex::Token* end){
 				Utils::SmallVector<Tkn, 200> stack;
 				Lex::Token* ptr = begin;
 				int idx = 0;
+				int semiPast = _firstSemicolon; 
 				while(ptr != end){
 					using Lex::SubType;
 					switch(ptr->subType){
@@ -81,6 +83,10 @@ namespace Parse {
 							map.insert(Match(stack.eback().pos, idx));
 							stack.pop_back();
 							break;
+						case SubType::SEMICOLON:
+							map.insert(Match(semiPast, idx));
+							semiPast = idx;
+							break;
 						default:
 							break;		
 					}
@@ -89,9 +95,11 @@ namespace Parse {
 				}	
 			}
 			~GroupFinder(){}
+			constexpr int firstSemicolon(){return _firstSemicolon;}
+			constexpr int notFound(){return -4;}
 			int find(int offset, int match){
 				Match* mth = map.find({offset+match,0});
-				return mth == nullptr ? -1 : mth->close()-offset;
+				return mth == nullptr ? notFound() : mth->close()-offset;
 			}	
 	};
 }

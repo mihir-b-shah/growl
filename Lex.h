@@ -3,7 +3,8 @@
 #define LEX_H
 
 namespace Lex {
-    
+   
+	char* program();	
     enum class Type:char {
         CONTROL, DATATYPE, GROUP, LITERAL, OPERATOR, ID
     };

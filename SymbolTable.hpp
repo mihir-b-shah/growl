@@ -5,9 +5,10 @@
 #include "AST.hpp"
 #include "Lex.h"
 #include <cstddef>
+#include "Set.hpp"
 
-using Parse::Control;
 using Parse::Variable;
+using Parse::Control;
 
 class ScopedVar {
 	friend class Utils::SetTraits<ScopedVar>;
@@ -15,23 +16,17 @@ class ScopedVar {
 		Variable* var;
 		Control* scope;
 	public:
-		static char* base;
 		ScopedVar(){
-			var = &(Parse::_emptyVar);
+			var = Parse::emptyVar();
 			scope = nullptr;
 		}
 		ScopedVar(Variable* _var, Control* _sc){
 			var = _var;
 			scope = _sc;
 		}	
-		static inline void setBase(char* prog){
-			base = prog;
-		}
-		static inline char* getBase(){return base;}
 		Variable* getVar(){return var;}
 		Control* getScope(){return scope;}
 };
-char* ScopedVar::base = nullptr;
 
 template<>
 struct Utils::SetTraits<ScopedVar>{
@@ -39,10 +34,10 @@ struct Utils::SetTraits<ScopedVar>{
 		return ScopedVar();
 	}
 	static ScopedVar tombstoneVal(){
-		return ScopedVar(&(Parse::_tombstoneVar), nullptr);
+		return ScopedVar(Parse::tombsVar(), nullptr);
 	}
 	static size_t hash(ScopedVar v){
-		return v.var->namePtr() - ScopedVar::getBase();
+		return v.var->namePtr() - Lex::program();
 	}
 	static bool equal(ScopedVar v1, ScopedVar v2){
 		return v1.var->namePtr() == v2.var->namePtr();

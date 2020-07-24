@@ -7,7 +7,7 @@
 #include "Allocator.h"
 #include "Parse.h"
 #include "GroupFinder.hpp"
-// #include "SymbolTable.hpp"
+#include "SymbolTable.hpp"
 
 // allocator constructed before lexing, freed when compilation ends
 Global::Alloc* allocator = nullptr;
@@ -20,20 +20,38 @@ Parse::GroupFinder* Parse::gf(){
 	return groupFinder;
 }
 
-/*
 Parse::SymbolTable* symbolTable = nullptr;
 Parse::SymbolTable* Parse::st(){
 	return symbolTable;
 }
-*/
+
+char* _program = nullptr;
+char* Lex::program(){
+	return _program;
+}
+
+Parse::Variable* _emptyVar = nullptr;
+Parse::Variable* Parse::emptyVar(){
+	return _emptyVar;
+}
+
+Parse::Variable* _tombsVar = nullptr;
+Parse::Variable* Parse::tombsVar(){
+	return _tombsVar;
+}
 
 static const int FILE_SIZE_MULTIPLIER = 10;
 static const int CONSOLE_WIDTH = 100;
 
+// i just want this to be heap allocated for some reason.
+static void singletonVars(){
+	// char is a dummy here
+	_tombsVar = new Parse::Variable("TOMBS_3022", 10, Lex::SubType::CHAR, 0);
+	_emptyVar = new Parse::Variable("EMPTY_2930", 10, Lex::SubType::CHAR, 0);	
+}
+
 int main(int argc, char** argv) {
-	std::cout << "HI!\n";
 	Global::Alloc alloc(0);
-	printf("Line %d\n", __LINE__);
     allocator = &alloc;
 
     if(argc != 2) {
@@ -46,10 +64,9 @@ int main(int argc, char** argv) {
     
     std::rewind(file);
 
-	printf("Line %d\n", __LINE__);
 	// HUGE WARNING MIGHT GET OPTIMIZED AWAY
     char* program = Global::getAllocator()->allocate<char>(size+1);
-	printf("Line %d\n", __LINE__);
+	_program = program;
 	
 	// ScopedVar::setBase(program);
 
@@ -59,22 +76,16 @@ int main(int argc, char** argv) {
     program[size] = '\0';
     // lex
     Lex::LexStream tokens(size/sizeof(char));
-    try {
-		printf("Line %d\n", __LINE__);
+	try {
         Lex::lex(tokens, size, program);
-		printf("Line %d\n", __LINE__);
         tokens.persist("test.txt");
-		printf("Line %d\n", __LINE__);
 		Parse::GroupFinder _gf(tokens.begin(), tokens.end());
 		groupFinder = &_gf;
-		printf("Line %d\n", __LINE__);
-		// Parse::SymbolTable _st;
-		// symbolTable = &_st;
-		printf("Line %d\n", __LINE__);
-		// Parse::parseLoop(5, tokens.begin()+5, tokens.end());
-       
-		// Variable* var = Parse::parseDecl(tokens.begin());
-		// delete var;
+		singletonVars();
+		Parse::SymbolTable _st;
+		symbolTable = &_st;
+		
+		Parse::parseAST(0, tokens.begin(), tokens.end(), nullptr);
 		
 		Global::getAllocator()->deallocate<char>(program);
 		return EXIT_SUCCESS;

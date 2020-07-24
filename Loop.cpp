@@ -15,7 +15,7 @@ using namespace Parse;
  *
  *
  */
-Loop* Parse::parseLoop(int offset, Lex::Token* begin, Lex::Token* end){
+Lex::Token* Parse::parseLoop(int offset, Lex::Token* begin, Loop* lp){
 	
 	int idx = 0;
 	if(__builtin_expect((begin+idx)->subType != SubType::WHILE,false)){
@@ -28,9 +28,8 @@ Loop* Parse::parseLoop(int offset, Lex::Token* begin, Lex::Token* end){
 		throw Global::InvalidLoop;
 	}
 	int matchParen = gf()->find(offset,idx);
-	std::cout << matchParen << '\n'; 
 	Expr* predicate = parseExpr(begin+idx+1, begin+matchParen);
-	predicate->print(80, std::cout);
+	lp->setPred(predicate);
 
 	idx = matchParen+1;
 	if(__builtin_expect((begin+idx)->subType != SubType::OBRACK, false)){
@@ -39,12 +38,8 @@ Loop* Parse::parseLoop(int offset, Lex::Token* begin, Lex::Token* end){
 	}
 
 	int matchBrack = gf()->find(offset, idx);
-	std::cout << matchBrack << '\n';
-
-	// NOT THE CASE ALWAYS JUST FOR DEMONSTRATION.
-	std::cout << idx+1 << ' ' << matchBrack << '\n';
-	Expr* body = parseExpr(begin+idx+1, begin+matchBrack-1);
-	body->print(80, std::cout);	
-
-    return nullptr;
+	AST* inner = parseAST(offset + matchParen + 2, begin + matchParen + 2, 
+					begin + matchBrack, lp);
+	lp->setExec(inner);
+    return begin+matchBrack+1;
 }

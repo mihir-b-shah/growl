@@ -5,8 +5,8 @@
 
 using namespace Parse;
 
-Variable::Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLvl){
-    name = _name;
+void Variable::set(const char* _name, char _len, Lex::SubType _type, char _ptrLvl){
+	name = _name;
     len = _len;
     switch(_type){
         case Lex::SubType::INT:
@@ -32,7 +32,12 @@ Variable::Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLv
             throw Global::DeveloperError; // should never occur.
     }
     ptrLvl = _ptrLvl;
-    _unsigned = false; // RIGHT NOW, IGNORE UNSIGNED VALUES. WILL INCORPORATE THEM LATER.
+    _unsigned = false; 
+	// RIGHT NOW, IGNORE UNSIGNED VALUES. WILL INCORPORATE THEM LATER.
+}
+
+Variable::Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLvl){
+	set(_name, _len, _type, _ptrLvl);
 }
 
 Variable::~Variable(){

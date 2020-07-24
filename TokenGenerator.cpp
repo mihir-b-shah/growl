@@ -42,6 +42,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             Global::specifyError("Line 40");
             throw Global::InvalidLiteral;
         }
+		base->size = ct;
         base->value.iof = IOF::UNDEFINED;
         base->type = Type::ID;
         base->subType = SubType::NAME;
@@ -56,7 +57,8 @@ static inline char* const parseWord(Token* base, char* const data) {
             Global::specifyError("Line 51");
             throw Global::InvalidLiteral;
         } else if(data[ct] == '.') {
-            // use a float 
+            // use a float
+			// might have bugs... 
             ++ct;
             char* dotPtr = data+ct;
             while(ct < 255 && std::isdigit(data[ct])) {
@@ -89,12 +91,13 @@ static inline char* const parseWord(Token* base, char* const data) {
             // use an int, num ranges from [data, data+ct).
             char* readPtr = data;
             long long res = 0;
-            char* ret = readPtr+1;
+            char* ret = data+ct;
             while(readPtr != ret) {
                 res *= 10;
                 res += *readPtr-'0';
                 ++readPtr;
             }
+			base->size = ct;
             base->type = Type::LITERAL;
             base->subType = SubType::INT_LITERAL;
             base->value.iof = IOF::INT_VAL;
