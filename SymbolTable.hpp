@@ -5,11 +5,93 @@
 #include "AST.hpp"
 #include "Lex.h"
 #include <cstddef>
-#include "Set.hpp"
+#include <unordered_map>
 
 using Parse::Variable;
 using Parse::Control;
 
+namespace Parse {
+
+	typedef unsigned char byte;
+	class String {
+		friend class _StringHash;
+		private:
+			const char* ptr;
+			byte len;	
+		public:
+			String(const char* _ptr, byte _len){
+				ptr = _ptr;
+				len = _len;
+			}
+			// gcc will optimize this to a bitshift.
+			static std::size_t hash(const String& str){
+				// according to Java's default string hash.
+				std::size_t _hash = 7;
+				char* iter = const_cast<char*>(str.ptr);
+				for(int i = 0; i<str.len; ++i){
+					_hash = _hash*31 + *iter;
+					++iter;
+				}
+				return _hash; 
+			}
+
+			bool operator== (const String& val){
+				return val.ptr == ptr && val.len == len; 
+			}	
+	};
+
+	struct _StringHash {
+		std::size_t hash(const String& str) const {
+			// according to Java's default string hash.
+			std::size_t _hash = 7;
+			char* iter = const_cast<char*>(str.ptr);
+			for(int i = 0; i<str.len; ++i){
+				_hash = _hash*31 + *iter;
+				++iter;
+			}
+			return _hash; 
+		}
+	};
+
+	class ControlPtr {
+		friend class _ControlHash;
+		private:
+			Control* cntrl;
+		public:
+			ControlPtr(Control* c){
+				cntrl = c;
+			}
+			bool operator== (const ControlPtr& _ptr){
+				return _ptr.cntrl == cntrl;
+			}
+	};
+
+	struct _ControlHash {
+		std::size_t hash(ControlPtr& cntr) const {
+			return cntr.cntrl->getBracket() - Lex::program();
+		}
+	};
+
+	// simplest design
+	class SymbolTable {
+		private:
+			std::unordered_map<String, 
+					std::unordered_map<ControlPtr, Variable*, _ControlHash>, _StringHash> map;
+		public:
+			SymbolTable(){
+			}
+			~SymbolTable(){
+			}
+			Variable* query(const char* str, byte len, Control* cntrl){
+				return map.find(String(str, len))->second.find(ControlPtr(cntrl))->second;
+			}
+			void insert(Variable* var, Control* cntrl){
+				map.find(String(var->namePtr(), var->getLen()))->second.insert({ControlPtr(cntrl), var});
+			}
+	};
+}
+
+/*
 class ScopedVar {
 	friend class Utils::SetTraits<ScopedVar>;
 	private:
@@ -45,7 +127,6 @@ struct Utils::SetTraits<ScopedVar>{
 };
 
 namespace Parse {
-	/**
 	 * Solving the duplicate variable problem efficiently
 	 *
 	 * The char* pointer WORKS except: when i want to query, how do i find this?
@@ -76,10 +157,11 @@ namespace Parse {
 	 *      int hash;
 	 * }
 	 *
-	 */
+	 *
 	class SymbolTable {
 		private:
 			Utils::SmallSet<ScopedVar, 200, Utils::SetTraits<ScopedVar>> table;	
+			Utils::SmallVector<char*, 1000> lookup;
 		public:
 			// doing multiple passes over the file isn't ideal but its probably fine here.
 			SymbolTable(){
@@ -106,5 +188,5 @@ namespace Parse {
 			}
 	};
 }
-
+*/
 #endif

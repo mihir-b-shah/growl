@@ -24,7 +24,23 @@ namespace Parse {
     };
 
 	class Control : public AST {
-    };
+		private:
+			char* openBrace;
+    	protected:
+			Control(char* ob){
+				openBrace = ob;
+			}
+		public:
+			Control(){
+				openBrace = Lex::program()-1;
+			}
+			void setBracket(char* ob){
+				openBrace = ob;
+			}
+			char* getBracket(){
+				return openBrace;
+			}
+	};
 
     class FuncDef : public Control {
         private:
@@ -53,13 +69,16 @@ namespace Parse {
 			Expr* pred;
 			AST* exec;
 		public:
-			Loop(){
+			Loop() : Control(nullptr) {
 			}
-			Loop(Expr* _pred, AST* _exec){
+			Loop(char* ob, Expr* _pred, AST* _exec) : Control(ob) {
 				pred = _pred;
 				exec = _exec;
 			}
 			~Loop(){
+			}
+			void setBracket(char* ob){
+				
 			}
 			void setPred(Expr* _pred){
 				pred = _pred;
@@ -171,6 +190,7 @@ namespace Parse {
             ~Variable();
 			void set(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
 			char* namePtr(){return const_cast<char*>(name);}
+			byte getLen(){return len;}
             int printRoot(char* buf) const override;
             Parse::ArgIterator iterator() override;
 			void debugPrint(std::ostream& out){

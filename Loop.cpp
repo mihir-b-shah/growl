@@ -30,6 +30,7 @@ Lex::Token* Parse::parseLoop(int offset, Lex::Token* begin, Loop* lp){
 	int matchParen = gf()->find(offset,idx);
 	Expr* predicate = parseExpr(begin+idx+1, begin+matchParen);
 	lp->setPred(predicate);
+	lp->setBracket(offset+const_cast<char*>(begin->pos));
 
 	idx = matchParen+1;
 	if(__builtin_expect((begin+idx)->subType != SubType::OBRACK, false)){
