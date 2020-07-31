@@ -32,6 +32,8 @@ Lex::Token* Parse::parseDecl(Lex::Token* begin, Parse::Variable* var, Parse::Con
 	}
 
 	var->debugPrint(std::cout);
-	Parse::st()->insert(var, cntrl);
+
+	/** WILL NEED TO CHANGE, THIS IS FOR DEBUGGING PURPOSE. */
+	Parse::st()->insert(var, Parse::globScope());
 	return begin;
 }

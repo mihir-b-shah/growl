@@ -42,6 +42,11 @@ Parse::Variable* Parse::tombsVar(){
 	return _tombsVar;
 }
 
+Control _globScope;
+Control* Parse::globScope(){
+	return &_globScope;
+}
+
 static const int FILE_SIZE_MULTIPLIER = 10;
 static const int CONSOLE_WIDTH = 100;
 
@@ -97,29 +102,4 @@ int main(int argc, char** argv) {
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }
-
-
-	const char* str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-	Variable* v1 = new Variable(str, 3, Lex::SubType::VOID, 0);
-	Variable* v2 = new Variable(str+4, 3, Lex::SubType::VOID, 0);
-	Variable* v3 = new Variable(str+8, 3, Lex::SubType::VOID, 0);
-	Variable* v4 = new Variable(str+12, 3, Lex::SubType::VOID, 0);
-	Variable* v5 = new Variable(str+16, 3, Lex::SubType::VOID, 0);
-	Variable* v6 = new Variable(str+20, 3, Lex::SubType::VOID, 0);
-
-	Parse::SymbolTable st;
-	st.insert(v1, nullptr);
-	st.insert(v2, nullptr);
-	st.insert(v3, nullptr);
-	st.insert(v4, nullptr);
-	st.insert(v5, nullptr);
-	st.insert(v6, nullptr);
-
-	st.query(3, str)->debugPrint(std::cout);
-	st.query(3, str+4)->debugPrint(std::cout);
-	st.query(3, str+8)->debugPrint(std::cout);
-	st.query(3, str+12)->debugPrint(std::cout);
-	st.query(3, str+16)->debugPrint(std::cout);
-	st.query(3, str+20)->debugPrint(std::cout);
 }

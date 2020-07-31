@@ -4,89 +4,112 @@
 
 #include "AST.hpp"
 #include "Lex.h"
+#include "Error.h"
 #include <cstddef>
 #include <unordered_map>
 
 using Parse::Variable;
 using Parse::Control;
 
-namespace Parse {
+typedef unsigned char byte;
 
-	typedef unsigned char byte;
-	class String {
-		friend class _StringHash;
-		private:
-			const char* ptr;
-			byte len;	
-		public:
-			String(const char* _ptr, byte _len){
-				ptr = _ptr;
-				len = _len;
-			}
-			// gcc will optimize this to a bitshift.
-			static std::size_t hash(const String& str){
-				// according to Java's default string hash.
-				std::size_t _hash = 7;
-				char* iter = const_cast<char*>(str.ptr);
-				for(int i = 0; i<str.len; ++i){
-					_hash = _hash*31 + *iter;
-					++iter;
+class String {
+	private:
+		const char* ptr;
+		byte len;	
+	public:
+		String(const char* _ptr, byte _len){
+			ptr = _ptr;
+			len = _len;
+		}
+		const char* getPtr() const {return ptr;}
+		const byte getLen() const {return len;}
+		bool operator== (const String& val) const {
+			if(val.len != len) return false;
+			for(int i = 0; i<len; ++i){
+				if(ptr[i] != val.ptr[i]) {
+					return false; 
 				}
-				return _hash; 
 			}
+			return true;
+		}
+		void print(std::ostream& out) const{
+			out.write(ptr, len);
+		}	
+};
 
-			bool operator== (const String& val){
-				return val.ptr == ptr && val.len == len; 
-			}	
-	};
-
-	struct _StringHash {
-		std::size_t hash(const String& str) const {
+namespace std {
+	template<>
+	struct hash<String> {
+		size_t operator()(const String& str) const {
 			// according to Java's default string hash.
-			std::size_t _hash = 7;
-			char* iter = const_cast<char*>(str.ptr);
-			for(int i = 0; i<str.len; ++i){
+			size_t _hash = 7;
+			char* iter = const_cast<char*>(str.getPtr());
+			for(int i = 0; i<str.getLen(); ++i){
 				_hash = _hash*31 + *iter;
 				++iter;
 			}
 			return _hash; 
 		}
 	};
+}
 
-	class ControlPtr {
-		friend class _ControlHash;
-		private:
-			Control* cntrl;
-		public:
-			ControlPtr(Control* c){
-				cntrl = c;
-			}
-			bool operator== (const ControlPtr& _ptr){
-				return _ptr.cntrl == cntrl;
-			}
-	};
+class ControlPtr {
+	private:
+		Control* cntrl;
+	public:
+		ControlPtr(Control* c){
+			cntrl = c;
+		}
+		const char* getBrack() const {return cntrl->getBracket();}
+		bool operator== (const ControlPtr& _ptr) const {
+			return _ptr.cntrl == cntrl;
+		}
+};
 
-	struct _ControlHash {
-		std::size_t hash(ControlPtr& cntr) const {
-			return cntr.cntrl->getBracket() - Lex::program();
+namespace std {
+	template<>
+	struct hash<ControlPtr> {
+		size_t operator()(const ControlPtr& cntr) const {
+			return cntr.getBrack() - Lex::program();
 		}
 	};
+}
 
+namespace Parse {
 	// simplest design
 	class SymbolTable {
 		private:
 			std::unordered_map<String, 
-					std::unordered_map<ControlPtr, Variable*, _ControlHash>, _StringHash> map;
+					std::unordered_map<ControlPtr, Variable*>> map;
 		public:
 			SymbolTable(){
 			}
 			~SymbolTable(){
 			}
+			void debugPrint(std::ostream& out){
+				out << "Debug print:\n";
+				for(auto outer = map.begin(); outer!=map.end(); ++outer){
+					outer->first.print(out);
+				}
+				out << "___________________________________________\n";
+			}
 			Variable* query(const char* str, byte len, Control* cntrl){
-				return map.find(String(str, len))->second.find(ControlPtr(cntrl))->second;
+				auto found = map.find(String(str, len));
+				if(found == map.end()){
+					Global::specifyError("In query, String not found.\n");
+					throw Global::DeveloperError;
+				} else {
+					return found->second.find(ControlPtr(cntrl))->second;
+				}
 			}
 			void insert(Variable* var, Control* cntrl){
-				map.find(String(var->namePtr(), var->getLen()))->second.insert({ControlPtr(cntrl), var});
+				String str(var->namePtr(), var->getLen());	
+				auto found = map.find(str);
+				if(found == map.end()){
+					map.insert({str, std::unordered_map<ControlPtr, Variable*>()});
+				}
+				map.at(str).insert({ControlPtr(cntrl), var});
 			}
 	};
 }

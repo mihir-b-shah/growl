@@ -40,7 +40,7 @@ namespace Parse {
 
 	class SymbolTable;
 	SymbolTable* st();
-
+	
 }
 
 #endif

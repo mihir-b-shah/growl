@@ -213,8 +213,7 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
                 // change to Global::getAllocator. just for convenience for now.
                 // the void,0 is also convenience. a symbol table and its propagation is necessaary for typing.
 				
-				Control cntrl;
-                Variable* var = Parse::st()->query(tk->pos, tk->size, &cntrl);
+                Variable* var = Parse::st()->query(tk->pos, tk->size, Parse::globScope());
 				// Variable* var = new Variable(tk->pos, tk->size, SubType::VOID, 0);
                 output.push_back(var);
                 break;

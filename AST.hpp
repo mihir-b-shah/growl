@@ -41,6 +41,8 @@ namespace Parse {
 				return openBrace;
 			}
 	};
+	Control* globScope();
+
 
     class FuncDef : public Control {
         private:
