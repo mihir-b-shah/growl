@@ -90,8 +90,14 @@ int main(int argc, char** argv) {
 		Parse::SymbolTable _st;
 		symbolTable = &_st;
 		
-		Parse::parseAST(0, tokens.begin(), tokens.end(), nullptr);
-		
+		Parse::parseAST(0, tokens.begin(), tokens.end(), 
+						Parse::globScope());
+
+		Utils::Vector<Parse::AST*>& list = Parse::globScope()->getList();
+		for(auto iter = list.begin(); iter!=list.end(); ++iter){
+			(*iter)->debugPrint(std::cout);
+		}
+
 		Global::getAllocator()->deallocate<char>(program);
 //		return EXIT_SUCCESS;
     } catch (int exc) {

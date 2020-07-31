@@ -13,11 +13,11 @@ static inline void unsupported(){
 	throw Global::DeveloperError;
 }
 
-static AST* parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl){
+static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl){
 	using Lex::SubType;
 	using Lex::Type;
 
-	if(begin >= end) return nullptr;
+	if(begin >= end) return;
 
 	switch(begin->type){
 		case Type::DATATYPE:
@@ -31,7 +31,9 @@ static AST* parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
 				// Specifically, this is bc constructors dont exist now.
 				unsupported();
 			}
-			return parse(offset + (ret-begin), ret, end, cntrl);
+			cntrl->seqAdd(var);
+			parse(offset + (ret-begin), ret, end, cntrl);
+			break;
 		}
 		case Type::OPERATOR:
 			if(Syntax::opType(begin->subType) == Syntax::OpType::BINARY){
@@ -52,8 +54,9 @@ static AST* parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
 			}
 			Expr* expr = parseExpr(begin, runner);
 			expr->print(80, std::cout);
-			AST* next = parse(offset + (runner-begin) + 1, runner + 1, end, cntrl);	
-			return joinAST(expr, next);
+			cntrl->seqAdd(expr);
+			parse(offset + (runner-begin) + 1, runner + 1, end, cntrl);	
+			break;
 		}
 		case Type::CONTROL:
 		{
@@ -62,8 +65,9 @@ static AST* parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
 			}
 			Loop* loop = new Loop();
 			Lex::Token* next = parseLoop(offset, begin, loop); 
-			AST* rest = parse(offset + (next - begin), next, end, cntrl);
-			return joinAST(loop, rest); 
+			cntrl->seqAdd(loop);
+			parse(offset + (next - begin), next, end, cntrl);
+			break;
 		}
 		case Type::GROUP:
 			if(__builtin_expect(begin->subType != SubType::CBRACK, false)){
@@ -71,10 +75,9 @@ static AST* parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
 			}
 			break;
 	}
-	return nullptr;
 }
 
 /** Stack overflow warning */
-AST* Parse::parseAST(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl){
-	return parse(offset, begin, end, cntrl);
+void Parse::parseAST(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl){
+	parse(offset, begin, end, cntrl);
 }

@@ -6,13 +6,15 @@
 #include "Parse.h"
 #include "Syntax.h"
 #include "Error.h"
-#include "Vector.hpp"
 #include <iostream>
 #include <cstdlib>
+#include "Vector.hpp"
 
 namespace Parse {
     
     class AST {
+		public:
+			virtual void debugPrint(std::ostream& out) = 0;
     };
 
     class Expr : public AST {
@@ -20,12 +22,16 @@ namespace Parse {
         public:
             virtual int printRoot(char* buf) const = 0;
             virtual ArgIterator iterator() = 0;
-            void print(const int width, std::ostream& out);
+			void print(const int width, std::ostream& out);
+			void debugPrint(std::ostream& out){
+				print(80, out);
+			}
     };
 
 	class Control : public AST {
 		private:
 			char* openBrace;
+			Utils::SmallVector<AST*,5> seq;
     	protected:
 			Control(char* ob){
 				openBrace = ob;
@@ -39,6 +45,16 @@ namespace Parse {
 			}
 			char* getBracket(){
 				return openBrace;
+			}
+			unsigned int seqSize(){return seq.size();}
+			void seqAdd(AST* a){
+				seq.push_back(a);
+			}
+			Utils::Vector<AST*>& getList(){
+				return seq;
+			}
+			virtual void debugPrint(std::ostream& out){
+				out << "Control\n";
 			}
 	};
 	Control* globScope();
@@ -69,13 +85,11 @@ namespace Parse {
 	class Loop : public Control {
 		private:
 			Expr* pred;
-			AST* exec;
 		public:
 			Loop() : Control(nullptr) {
 			}
-			Loop(char* ob, Expr* _pred, AST* _exec) : Control(ob) {
+			Loop(char* ob, Expr* _pred) : Control(ob) {
 				pred = _pred;
-				exec = _exec;
 			}
 			~Loop(){
 			}
@@ -85,14 +99,11 @@ namespace Parse {
 			void setPred(Expr* _pred){
 				pred = _pred;
 			}	
-			void setExec(AST* _exec){
-				exec = _exec;
-			}
 			Expr* getPred(){
 				return pred;
 			}
-			AST* getExec(){
-				return exec;
+			void debugPrint(std::ostream& out){
+				out << "Loop\n";
 			}
     };
 
@@ -125,6 +136,11 @@ namespace Parse {
             int arity() const;
             int printRoot(char* buf) const;
             ArgIterator iterator();
+			void debugPrint(std::ostream& out){
+				char buf[5] = {'\0'};
+				printRoot(buf);
+				out << buf << '\n';
+			}
     };
 
     class Literal : public Expr {
@@ -171,6 +187,11 @@ namespace Parse {
             Parse::ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Lit, this, 0);
             }
+			void debugPrint(std::ostream& out){
+				char buf[5] = {'\0'};
+				printRoot(buf);
+				out << buf << '\n';
+			}
     };
 
     enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
@@ -195,7 +216,7 @@ namespace Parse {
 			byte getLen(){return len;}
             int printRoot(char* buf) const override;
             Parse::ArgIterator iterator() override;
-			void debugPrint(std::ostream& out){
+			void debugPrint(std::ostream& out) override {
 				out << "Name: ";
 				out.write(name, len);
 				out << " Len: " << static_cast<int>(len);
@@ -206,20 +227,6 @@ namespace Parse {
     };
 	Variable* emptyVar();
 	Variable* tombsVar();
-
-	class Sequence : public AST {
-		private:
-			Utils::SmallVector<AST*, 5> seq;
-		public:
-			Sequence(){
-			}
-			~Sequence(){
-			}
-			void push_back(AST* item){seq.push_back(item);}
-			void pop_back(){seq.pop_back();}
-			AST* operator[](size_t i){return seq.at(i);}
-			size_t size(){return seq.size();}
-	};
 }
 
 #endif

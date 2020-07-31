@@ -39,8 +39,7 @@ Lex::Token* Parse::parseLoop(int offset, Lex::Token* begin, Loop* lp){
 	}
 
 	int matchBrack = gf()->find(offset, idx);
-	AST* inner = parseAST(offset + matchParen + 2, begin + matchParen + 2, 
+	parseAST(offset + matchParen + 2, begin + matchParen + 2, 
 					begin + matchBrack, lp);
-	lp->setExec(inner);
     return begin+matchBrack+1;
 }

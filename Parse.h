@@ -31,8 +31,7 @@ namespace Parse {
             Expr* get();
     };
 
-	AST* parseAST(int offset, Lex::Token* begin, Lex::Token* end, Control* within);
-	AST* joinAST(AST* one, AST* two);
+	void parseAST(int offset, Lex::Token* begin, Lex::Token* end, Control* within);
     Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
 	Lex::Token* parseLoop(int offset, Lex::Token* begin, Loop* lp);
 	Lex::Token* parseDecl(Lex::Token* begin, Variable* v, Control* within);
