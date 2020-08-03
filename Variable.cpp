@@ -52,5 +52,5 @@ int Variable::printRoot(char* buf) const {
 }
 
 Parse::ArgIterator Variable::iterator() {
-    return ArgIterator(SupportedType::_Var, this, 0);
+    return ArgIterator(SupportedType::_Var, this);
 }

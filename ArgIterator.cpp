@@ -6,6 +6,10 @@
 /*
 Implements a polymorphic iterator.
 Gets around the annoying features for C++ covariance/ avoids heap alloc.
+
+This is very useful for traversing nodes with variable length
+features.
+
 */
 
 using namespace Parse;
@@ -33,27 +37,22 @@ class ArgIterator {
 	_Seq: traverse the sequence
 */
 
-ArgIterator::ArgIterator(SupportedType mType, AST* mHandle, void* pObj){
+ArgIterator::ArgIterator(SupportedType mType, AST* mHandle){
     type = mType;
     handle = mHandle;
-    aux.obj = pObj;
-}
-
-ArgIterator::ArgIterator(SupportedType mType, AST* mHandle, int mPos){
-    type = mType;
-    handle = mHandle;
-    aux.pos = mPos;
+	pos = 0;
 }
 
 bool ArgIterator::done(){
     switch(type){
         case SupportedType::_Op:
-            return aux.pos == (static_cast<Op*>(handle))->arity();
+            return pos == (static_cast<Op*>(handle))->arity();
 		case SupportedType::_Seq:
-			return aux.pos == (static_cast<Sequence*>(handle))->size();
+			return pos == (static_cast<Sequence*>(handle))->size();
+		case SupportedType::_Br:
+			return static_cast<Branch*>(handle)->next == nullptr;
         case SupportedType::_Lit:
         case SupportedType::_Var:
-		case SupportedType::_Br:
 		case SupportedType::_Decl:
 		case SupportedType::_Lp:
 			return true;
@@ -69,23 +68,19 @@ bool ArgIterator::done(){
 void ArgIterator::next(){
     switch(type){
         case SupportedType::_Op:
-            ++aux.pos;
+		case SupportedType::_Seq:
+            ++pos;
             break;
-        case SupportedType::_Lit:
-        case SupportedType::_Var:
-            Global::specifyError("Should never happen. PolyIter:next.");
-            throw Global::DeveloperError;
-		case SupportedType::_Br:
-			return;
 		case SupportedType::_Ctl:
             Global::specifyError("Global scope is being traversed. ArgIterator.");
             throw Global::DeveloperError;
-		case SupportedType::_Decl:
-			return;
-		case SupportedType::_Seq:
+		case SupportedType::_Br:
+			handle = static_cast<Branch*>(handle)->next;
 			break;
+        case SupportedType::_Lit:
+        case SupportedType::_Var:
+		case SupportedType::_Decl:
 		case SupportedType::_Lp:
-			return;
         default:
             Global::specifyError("Should never happen. PolyIter:next.");
             throw Global::DeveloperError;
@@ -97,22 +92,32 @@ AST* ArgIterator::get(){
         case SupportedType::_Op:
         {
             Op* _op = static_cast<Op*>(handle);
-            switch(_op->arity()){
+			switch(_op->arity()){
                 case 1:
                     // unary operator or unary function.
                     return _op->inputs.arg;
                 case 2:
                     // binary operator or binary function.
-                    return _op->inputs.twoArgs[aux.pos];
+                    return _op->inputs.twoArgs[pos];
                 default:
                     // a function for sure.
-                    return _op->inputs.args[aux.pos];
+                    return _op->inputs.args[pos];
             }
             break;
-        }
-        case SupportedType::_Lit:
+		}
+		case SupportedType::_Seq:
+		{
+			Sequence* _seq = static_cast<Sequence*>(handle);
+			return _seq->at(pos);
+		}
+		case SupportedType::_Br:
+        	return handle;
+		case SupportedType::_Lit:
         case SupportedType::_Var:
-        default:
+		case SupportedType::_Decl:
+		case SupportedType::_Lp:
+		case SupportedType::_Ctl:
+		default:
             Global::specifyError("Should never happen. PolyIter:get.");
             throw Global::DeveloperError;
     }

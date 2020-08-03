@@ -18,15 +18,10 @@ namespace Parse {
     class ArgIterator {
         SupportedType type;
         AST* handle;
-        
-        union {
-            int pos;
-            void* obj;
-        } aux;
+		int pos;
         
         public:
-            ArgIterator(SupportedType mType, AST* mHandle, void* pObj);
-            ArgIterator(SupportedType mType, AST* mHandle, int pos);
+            ArgIterator(SupportedType mType, AST* mHandle);
             bool done();
             void next();
             AST* get();
@@ -35,7 +30,9 @@ namespace Parse {
 	void parseAST(int offset, Lex::Token* begin, Lex::Token* end, Control* within);
     Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
 	Lex::Token* parseLoop(int offset, Lex::Token* begin, Loop* lp);
+
 	Lex::Token* parseBranch(int offset, Lex::Token* begin, Branch* br);
+
 	Lex::Token* parseDecl(Lex::Token* begin, Variable* v, Control* within);
 	GroupFinder* gf();
 

@@ -9,23 +9,27 @@
 #include <iostream>
 #include <cstdlib>
 #include "Vector.hpp"
+#include "CodeGen.h"
 
 namespace Parse {
-    
+   
+	class IInstr;	
     class AST {
 		public:
 			virtual void debugPrint(std::ostream& out) = 0;
+            virtual ArgIterator iterator() = 0;
+			virtual void codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
     };
 
     class Expr : public AST {
         friend class ArgIterator;
         public:
             virtual int printRoot(char* buf) const = 0;
-            virtual ArgIterator iterator() = 0;
 			void print(const int width, std::ostream& out);
 			virtual void debugPrint(std::ostream& out){
 				out << "Expr\n";
 			}
+			virtual void codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
     };
 
 	class Sequence : public AST {
@@ -63,6 +67,10 @@ namespace Parse {
 			void debugPrint(std::ostream& out){
 				out << "sequence\n";
 			}
+			ArgIterator iterator(){
+				return ArgIterator(SupportedType::_Seq, this);
+			}
+			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
 	};
 
 	class Control : public AST {
@@ -95,6 +103,13 @@ namespace Parse {
 			virtual void debugPrint(std::ostream& out){
 				out << "Control\n";
 			}
+			virtual ArgIterator iterator(){
+				return ArgIterator(SupportedType::_Ctl, this);
+			}
+			virtual void codeGen(Utils::Vector<CodeGen::IInstr>& vect){
+				Global::specifyError("Code gen on Control* not sup.\n");
+				throw Global::DeveloperError;
+			}
 	};
 	Control* globScope();
 
@@ -109,8 +124,12 @@ namespace Parse {
     };
 
     class Branch : public Control {
+		friend class ArgIterator;
 		private:
-			Expr* pred;
+			// essentially a link list of branches. last one 
+			// guaranteed to have a null predicate pointer.
+			Expr* pred = nullptr;
+			Branch* next = nullptr;
 		public:
 			Branch() : Control(nullptr){
 			}
@@ -119,8 +138,9 @@ namespace Parse {
 			}
 			~Branch(){
 			}
-			void setBracket(char* ob){
-				
+			Branch* addBranch(){
+				next = new Branch();
+				return next;
 			}
 			void setPred(Expr* _pred){
 				pred = _pred;
@@ -131,6 +151,10 @@ namespace Parse {
 			void debugPrint(std::ostream& out){
 				out << "Branch\n";
 			}
+			ArgIterator iterator(){
+				return ArgIterator(SupportedType::_Br, this);
+			}
+			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     /*
@@ -165,6 +189,10 @@ namespace Parse {
 			void debugPrint(std::ostream& out){
 				out << "Loop\n";
 			}
+			ArgIterator iterator(){
+				return ArgIterator(SupportedType::_Lp, this);
+			}
+			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
@@ -201,6 +229,7 @@ namespace Parse {
 				printRoot(buf);
 				out << buf << '\n';
 			}
+			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     class Literal : public Expr {
@@ -232,7 +261,7 @@ namespace Parse {
                 type = FLOAT;
                 value.fltVal = v;
             }
-            int printRoot(char* buf) const {
+            int printRoot(char* buf) const override {
                 switch(type){
                     case INT:
                         // print len 3.
@@ -244,14 +273,15 @@ namespace Parse {
                         throw Global::DeveloperError;
                 }
             }
-            Parse::ArgIterator iterator(){
-                return ArgIterator(SupportedType::_Lit, this, 0);
+            Parse::ArgIterator iterator() override {
+                return ArgIterator(SupportedType::_Lit, this);
             }
-			void debugPrint(std::ostream& out){
+			void debugPrint(std::ostream& out) override {
 				char buf[5] = {'\0'};
 				printRoot(buf);
 				out << buf << '\n';
 			}
+			void codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
     };
 
     enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
@@ -284,6 +314,7 @@ namespace Parse {
 			   	out << " PtrLvl: " << static_cast<int>(ptrLvl);
 				out << '\n';	
 			}
+			void codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
     };
 	Variable* emptyVar();
 	Variable* tombsVar();
@@ -308,6 +339,10 @@ namespace Parse {
 			void debugPrint(std::ostream& out){
 				var->debugPrint(out);
 			}
+			Parse::ArgIterator iterator() override {
+				return ArgIterator(SupportedType::_Decl, this);
+			}
+			void codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
 	};
 }
 

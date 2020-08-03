@@ -78,7 +78,8 @@ Op::Op(SubType op, Expr* e1){
 Op::Op(SubType op, Expr* e1, Expr* e2){
     Op::inputs.twoArgs[0] = e1;
     inputs.twoArgs[1] = e2;
-    Op::intrinsic = true;
+   
+	Op::intrinsic = true;
     switch(op) {
         case SubType::PLUS:
             driver.intr = IntrOps::ADD;
@@ -184,7 +185,7 @@ int Op::printRoot(char* buf) const {
 
 ArgIterator Op::iterator(){
     //std::cout << "hello. op\n";
-    return ArgIterator(SupportedType::_Op, this, 0);
+    return ArgIterator(SupportedType::_Op, this);
     /*
     iter->handle = this;
     iter->pos = 0; */

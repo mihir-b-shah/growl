@@ -3,7 +3,6 @@
 #define CODE_GEN_H
 
 #include "Vector.hpp"
-#include "AST.hpp"
 
 namespace CodeGen {
 	
