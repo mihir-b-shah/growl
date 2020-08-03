@@ -35,5 +35,5 @@ Lex::Token* Parse::parseDecl(Lex::Token* begin, Parse::Variable* var, Parse::Con
 
 	/** WILL NEED TO CHANGE, THIS IS FOR DEBUGGING PURPOSE. */
 	Parse::st()->insert(var, Parse::globScope());
-	return begin;
+	return 1+begin;
 }

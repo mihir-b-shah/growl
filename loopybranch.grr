@@ -1,0 +1,8 @@
+int ctr;
+ctr = 0;
+while(ctr < 11){
+	ctr = ctr + 2;
+	if((ctr&1) == 1){
+		ctr = ctr - 1;
+	}
+}

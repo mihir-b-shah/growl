@@ -23,15 +23,52 @@ namespace Parse {
             virtual int printRoot(char* buf) const = 0;
             virtual ArgIterator iterator() = 0;
 			void print(const int width, std::ostream& out);
-			void debugPrint(std::ostream& out){
-				print(80, out);
+			virtual void debugPrint(std::ostream& out){
+				out << "Expr\n";
 			}
     };
+
+	class Sequence : public AST {
+		private:
+			Utils::SmallVector<AST*,5> seq;
+		public:
+			Sequence(){
+			}
+			~Sequence(){
+			}
+			/** Returns start iterator */
+			AST** begin(){
+				return seq.begin();
+			}
+			/** Returns end iterator */
+			AST** end(){
+				return seq.end();
+			}
+			/** Return back element */
+			AST* back(){
+				return seq.eback();
+			}
+			AST* at(unsigned int idx){
+				return seq[idx];
+			}
+			void push(AST* item){
+				return seq.push_back(item);
+			}
+			void pop(){
+				return seq.pop_back();
+			}
+			unsigned int size(){
+				return seq.size();
+			}
+			void debugPrint(std::ostream& out){
+				out << "sequence\n";
+			}
+	};
 
 	class Control : public AST {
 		private:
 			char* openBrace;
-			Utils::SmallVector<AST*,5> seq;
+			Sequence seq;
     	protected:
 			Control(char* ob){
 				openBrace = ob;
@@ -46,19 +83,20 @@ namespace Parse {
 			char* getBracket(){
 				return openBrace;
 			}
-			unsigned int seqSize(){return seq.size();}
-			void seqAdd(AST* a){
-				seq.push_back(a);
+			unsigned int seqSize(){
+				return seq.size();
 			}
-			Utils::Vector<AST*>& getList(){
-				return seq;
+			void seqAdd(AST* a){
+				seq.push(a);
+			}
+			Sequence* getSeq(){
+				return &seq;
 			}
 			virtual void debugPrint(std::ostream& out){
 				out << "Control\n";
 			}
 	};
 	Control* globScope();
-
 
     class FuncDef : public Control {
         private:
@@ -71,6 +109,28 @@ namespace Parse {
     };
 
     class Branch : public Control {
+		private:
+			Expr* pred;
+		public:
+			Branch() : Control(nullptr){
+			}
+			Branch(char* ob, Expr* _pred) : Control(ob){
+				pred = _pred;
+			}
+			~Branch(){
+			}
+			void setBracket(char* ob){
+				
+			}
+			void setPred(Expr* _pred){
+				pred = _pred;
+			}	
+			Expr* getPred(){
+				return pred;
+			}
+			void debugPrint(std::ostream& out){
+				out << "Branch\n";
+			}
     };
 
     /*
@@ -227,6 +287,28 @@ namespace Parse {
     };
 	Variable* emptyVar();
 	Variable* tombsVar();
+	
+	class Decl : public AST {
+		private:
+			Variable* var;
+			char* index;
+		public:
+			Decl(Variable* v, char* idx){
+				var = v;
+				index = idx;
+			}
+			~Decl(){
+			}
+			Variable* getVar(){
+				return var;
+			}
+			int getDist(){
+				return index-Lex::program();
+			}
+			void debugPrint(std::ostream& out){
+				var->debugPrint(out);
+			}
+	};
 }
 
 #endif

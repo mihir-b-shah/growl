@@ -47,6 +47,9 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
 		case Global::InvalidDeclaration:
             std::strncpy(buffer, "Invalid declaration.", Global::ERROR_BUFFER_SIZE);
             break;
+		case Global::InvalidBranch:
+            std::strncpy(buffer, "Invalid branch.", Global::ERROR_BUFFER_SIZE);
+            break;
 		default:
             std::strncpy(buffer, "Unnamed exception encountered.", 
                         Global::ERROR_BUFFER_SIZE);

@@ -24,14 +24,16 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
 		{
 			Variable* var = new Variable();
 			// guaranteed that semicolon is found.
-			Lex::Token* ret = 1+parseDecl(begin, var, cntrl);
+			Lex::Token* ret = parseDecl(begin, var, cntrl);
 			// POTENTIAL FOR STACK OVERFLOW IF THIS
 			// RECURSION GOES TOO DEEP
 			if(__builtin_expect(ret == nullptr, false)){
 				// Specifically, this is bc constructors dont exist now.
 				unsupported();
 			}
-			cntrl->seqAdd(var);
+			// ill optimize these allocations later.
+			Decl* decl = new Decl(var, const_cast<char*>(begin->pos));
+			cntrl->seqAdd(decl);
 			parse(offset + (ret-begin), ret, end, cntrl);
 			break;
 		}
@@ -60,13 +62,27 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
 		}
 		case Type::CONTROL:
 		{
-			if(__builtin_expect(begin->subType != SubType::WHILE, false)){
-				unsupported();
+			switch(begin->subType){
+				case SubType::WHILE:
+				{
+					Loop* loop = new Loop();
+					Lex::Token* next = parseLoop(offset, begin, loop); 
+					cntrl->seqAdd(loop);
+					parse(offset + (next - begin), next, end, cntrl);
+					break;
+				}
+				case SubType::IF:
+				{
+					Branch* br = new Branch();
+					Lex::Token* next = parseBranch(offset, begin, br); 
+					cntrl->seqAdd(br);
+					parse(offset + (next - begin), next, end, cntrl);
+					break;
+				}
+				default:
+					unsupported();
+					break;
 			}
-			Loop* loop = new Loop();
-			Lex::Token* next = parseLoop(offset, begin, loop); 
-			cntrl->seqAdd(loop);
-			parse(offset + (next - begin), next, end, cntrl);
 			break;
 		}
 		case Type::GROUP:
