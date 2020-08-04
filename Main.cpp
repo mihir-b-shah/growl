@@ -9,6 +9,7 @@
 #include "Parse.h"
 #include "GroupFinder.hpp"
 #include "SymbolTable.hpp"
+#include "CodeGen.h"
 
 // allocator constructed before lexing, freed when compilation ends
 Global::Alloc* allocator = nullptr;
@@ -44,6 +45,11 @@ Parse::Variable* Parse::tombsVar(){
 Control _globScope;
 Control* Parse::globScope(){
 	return &_globScope;
+}
+
+unsigned long long _nextSSA = 1;
+unsigned long long CodeGen::nextSSA(){
+	return _nextSSA++;
 }
 
 static const int FILE_SIZE_MULTIPLIER = 10;

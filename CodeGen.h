@@ -6,28 +6,15 @@
 
 namespace CodeGen {
 	
-	enum class _IInstr {
-	};
-
-	enum class Register {
-		R0, R1, R2, R3, R4, R5, R6, R7
-	};
-
-	enum MemLoc {
-		REG, MEM
-	};
-
-	class Address {
-		MemLoc ml;
-		union {
-			Register reg;
-		} addr;	
-	};
-
 	class IInstr {
-		_IInstr ins;
+	};
+
+	class _Branch {
 			
 	};	
+
+	// my next ssa is "s" plus this number.
+	unsigned long long nextSSA();
 
 	void genASM(Utils::Vector<IInstr>& buf);
 }
