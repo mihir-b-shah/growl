@@ -10,7 +10,6 @@
 #include "GroupFinder.hpp"
 #include "SymbolTable.hpp"
 
-
 // allocator constructed before lexing, freed when compilation ends
 Global::Alloc* allocator = nullptr;
 Global::Alloc* Global::getAllocator() {
@@ -93,7 +92,6 @@ int main(int argc, char** argv) {
 		Parse::parseAST(0, tokens.begin(), tokens.end(), 
 						Parse::globScope());
 
-		Global::getAllocator()->deallocate<char>(program);
 //		return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];

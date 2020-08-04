@@ -24,7 +24,7 @@ namespace Global {
             // right now, i just want a global point of access.
             template<typename T>
             T* allocate(int N) {
-                return new T[N];
+                return new T[N]();
             }
             
             template<typename T>

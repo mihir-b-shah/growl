@@ -446,14 +446,11 @@ void Lex::lex(LexStream& tokens, int size, char* const program) {
     while(isspace(*moving)) {
     	++moving;
     }
-    while(moving-program < size) {
+    while(*moving != '\0') {
         Token* token = tokens.allocate();
         moving = parse(token, moving);
-        while(isspace(*moving)) {
+		while(isspace(*moving)) {
             ++moving;
-        }
-        if(!isgraph(*moving)) {
-            break;
         }
     }
 }

@@ -50,7 +50,7 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
 			while(runner != end && runner->subType != SubType::SEMICOLON){
 				++runner;
 			}	
-			if(runner == end){
+			if(begin != end && runner == end){
 				Global::specifyError("Semicolon not found.\n");
 				throw Global::InvalidExpression;
 			}
