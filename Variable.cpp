@@ -28,7 +28,8 @@ void Variable::set(const char* _name, char _len, Lex::SubType _type, char _ptrLv
             type = VarType::VOID;
             break;
         default:
-            Global::specifyError("Invalid variable type.");
+            Global::specifyError("Invalid variable type.", 
+                            __FILE__, __LINE__);
             throw Global::DeveloperError; // should never occur.
     }
     ptrLvl = _ptrLvl;

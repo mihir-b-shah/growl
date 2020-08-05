@@ -17,7 +17,7 @@ of this method. it will not be freed by this method either.
 Op::Op(FuncDef* def, int argc, Expr** argv){
     // throw error if the number of args give != argc(def).
     if(def->arity() != argc) {
-        Global::specifyError("Function call args not match def.");
+        Global::specifyError("Function call args not match def.", __FILE__, __LINE__);
         throw Global::InvalidFunctionCall;
     }
     
@@ -69,7 +69,7 @@ Op::Op(SubType op, Expr* e1){
             driver.intr = IntrOps::ADDRESS;
             break;
         default:
-            Global::specifyError("Invalid invocation of operator.");
+            Global::specifyError("Invalid invocation of operator.", __FILE__, __LINE__);
             throw Global::InvalidOperatorInvocation;
     }
 }    
@@ -126,7 +126,7 @@ Op::Op(SubType op, Expr* e1, Expr* e2){
         case SubType::RSHIFT:
             driver.intr = IntrOps::RSHIFT;
         default:
-            Global::specifyError("Invalid invocation of operator.");
+            Global::specifyError("Invalid invocation of operator.", __FILE__, __LINE__);
             throw Global::InvalidOperatorInvocation;
     }
 }
@@ -158,7 +158,7 @@ static inline Syntax::OpType detOpType(IntrOps type) {
         case IntrOps::RSHIFT:
             return Syntax::OpType::BINARY;
         default:
-            Global::specifyError("Invalid operator encountered.");
+            Global::specifyError("Invalid operator encountered.", __FILE__, __LINE__);
             throw Global::InvalidOperator;
     }
 }

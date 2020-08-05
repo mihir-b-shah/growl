@@ -97,7 +97,7 @@ namespace Parse {
             Variable* query(const char* str, byte len, Control* cntrl){
                 auto found = map.find(String(str, len));
                 if(found == map.end()){
-                    Global::specifyError("In query, String not found.\n");
+                    Global::specifyError("In query, String not found.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 } else {
                     return found->second.find(ControlPtr(cntrl))->second;

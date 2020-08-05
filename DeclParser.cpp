@@ -27,7 +27,7 @@ Lex::Token* Parse::parseDecl(Lex::Token* begin, Parse::Variable* var, Parse::Con
 
     if(__builtin_expect(begin->type != Lex::Type::GROUP 
             || begin->subType != Lex::SubType::SEMICOLON, false)){
-        Global::specifyError("Semicolon not found\n");
+        Global::specifyError("Semicolon not found\n", __FILE__, __LINE__);
         throw Global::InvalidDeclaration;
     }
 

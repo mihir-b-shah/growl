@@ -24,12 +24,12 @@ Lex::Token* Parse::parseBranch(int _offset, Lex::Token* _begin, Branch* _br){
 
     int idx = 0;
     if(__builtin_expect((_begin+idx)->subType != SubType::IF,false)){
-        Global::specifyError("\"If\" token not found at _branch start.\n");
+        Global::specifyError("\"If\" token not found at _branch start.\n", __FILE__, __LINE__);
         throw Global::InvalidBranch;
     }
     ++idx;
     if(__builtin_expect((_begin+idx)->subType != SubType::OPAREN,false)){
-        Global::specifyError("Opening paren not found after if.\n");
+        Global::specifyError("Opening paren not found after if.\n", __FILE__, __LINE__);
         throw Global::InvalidBranch;
     }
     int matchParen = gf()->find(_offset,idx);
@@ -39,7 +39,7 @@ Lex::Token* Parse::parseBranch(int _offset, Lex::Token* _begin, Branch* _br){
 
     idx = matchParen+1;
     if(__builtin_expect((_begin+idx)->subType != SubType::OBRACK, false)){
-        Global::specifyError("Opening _bracket not found after if.\n");
+        Global::specifyError("Opening _bracket not found after if.\n", __FILE__, __LINE__);
         throw Global::InvalidBranch;
     }
 

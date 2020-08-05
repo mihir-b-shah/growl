@@ -107,7 +107,7 @@ namespace Parse {
                 return ArgIterator(SupportedType::_Ctl, this);
             }
             virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect){
-                Global::specifyError("Code gen on Control* not sup.\n");
+                Global::specifyError("Code gen on Control* not sup.\n", __FILE__, __LINE__);
                 throw Global::DeveloperError;
             }
     };
@@ -118,7 +118,7 @@ namespace Parse {
             int numArgs;
         public:
             int arity() const {
-                Global::specifyError("Unimplemented function call.");
+                Global::specifyError("Unimplemented function call.", __FILE__, __LINE__);
                 throw Global::DeveloperError;
             }
     };
@@ -269,7 +269,7 @@ namespace Parse {
                     case FLOAT:
                         return min(std::snprintf(buf,4,"%lf",static_cast<double>(value.fltVal)),3);
                     default:
-                        Global::specifyError("Literal of invalid type.\n");
+                        Global::specifyError("Literal of invalid type.\n", __FILE__, __LINE__);
                         throw Global::DeveloperError;
                 }
             }

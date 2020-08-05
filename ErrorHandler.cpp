@@ -1,6 +1,7 @@
 
 #include "Error.h"
 #include <cstring>
+#include <cstdio>
 
 void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
     switch(error) {
@@ -62,6 +63,16 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
 
 // define it once, declared in header file
 char Global::errorMsg[Global::ERROR_REFERENCE_SIZE];
-void Global::specifyError(const char* spec) {
+char Global::location[Global::FILE_REFERENCE_SIZE];
+
+// https://stackoverflow.com/questions/8487986/file-macro-shows-full-path
+
+static inline const char* extractFile(const char* file){
+    return std::strrchr(file, '/') ? std::strrchr(file, '/') + 1 : file; 
+}
+
+void Global::specifyError(const char* spec, const char* file, unsigned int line) {
+    std::snprintf(Global::location, Global::FILE_REFERENCE_SIZE, 
+                    "File: %s, Line:%u\n", file, line);
     std::strncpy(Global::errorMsg, spec, Global::ERROR_REFERENCE_SIZE);
 }

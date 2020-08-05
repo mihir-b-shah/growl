@@ -46,7 +46,7 @@ namespace Utils {
             
             Set(T* st, size_t s, size_t c){
                 if(__builtin_expect(c > MAX_CAPACITY,false)){
-                    Global::specifyError("Too much memory req.\n");
+                    Global::specifyError("Too much memory req.\n", __FILE__, __LINE__);
                     throw Global::MemoryRequestError; 
                 }
                 front = st;
@@ -87,7 +87,7 @@ namespace Utils {
                     case HEAP_GROW:
                     {
                         if(__builtin_expect(realCapacity*2 > MAX_CAPACITY,false)){
-                            Global::specifyError("Too much memory req.\n");
+                            Global::specifyError("Too much memory req.\n", __FILE__, __LINE__);
                             throw Global::MemoryRequestError; 
                         }
                         

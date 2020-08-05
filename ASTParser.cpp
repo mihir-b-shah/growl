@@ -9,7 +9,7 @@
 using namespace Parse;
 
 static inline void unsupported(){
-    Global::specifyError("Not supported yet.");
+    Global::specifyError("Not supported yet.", __FILE__, __LINE__);
     throw Global::DeveloperError;
 }
 
@@ -51,7 +51,7 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
                 ++runner;
             }    
             if(begin != end && runner == end){
-                Global::specifyError("Semicolon not found.\n");
+                Global::specifyError("Semicolon not found.\n", __FILE__, __LINE__);
                 throw Global::InvalidExpression;
             }
             Expr* expr = parseExpr(begin, runner);

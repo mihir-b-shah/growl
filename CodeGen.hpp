@@ -38,7 +38,7 @@ namespace CodeGen {
             if(__builtin_expect(which == SType::REF,true)){
                 return SSA(holder.ref++);
             } else {
-                Global::specifyError("SSA increment called on literal.\n");
+                Global::specifyError("SSA increment called on literal.\n", __FILE__, __LINE__);
                 throw Global::DeveloperError;
             }
         }
@@ -112,7 +112,7 @@ namespace CodeGen {
                     return SType::FLT_LIT;
                 case SubType::VOID:
                 default:
-                    Global::specifyError("Type void or other passed to IR generator.\n");
+                    Global::specifyError("Type void or other passed to IR generator.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
             }
         }
@@ -143,7 +143,7 @@ namespace CodeGen {
                 case SubType::FLOAT:
                 case SubType::VOID:
                 default:
-                    Global::specifyError("Non integer type passed.\n");
+                    Global::specifyError("Non integer type passed.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
             }
         }
@@ -184,7 +184,7 @@ namespace CodeGen {
             } else {
                 switch(pred.which){
                     case SType::FLT_LIT:
-                        Global::specifyError("Float passed to branch predicate.\n");
+                        Global::specifyError("Float passed to branch predicate.\n", __FILE__, __LINE__);
                         throw Global::InvalidBranch;
                     case SType::SIGN_LIT:
                         return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
@@ -232,14 +232,14 @@ namespace CodeGen {
                         break;
                     case SubType::FLOAT:
                         if(__builtin_expect(std::strcmp(fltInstr, ERROR_INSTR) == 0,false)){
-                            Global::specifyError("Flt type used in int-only instruction.\n");    
+                            Global::specifyError("Flt type used in int-only instruction.\n", __FILE__, __LINE__);    
                             throw Global::InvalidInstrInvocation;
                         }
                         // right now, floats in Growl are 64-bit doubles in LLVM.    
                         ret = printOp(buf, fltInstr, fflg, dispFltType ? "double" : "", true, true);
                         break;
                     default:
-                        Global::specifyError("Invalid type encountered.\n");
+                        Global::specifyError("Invalid type encountered.\n", __FILE__, __LINE__);
                         throw Global::DeveloperError;
                 }
 
@@ -270,7 +270,7 @@ namespace CodeGen {
                 if(__builtin_expect(dest.which != SType::REF && (src1.which != corresp 
                         || src1.which != SType::REF) && (src2.which != corresp 
                         || src2.which != SType::REF),false)){
-                    Global::specifyError("Incorrect types passed to IR generator.\n");
+                    Global::specifyError("Incorrect types passed to IR generator.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
             }
@@ -291,7 +291,7 @@ namespace CodeGen {
                                 spec1, spec2);
                 
                 if(chk >= FSBUF_LEN) {
-                    Global::specifyError("Buffer for snprintf too small.\n");
+                    Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
                 
@@ -329,12 +329,12 @@ namespace CodeGen {
                             src1.extractLbl(), src2.extractLbl());
                         break;
                     default:
-                        Global::specifyError("Bool mask overflowed.\n");
+                        Global::specifyError("Bool mask overflowed.\n", __FILE__, __LINE__);
                         throw Global::DeveloperError;            
                 }
 
                 if(chk >= INSTR_BUF_SIZE){
-                    Global::specifyError("Buffer for snprintf too small.\n");
+                    Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;            
                 }
 
@@ -469,7 +469,7 @@ namespace CodeGen {
                 SType corresp = OpUtils::genSType(type);
                 if(__builtin_expect(dest.which != SType::REF && (src.which != corresp 
                         || src.which != SType::REF) ,false)){
-                    Global::specifyError("Incorrect types passed to IR generator.\n");
+                    Global::specifyError("Incorrect types passed to IR generator.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
             }
@@ -488,7 +488,7 @@ namespace CodeGen {
                 int chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s %s", spec);
                 
                 if(chk >= FSBUF_LEN) {
-                    Global::specifyError("Buffer for snprintf too small.\n");
+                    Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
                 
@@ -509,12 +509,12 @@ namespace CodeGen {
                             src.extractLbl());
                         break;
                     default:
-                        Global::specifyError("Bool mask overflowed.\n");
+                        Global::specifyError("Bool mask overflowed.\n", __FILE__, __LINE__);
                         throw Global::DeveloperError;            
                 }
 
                 if(chk >= INSTR_BUF_SIZE){
-                    Global::specifyError("Buffer for snprintf too small.\n");
+                    Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;            
                 }
 

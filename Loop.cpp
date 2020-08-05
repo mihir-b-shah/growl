@@ -19,12 +19,12 @@ Lex::Token* Parse::parseLoop(int offset, Lex::Token* begin, Loop* lp){
     
     int idx = 0;
     if(__builtin_expect((begin+idx)->subType != SubType::WHILE,false)){
-        Global::specifyError("\"While\" token not found at loop start.\n");
+        Global::specifyError("\"While\" token not found at loop start.\n", __FILE__, __LINE__);
         throw Global::InvalidLoop;
     }
     ++idx;
     if(__builtin_expect((begin+idx)->subType != SubType::OPAREN,false)){
-        Global::specifyError("Opening paren not found after while.\n");
+        Global::specifyError("Opening paren not found after while.\n", __FILE__, __LINE__);
         throw Global::InvalidLoop;
     }
     int matchParen = gf()->find(offset,idx);
@@ -34,7 +34,7 @@ Lex::Token* Parse::parseLoop(int offset, Lex::Token* begin, Loop* lp){
 
     idx = matchParen+1;
     if(__builtin_expect((begin+idx)->subType != SubType::OBRACK, false)){
-        Global::specifyError("Opening bracket not found after while.\n");
+        Global::specifyError("Opening bracket not found after while.\n", __FILE__, __LINE__);
         throw Global::InvalidLoop;
     }
 

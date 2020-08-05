@@ -46,7 +46,7 @@ namespace Parse {
         private:
             Utils::SmallSet<Match, 200, Utils::SetTraits<Match>> map;
             static inline void throwError(){
-                Global::specifyError("Brackets not balanced.\n");
+                Global::specifyError("Brackets not balanced.\n", __FILE__, __LINE__);
                 throw Global::InvalidExpression;
             }
             struct Tkn {

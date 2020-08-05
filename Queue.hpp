@@ -24,7 +24,7 @@ namespace Utils {
             
             Queue(T* st, size_t f, size_t b, size_t l, size_t c){
                 if(__builtin_expect(c > MAX_CAPACITY,false)){
-                    Global::specifyError("Queue requested more than 1 << sizeof(size_t)-2 capacity.");
+                    Global::specifyError("Queue requested more than 1 << sizeof(size_t)-2 capacity.", __FILE__, __LINE__);
                     throw Global::MemoryRequestError;
                 }
                 _front = f;
@@ -46,7 +46,7 @@ namespace Utils {
                     case HEAP_GROW:
                     {
                         if(__builtin_expect(length*2 > MAX_CAPACITY,false)){
-                            Global::specifyError("Vector requested more than (1 << sizeof(size_t)-2)-1 capacity.");
+                            Global::specifyError("Vector requested more than (1 << sizeof(size_t)-2)-1 capacity.", __FILE__, __LINE__);
                             throw Global::MemoryRequestError;
                         }
                         T* aux = Global::getAllocator()->allocate<T>(length*2);

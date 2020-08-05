@@ -57,10 +57,10 @@ bool ArgIterator::done(){
         case SupportedType::_Lp:
             return true;
         case SupportedType::_Ctl:
-            Global::specifyError("Global scope is being traversed. ArgIterator.");
+            Global::specifyError("Global scope is being traversed. ArgIterator.", __FILE__, __LINE__);
             throw Global::DeveloperError;
         default:
-            Global::specifyError("Should never happen. PolyIter:done.");
+            Global::specifyError("Should never happen. PolyIter:done.", __FILE__, __LINE__);
             throw Global::DeveloperError;
     }
 }
@@ -72,7 +72,7 @@ void ArgIterator::next(){
             ++pos;
             break;
         case SupportedType::_Ctl:
-            Global::specifyError("Global scope is being traversed. ArgIterator.");
+            Global::specifyError("Global scope is being traversed. ArgIterator.", __FILE__, __LINE__);
             throw Global::DeveloperError;
         case SupportedType::_Br:
             handle = static_cast<Branch*>(handle)->next;
@@ -82,7 +82,7 @@ void ArgIterator::next(){
         case SupportedType::_Decl:
         case SupportedType::_Lp:
         default:
-            Global::specifyError("Should never happen. PolyIter:next.");
+            Global::specifyError("Should never happen. PolyIter:next.", __FILE__, __LINE__);
             throw Global::DeveloperError;
     }
 }
@@ -118,7 +118,7 @@ AST* ArgIterator::get(){
         case SupportedType::_Lp:
         case SupportedType::_Ctl:
         default:
-            Global::specifyError("Should never happen. PolyIter:get.");
+            Global::specifyError("Should never happen. PolyIter:get.", __FILE__, __LINE__);
             throw Global::DeveloperError;
     }
 }

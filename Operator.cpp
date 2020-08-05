@@ -30,7 +30,7 @@ OpType Syntax::opType(SubType type) {
         case SubType::RSHIFT:
             return OpType::BINARY;
         default:
-            Global::specifyError("Occurred in Operator.cpp. 31");
+            Global::specifyError("Occurred in Operator.cpp. 31", __FILE__, __LINE__);
             throw Global::InvalidOperator;
     }
 }
@@ -52,7 +52,7 @@ Syntax::Assoc Syntax::associate(SubType type, OpType opType) {
                 case OpType::BINARY:
                     return Assoc::LEFT;
                 default:
-                    Global::specifyError("Occurred in Operator.cpp. 53");
+                    Global::specifyError("Occurred in Operator.cpp. 53", __FILE__, __LINE__);
                     throw Global::DeveloperError;
             }
         case SubType::ASSN:
@@ -68,7 +68,7 @@ Syntax::Assoc Syntax::associate(SubType type, OpType opType) {
         case SubType::RSHIFT:
             return Assoc::LEFT;
         default:
-            Global::specifyError("Occurred in Operator.cpp.");
+            Global::specifyError("Occurred in Operator.cpp.", __FILE__, __LINE__);
             throw Global::InvalidOperator;
     }
 }
@@ -90,7 +90,7 @@ int Syntax::precedence(SubType type, OpType opType) {
                     return 9;
                 case OpType::AMBIG_TYPE:
                 default:
-                    Global::specifyError("Occurred in Operator.cpp. 89");
+                    Global::specifyError("Occurred in Operator.cpp. 89", __FILE__, __LINE__);
                     throw Global::DeveloperError;
             }
         case SubType::DIV:
@@ -104,7 +104,7 @@ int Syntax::precedence(SubType type, OpType opType) {
                     return 8;
                 case OpType::AMBIG_TYPE:
                 default:
-                    Global::specifyError("Occurred in Operator.cpp. 103");
+                    Global::specifyError("Occurred in Operator.cpp. 103", __FILE__, __LINE__);
                     throw Global::DeveloperError;
             }
         case SubType::PLUS:
@@ -125,7 +125,7 @@ int Syntax::precedence(SubType type, OpType opType) {
                     return 4;
                 case OpType::AMBIG_TYPE:
                 default:
-                    Global::specifyError("Occurred in Operator.cpp. 124");
+                    Global::specifyError("Occurred in Operator.cpp. 124", __FILE__, __LINE__);
                     throw Global::DeveloperError;
             }
         case SubType::CARET:
@@ -135,7 +135,7 @@ int Syntax::precedence(SubType type, OpType opType) {
         case SubType::ASSN:
             return 1;
         default:
-            Global::specifyError("Occurred in Operator.cpp. 133");
+            Global::specifyError("Occurred in Operator.cpp. 133", __FILE__, __LINE__);
             throw Global::InvalidOperator;
     }
 }
@@ -150,7 +150,7 @@ int Syntax::optypeInt(OpType optype){
         case OpType::BINARY:
             return 2;
         default:
-            Global::specifyError("Occurred in Operator.cpp. 148");
+            Global::specifyError("Occurred in Operator.cpp. 148", __FILE__, __LINE__);
             throw Global::DeveloperError;
     }
 }

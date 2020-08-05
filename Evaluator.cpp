@@ -106,7 +106,7 @@ static inline void bind(Token* tkn, Syntax::OpType* top){
             *top = tkn->subType == SubType::OPAREN ? Syntax::OpType::UNARY : Syntax::OpType::BINARY;
             break;
         default:
-            Global::specifyError("Invalid token in expression.");
+            Global::specifyError("Invalid token in expression.", __FILE__, __LINE__);
             throw Global::InvalidExpression;
     }
 }
@@ -132,7 +132,7 @@ static inline void construct(Utils::Vector<Expr*>& output, SubType top, Syntax::
             output.push_back(ins);
             break;
         default:
-            Global::specifyError("Invalid operator 'arity'.");
+            Global::specifyError("Invalid operator 'arity'.", __FILE__, __LINE__);
             throw Global::InvalidExpression;
             
     }
@@ -181,7 +181,7 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
                     stack.pop_back();
                 }
                 if(!parenFlg) {
-                    Global::specifyError("Parenthesis possibly not balanced.");
+                    Global::specifyError("Parenthesis possibly not balanced.", __FILE__, __LINE__);
                     throw Global::InvalidExpression;
                 }
                 break;
@@ -191,7 +191,7 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
             case SubType::CBRACK:
             case SubType::COMMA:
             case SubType::SEMICOLON:
-                Global::specifyError("Invalid group token in expression.");
+                Global::specifyError("Invalid group token in expression.", __FILE__, __LINE__);
                 throw Global::InvalidExpression;
             case SubType::INT_LITERAL:
             case SubType::CHAR_LITERAL:

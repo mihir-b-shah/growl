@@ -39,7 +39,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             ++ct;
         }
         if(ct == 255) {
-            Global::specifyError("Line 40");
+            Global::specifyError("Line 40", __FILE__, __LINE__);
             throw Global::InvalidLiteral;
         }
         base->size = ct;
@@ -54,7 +54,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             ++ct;
         }
         if(ct == 255 || validLetter(data[ct])) {
-            Global::specifyError("Line 51");
+            Global::specifyError("Line 51", __FILE__, __LINE__);
             throw Global::InvalidLiteral;
         } else if(data[ct] == '.') {
             // use a float
@@ -65,7 +65,7 @@ static inline char* const parseWord(Token* base, char* const data) {
                 ++ct;
             }
             if(ct == 255 || !std::isspace(data[ct])) {
-                Global::specifyError("Line 61.");
+                Global::specifyError("Line 61.", __FILE__, __LINE__);
                 throw Global::InvalidLiteral;
             }
             long double res = 0;
