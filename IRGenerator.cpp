@@ -1,17 +1,19 @@
 
 #include "AST.hpp"
 #include "Vector.hpp"
-#include "CodeGen.h"
+#include "CodeGen.hpp"
 
 /**
  * We will target LLVM IR.
  */
 
 /** None */
-void Parse::Sequence::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+unsigned int Parse::Sequence::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+	unsigned int accm = 0;
 	for(auto iter = this->iterator(); !iter.done(); iter.next()){
-		iter.get()->codeGen(output);
+		accm += iter.get()->codeGen(output);
 	}
+	return accm;
 }
 
 /**
@@ -25,34 +27,50 @@ void Parse::Sequence::codeGen(Utils::Vector<CodeGen::IInstr>& output){
  * ....
  * Else is an unconditional branch if exists.
  */
-void Parse::Branch::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	
+unsigned int Parse::Branch::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+	for(auto iter = this->iterator(); !iter.done(); iter.next()){
+	}	
 }
 
 /** Compute the Expr, Setup a loop 
  *
- * 1. Get the past SSA 
+ * 1. Do the branch at the top. If yes, continue to next line. If no, leave loop.
+ * 2. At the end of the loop, unconditionally branch to the top comp.
+ *
+ * Structure:
+ * 
+ * L1: %s1..... my comparison
+ * L2: loop ast....
+ *     br L1
  */
-void Parse::Loop::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+unsigned int Parse::Loop::codeGen(Utils::Vector<CodeGen::IInstr>& output){
 	
 }
 
-void Parse::Op::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+/** Setup an operator 
+ * 
+ * Call codegen on each of the supporting operators.
+ * then get the % node for each of them. Then call my operator.
+ */
+unsigned int Parse::Op::codeGen(Utils::Vector<CodeGen::IInstr>& output){
 	
 }
 
-void Parse::Literal::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+/** Simple substitution */
+unsigned int Parse::Literal::codeGen(Utils::Vector<CodeGen::IInstr>& output){
 	
 }
 
-void Parse::Variable::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+/** Simple substitution...? */
+unsigned int Parse::Variable::codeGen(Utils::Vector<CodeGen::IInstr>& output){
 	
 }
 
-void Parse::Decl::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+/** An alloca <type> */
+unsigned int Parse::Decl::codeGen(Utils::Vector<CodeGen::IInstr>& output){
 	
 }
 
-void genIR(Utils::Vector<CodeGen::IInstr>& buf){
+unsigned int genIR(Utils::Vector<CodeGen::IInstr>& buf){
 	
 }

@@ -232,7 +232,8 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
             case SubType::OR:
             case SubType::CARET:
             case SubType::ASSN:
-            case SubType::SHIFT:
+            case SubType::LSHIFT:
+			case SubType::RSHIFT:
             {
                 SubType me = tk->subType;
                 Syntax::OpType myType = Syntax::opType(me);

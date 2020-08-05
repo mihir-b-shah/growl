@@ -9,7 +9,13 @@
 #include "Parse.h"
 #include "GroupFinder.hpp"
 #include "SymbolTable.hpp"
-#include "CodeGen.h"
+#include "CodeGen.hpp"
+
+/* 
+ * LETS FIX ERROR.H, USE THE __FILE__ AND __LINE__ MACROS
+ * TO GET BETTER ERROR MESSAGES
+ */
+
 
 // allocator constructed before lexing, freed when compilation ends
 Global::Alloc* allocator = nullptr;
@@ -47,9 +53,14 @@ Control* Parse::globScope(){
 	return &_globScope;
 }
 
-unsigned long long _nextSSA = 1;
-unsigned long long CodeGen::nextSSA(){
+CodeGen::SSA _nextSSA = CodeGen::SSA(1);
+CodeGen::SSA CodeGen::nextSSA(){
 	return _nextSSA++;
+}
+
+CodeGen::Label _nextLbl = CodeGen::Label(1);
+CodeGen::Label CodeGen::nextLabel(){
+	return _nextLbl++;
 }
 
 static const int FILE_SIZE_MULTIPLIER = 10;

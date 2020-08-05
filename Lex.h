@@ -14,7 +14,7 @@ namespace Lex {
         UNSIGNED, INT, LONG, CHAR, FLOAT, BOOL, VOID, OPAREN, CPAREN, 
         COLON, OBRACK, CBRACK, COMMA, SEMICOLON, INT_LITERAL, FLT_LITERAL,
         CHAR_LITERAL, PLUS, MINUS, ASTK, DIV, MOD, NEG, DOT, GREATER, LESS,
-        EQUAL, AMP, OR, CARET, ASSN, SHIFT, NAME
+        EQUAL, AMP, OR, CARET, ASSN, LSHIFT, RSHIFT, NAME
     };
 
     enum class IOF:char {
@@ -60,7 +60,7 @@ namespace Lex {
         "LONG", "CHAR", "FLOAT", "BOOL", "VOID", "OPAREN", "CPAREN", "COLON", 
         "OBRACK", "CBRACK", "COMMA", "SEMICOLON", "INT_LITERAL", "FLT_LITERAL", 
         "CHAR_LITERAL", "PLUS", "MINUS", "ASTK", "DIV", "MOD", "NEG", "DOT", 
-        "GREATER", "LESS", "EQUAL", "AMP", "OR", "CARET", "ASSN", "SHIFT", "NAME"};
+        "GREATER", "LESS", "EQUAL", "AMP", "OR", "CARET", "ASSN", "LSHIFT", "RSHIFT", "NAME"};
 
     void lex(LexStream& tokens, int size, char* const program); 
 }

@@ -1,5 +1,5 @@
 
-#include "CodeGen.h"
+#include "CodeGen.hpp"
 #include "Vector.hpp"
 #include "AST.hpp"
 

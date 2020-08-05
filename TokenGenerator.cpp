@@ -243,7 +243,7 @@ static char* const parse(Token* base, char* const data) {
             if(data[1] == '<') {
                 base->size = 2;
                 base->type = Type::OPERATOR;
-                base->subType = SubType::SHIFT;
+                base->subType = SubType::LSHIFT;
                 base->value.iof = IOF::UNDEFINED;
                 return data+2;
             }
@@ -252,6 +252,13 @@ static char* const parse(Token* base, char* const data) {
             base->value.iof = IOF::UNDEFINED;
             return data+1;
         case '>':
+            if(data[1] == '>') {
+                base->size = 2;
+                base->type = Type::OPERATOR;
+                base->subType = SubType::RSHIFT;
+                base->value.iof = IOF::UNDEFINED;
+                return data+2;
+            }
             base->type = Type::OPERATOR;
             base->subType = SubType::GREATER;
             base->value.iof = IOF::UNDEFINED;

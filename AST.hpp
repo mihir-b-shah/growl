@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "Vector.hpp"
-#include "CodeGen.h"
+#include "CodeGen.hpp"
 
 namespace Parse {
    
@@ -18,7 +18,7 @@ namespace Parse {
 		public:
 			virtual void debugPrint(std::ostream& out) = 0;
             virtual ArgIterator iterator() = 0;
-			virtual void codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
+			virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
     };
 
     class Expr : public AST {
@@ -29,7 +29,7 @@ namespace Parse {
 			virtual void debugPrint(std::ostream& out){
 				out << "Expr\n";
 			}
-			virtual void codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
+			virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
     };
 
 	class Sequence : public AST {
@@ -70,7 +70,7 @@ namespace Parse {
 			ArgIterator iterator(){
 				return ArgIterator(SupportedType::_Seq, this);
 			}
-			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
 	};
 
 	class Control : public AST {
@@ -106,7 +106,7 @@ namespace Parse {
 			virtual ArgIterator iterator(){
 				return ArgIterator(SupportedType::_Ctl, this);
 			}
-			virtual void codeGen(Utils::Vector<CodeGen::IInstr>& vect){
+			virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect){
 				Global::specifyError("Code gen on Control* not sup.\n");
 				throw Global::DeveloperError;
 			}
@@ -154,7 +154,7 @@ namespace Parse {
 			ArgIterator iterator(){
 				return ArgIterator(SupportedType::_Br, this);
 			}
-			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     /*
@@ -192,10 +192,10 @@ namespace Parse {
 			ArgIterator iterator(){
 				return ArgIterator(SupportedType::_Lp, this);
 			}
-			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
-    enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, SHIFT};
+    enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, LSHIFT, RSHIFT};
     
     class Op : public Expr {
         friend class ArgIterator;
@@ -229,7 +229,7 @@ namespace Parse {
 				printRoot(buf);
 				out << buf << '\n';
 			}
-			void codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     class Literal : public Expr {
@@ -281,7 +281,7 @@ namespace Parse {
 				printRoot(buf);
 				out << buf << '\n';
 			}
-			void codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
     };
 
     enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
@@ -314,7 +314,7 @@ namespace Parse {
 			   	out << " PtrLvl: " << static_cast<int>(ptrLvl);
 				out << '\n';	
 			}
-			void codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
     };
 	Variable* emptyVar();
 	Variable* tombsVar();
@@ -342,7 +342,7 @@ namespace Parse {
 			Parse::ArgIterator iterator() override {
 				return ArgIterator(SupportedType::_Decl, this);
 			}
-			void codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
 	};
 }
 

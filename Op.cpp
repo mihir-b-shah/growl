@@ -120,9 +120,11 @@ Op::Op(SubType op, Expr* e1, Expr* e2){
         case SubType::ASSN:
             driver.intr = IntrOps::ASSN;
             break;
-        case SubType::SHIFT:
-            driver.intr = IntrOps::SHIFT;
+        case SubType::LSHIFT:
+            driver.intr = IntrOps::LSHIFT;
             break;
+		case SubType::RSHIFT:
+			driver.intr = IntrOps::RSHIFT;
         default:
             Global::specifyError("Invalid invocation of operator.");
             throw Global::InvalidOperatorInvocation;
@@ -152,7 +154,8 @@ static inline Syntax::OpType detOpType(IntrOps type) {
         case IntrOps::OR:
         case IntrOps::XOR:
         case IntrOps::ASSN:
-        case IntrOps::SHIFT:
+        case IntrOps::LSHIFT:
+		case IntrOps::RSHIFT:
             return Syntax::OpType::BINARY;
         default:
             Global::specifyError("Invalid operator encountered.");
