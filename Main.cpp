@@ -1,4 +1,5 @@
 
+
 #include <iostream>
 #include <cstdlib>
 
@@ -24,7 +25,6 @@ Global::Alloc* Global::getAllocator() {
     return allocator;
 }
 
-/*
 Parse::GroupFinder* groupFinder = nullptr;
 Parse::GroupFinder* Parse::gf(){
 	return groupFinder;
@@ -54,7 +54,6 @@ Control _globScope;
 Control* Parse::globScope(){
 	return &_globScope;
 }
-*/
 
 CodeGen::SSA _nextSSA = CodeGen::SSA(1);
 CodeGen::SSA CodeGen::nextSSA(){
@@ -66,12 +65,6 @@ CodeGen::Label CodeGen::nextLabel(){
 	return _nextLbl++;
 }
 
-int main(){
-	Label l1 = CodeGen::nextLabel()
-	Label l2 = CodeGen:
-}
-
-/*
 static const int FILE_SIZE_MULTIPLIER = 10;
 static const int CONSOLE_WIDTH = 100;
 
@@ -118,7 +111,7 @@ int main(int argc, char** argv) {
 		Parse::parseAST(0, tokens.begin(), tokens.end(), 
 						Parse::globScope());
 
-//		return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
@@ -128,4 +121,3 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 }
-*/
