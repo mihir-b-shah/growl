@@ -13,84 +13,84 @@ namespace CodeGen {
 
 	using Lex::SubType;
 
-	enum class LType:char {FLT_LIT, SIGN_LIT, USIGN_LIT, LBL};
+	enum class SType:char {FLT_LIT, SIGN_LIT, USIGN_LIT, REF};
 	
 	/** Label is rep as L1 for instance */
-	struct Label {
+	struct SSA {
 
 		// passing 
 		union {
-			unsigned int lbl;
+			unsigned int ref;
 			long long sint;
 			unsigned long long uint;
 			long double flt;
 		} holder;
-		LType which;
+		SType which;
 
-		Label(){holder.lbl = 0; which = LType::LBL;}
+		SSA(){holder.ref = 0; which = SType::REF;}
 
-		Label(unsigned int _lbl){
-			holder.lbl = _lbl;
-			which = LType::LBL;
+		SSA(unsigned int _ref){
+			holder.ref = _ref;
+			which = SType::REF;
 		}
 
-		Label operator++(int){
-			if(__builtin_expect(which == LType::LBL,true)){
-				return Label(holder.lbl++);
+		SSA operator++(int){
+			if(__builtin_expect(which == SType::REF,true)){
+				return SSA(holder.ref++);
 			} else {
-				Global::specifyError("Label increment called on literal.\n");
+				Global::specifyError("SSA increment called on literal.\n");
 				throw Global::DeveloperError;
 			}
 		}
 
-		static Label genUInt(unsigned long long v){
-			Label lbl;
-			lbl.which = LType::USIGN_LIT;
-			lbl.holder.uint = v;
-			return lbl;
+		static SSA genUInt(unsigned long long v){
+			SSA ref;
+			ref.which = SType::USIGN_LIT;
+			ref.holder.uint = v;
+			return ref;
 		}
 
-		static Label genSInt(long long v){
-			Label lbl;
-			lbl.which = LType::SIGN_LIT;
-			lbl.holder.sint = v;
-			return lbl;
+		static SSA genSInt(long long v){
+			SSA ref;
+			ref.which = SType::SIGN_LIT;
+			ref.holder.sint = v;
+			return ref;
 		}
 		
-		static Label genFlt(long double v){
-			Label lbl;
-			lbl.which = LType::FLT_LIT;
-			lbl.holder.flt = v;
-			return lbl;
+		static SSA genFlt(long double v){
+			SSA ref;
+			ref.which = SType::FLT_LIT;
+			ref.holder.flt = v;
+			return ref;
 		}
 
-		bool isNull(){return which == LType::LBL && holder.lbl== 0;} 
-		unsigned int extractLbl(){return holder.lbl;}
+		bool isNull(){return which == SType::REF && holder.ref== 0;} 
+		unsigned int extractLbl(){return holder.ref;}
 		long long extractSignedInt(){return holder.sint;}
 		unsigned long long extractUnsignedInt(){return holder.sint;}
 		long double extractFlt(){return holder.flt;}
 	};
 
 	/* SSA is rep as %s1 for instance, good type safety too!*/
-	struct SSA {
-		unsigned long long ssa;
+	struct Label {
+		unsigned int lbl;
 
-		SSA(){ssa = 0;}
+		Label(){lbl = 0;}
 
-		SSA(unsigned long long _ssa){
-			ssa = _ssa;
+		Label(unsigned int _lbl){
+			lbl = _lbl;
 		}
 
-		SSA operator++(int){
-			return SSA(ssa++);
+		Label operator++(int){
+			return Label(lbl++);
 		}
 
-		bool operator==(const SSA& s2){
-			return ssa == s2.ssa;
+		bool operator==(const Label& s2){
+			return lbl == s2.lbl;
 		}
 
-		static SSA nullSSA(){return SSA(0);}
-		unsigned int extract(){return ssa;}
+		static Label nullLabel(){return Label(0);}
+		unsigned int extract(){return lbl;}
 	};
 
 	static const unsigned int INSTR_BUF_SIZE = 100;
@@ -100,16 +100,16 @@ namespace CodeGen {
 	constexpr unsigned int instrBufSize(){return INSTR_BUF_SIZE;}
 
 	struct OpUtils {
-		static LType genLType(SubType type){
+		static SType genSType(SubType type){
 			switch(type){
 				case SubType::CHAR:
 				case SubType::LONG:
 				case SubType::BOOL:
-					return LType::USIGN_LIT;
+					return SType::USIGN_LIT;
 				case SubType::INT:
-					return LType::SIGN_LIT;
+					return SType::SIGN_LIT;
 				case SubType::FLOAT:
-					return LType::FLT_LIT;
+					return SType::FLT_LIT;
 				case SubType::VOID:
 				default:
 					Global::specifyError("Type void or other passed to IR generator.\n");
@@ -118,15 +118,15 @@ namespace CodeGen {
 		}
 
 		static inline bool isUnsigned(SubType type){
-			return LType::USIGN_LIT == genLType(type);
+			return SType::USIGN_LIT == genSType(type);
 		}
 		
 		static inline bool isSigned(SubType type){
-			return LType::SIGN_LIT == genLType(type);
+			return SType::SIGN_LIT == genSType(type);
 		}
 
 		static inline bool isFloat(SubType type){
-			return LType::USIGN_LIT == genLType(type);
+			return SType::FLT_LIT == genSType(type);
 		}
 
 		/** Returns 0 if should be signed */
@@ -148,15 +148,15 @@ namespace CodeGen {
 			}
 		}
 
-		static inline const char* formatSpec(LType lt){
+		static inline const char* formatSpec(SType lt){
 			switch(lt){	
-				case LType::FLT_LIT: 
+				case SType::FLT_LIT: 
 					return "%%Lf";
-				case LType::LBL:
+				case SType::REF:
 					return "s%%%%u";
-				case LType::SIGN_LIT:
+				case SType::SIGN_LIT:
 					return "%%lld";
-				case LType::USIGN_LIT:
+				case SType::USIGN_LIT:
 					return "%%llu";
 			}
 		}
@@ -179,11 +179,23 @@ namespace CodeGen {
 		}
 
 		unsigned int output(char* buf){
-			if(pred == SSA::nullSSA()) { 
-				return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr.extractLbl());
+			if(pred.isNull()) { 
+				return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr.extract());
 			} else {
-				return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
-								pred.extract(), ifbr.extractLbl(), elsebr.extractLbl()); 
+				switch(pred.which){
+					case SType::FLT_LIT:
+						Global::specifyError("Float passed to branch predicate.\n");
+						throw Global::InvalidBranch;
+					case SType::SIGN_LIT:
+						return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
+								pred.extractSignedInt() != 0 ? ifbr.extract() : elsebr.extract());
+					case SType::USIGN_LIT:
+						return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
+								pred.extractUnsignedInt() != 0 ? ifbr.extract() : elsebr.extract());
+					case SType::REF:
+						return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
+								pred.extractLbl(), ifbr.extract(), elsebr.extract()); 
+				}
 			}
 		}	
 	};
@@ -239,14 +251,14 @@ namespace CodeGen {
 
 	class IBinOp : public IOp {
 		private:
-			enum:char {LIT_LIT_INT, LIT_LIT_FLT, LIT_LBL_INT, LIT_LBL_FLT, 
-						LBL_LIT_INT, LBL_LIT_FLT, LBL_LBL_INT, LBL_LBL_FLT};
+			enum:char {LIT_LIT_INT, LIT_LIT_FLT, LIT_REF_INT, LIT_REF_FLT, 
+						REF_LIT_INT, REF_LIT_FLT, REF_REF_INT, REF_REF_FLT};
 		protected:
-			Label src1;
-			Label src2;
-			Label dest;
+			SSA src1;
+			SSA src2;
+			SSA dest;
 
-			IBinOp(SubType _width, Label _src1, Label _src2, Label _dest) : IOp (_width) {
+			IBinOp(SubType _width, SSA _src1, SSA _src2, SSA _dest) : IOp (_width) {
 				src1 = _src1;
 				src2 = _src2;
 				dest = _dest;
@@ -254,10 +266,10 @@ namespace CodeGen {
 
 			void assertTypeError(SubType type) override {				
 				// these are the unsigned types right now.
-				LType corresp = OpUtils::genLType(type);
-				if(__builtin_expect(dest.which != LType::LBL && (src1.which != corresp 
-						|| src1.which != LType::LBL) && (src2.which != corresp 
-						|| src2.which != LType::LBL),false)){
+				SType corresp = OpUtils::genSType(type);
+				if(__builtin_expect(dest.which != SType::REF && (src1.which != corresp 
+						|| src1.which != SType::REF) && (src2.which != corresp 
+						|| src2.which != SType::REF),false)){
 					Global::specifyError("Incorrect types passed to IR generator.\n");
 					throw Global::DeveloperError;
 				}
@@ -285,7 +297,7 @@ namespace CodeGen {
 				
 				// example fsbuf later: "s%u = %s%s%s %lld %lld"
 
-				switch(((src1.which == LType::LBL) << 2) + ((src2.which == LType::LBL) << 1) + flt){
+				switch(((src1.which == SType::REF) << 2) + ((src2.which == SType::REF) << 1) + flt){
 					case LIT_LIT_INT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							sign ? src1.extractSignedInt() : src1.extractUnsignedInt(),
@@ -295,24 +307,24 @@ namespace CodeGen {
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractFlt(), src2.extractFlt());
 						break;
-					case LIT_LBL_INT:
+					case LIT_REF_INT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							sign ? src1.extractSignedInt() : src1.extractUnsignedInt(), src2.extractLbl());
 						break;
-					case LIT_LBL_FLT:
+					case LIT_REF_FLT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							sign ? src1.extractFlt() : src2.extractLbl());
 						break;
-					case LBL_LIT_INT:
+					case REF_LIT_INT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractLbl(), sign ? src2.extractSignedInt() : src2.extractUnsignedInt());
 						break;
-					case LBL_LIT_FLT:
+					case REF_LIT_FLT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractLbl(), src2.extractFlt());
 						break;
-					case LBL_LBL_INT:
-					case LBL_LBL_FLT:
+					case REF_REF_INT:
+					case REF_REF_FLT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractLbl(), src2.extractLbl());
 						break;
@@ -332,7 +344,7 @@ namespace CodeGen {
 
 	class IAdd : public IBinOp {
 		public:
-			IAdd(SubType _width, Label _src1, Label _src2, Label _dest)
+			IAdd(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				  	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 			
@@ -343,7 +355,7 @@ namespace CodeGen {
 
 	class ISub : public IBinOp {
 		public:
-			ISub(SubType _width, Label _src1, Label _src2, Label _dest)
+			ISub(SubType _width,  SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -354,7 +366,7 @@ namespace CodeGen {
 
 	class IMul : public IBinOp {
 		public:
-			IMul(SubType _width, Label _src1, Label _src2, Label _dest)
+			IMul(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -365,7 +377,7 @@ namespace CodeGen {
 
 	class IDiv : public IBinOp {
 		public:
-			IDiv(SubType _width, Label _src1, Label _src2, Label _dest)
+			IDiv(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -376,7 +388,7 @@ namespace CodeGen {
 
 	class IMod : public IBinOp {	
 		public:
-			IMod(SubType _width, Label _src1, Label _src2, Label _dest)
+			IMod(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -387,7 +399,7 @@ namespace CodeGen {
 
 	class IShiftLeft : public IBinOp {
 		public:
-			IShiftLeft(SubType _width, Label _src1, Label _src2, Label _dest)
+			IShiftLeft(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -398,7 +410,7 @@ namespace CodeGen {
 
 	class IShiftRight : public IBinOp {
 		public:
-			IShiftRight(SubType _width, Label _src1, Label _src2, Label _dest)
+			IShiftRight(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -409,7 +421,7 @@ namespace CodeGen {
 
 	class IAnd : public IBinOp {
 		public:
-			IAnd(SubType _width, Label _src1, Label _src2, Label _dest)
+			IAnd(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -420,7 +432,7 @@ namespace CodeGen {
 
 	class IOr : public IBinOp {
 		public:
-			IOr(SubType _width, Label _src1, Label _src2, Label _dest)
+			IOr(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -431,7 +443,7 @@ namespace CodeGen {
 
 	class IXor : public IBinOp {
 		public:
-			IXor(SubType _width, Label _src1, Label _src2, Label _dest)
+			IXor(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -442,21 +454,21 @@ namespace CodeGen {
 
 	class IUnOp : public IOp {
 		private:
-			enum:char {LIT_INT, LIT_FLT, LBL_INT, LBL_FLT};
+			enum:char {LIT_INT, LIT_FLT, REF_INT, REF_FLT};
 		protected:
-			Label src;
-			Label dest;
+			SSA src;
+			SSA dest;
 	
-			IUnOp(SubType _width, Label _src, Label _dest) : IOp(_width) {
+			IUnOp(SubType _width, SSA _src, SSA _dest) : IOp(_width) {
 				src = _src;
 				dest = _dest;
 			}
 
 			void assertTypeError(SubType type) override {				
 				// these are the unsigned types right now.
-				LType corresp = OpUtils::genLType(type);
-				if(__builtin_expect(dest.which != LType::LBL && (src.which != corresp 
-						|| src.which != LType::LBL) ,false)){
+				SType corresp = OpUtils::genSType(type);
+				if(__builtin_expect(dest.which != SType::REF && (src.which != corresp 
+						|| src.which != SType::REF) ,false)){
 					Global::specifyError("Incorrect types passed to IR generator.\n");
 					throw Global::DeveloperError;
 				}
@@ -482,7 +494,7 @@ namespace CodeGen {
 				
 				// example fsbuf later: "s%u = %s%s%s %lld %lld"
 
-				switch(((src.which == LType::LBL) << 2) + flt){
+				switch(((src.which == SType::REF) << 2) + flt){
 					case LIT_INT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							sign ? src.extractSignedInt() : src.extractUnsignedInt());
@@ -491,8 +503,8 @@ namespace CodeGen {
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src.extractFlt());
 						break;
-					case LBL_INT:
-					case LBL_FLT:
+					case REF_INT:
+					case REF_FLT:
 						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src.extractLbl());
 						break;
@@ -513,7 +525,7 @@ namespace CodeGen {
 	// not done yet
 	class IGreater : public IBinOp {
 		public:
-			IGreater(SubType _width, Label _src1, Label _src2, Label _dest)
+			IGreater(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -527,7 +539,7 @@ namespace CodeGen {
 
 	class ILess : public IBinOp {
 		public:
-			ILess(SubType _width, Label _src1, Label _src2, Label _dest)
+			ILess(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -539,7 +551,7 @@ namespace CodeGen {
 
 	class IEqual : public IBinOp {
 		public:
-			IEqual(SubType _width, Label _src1, Label _src2, Label _dest)
+			IEqual(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -552,7 +564,7 @@ namespace CodeGen {
 	/** For use in IAssn */
 	class IDummy : public IUnOp {
 		public:
-			IDummy(Label _src, Label _dest) 
+			IDummy(SSA _src, SSA _dest) 
 					: IUnOp(SubType::CHAR, _src, _dest) {
 			}
 
@@ -572,7 +584,7 @@ namespace CodeGen {
 	class IAssn : public IBinOp {
 	
 		public:
-			IAssn(SubType _width, Label _src1, Label _src2, Label _dest)
+			IAssn(SubType _width, SSA _src1, SSA _src2, SSA _dest)
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
@@ -587,14 +599,14 @@ namespace CodeGen {
 	// credits to godbolt!
 	class IFlip : public IUnOp {
 		public:
-			IFlip(SubType _width, Label _src, Label _dest)
+			IFlip(SubType _width, SSA _src, SSA _dest)
 				   	: IUnOp(_width, _src, _dest) {
 			}
 
 			unsigned int output(char* buf){
 				unsigned long long neg1 = OpUtils::genAllOne(type);
 				if(neg1 == 0){
-					return IXor(type, src, Label::genSInt(-1), dest).output(buf);
+					return IXor(type, src, SSA::genSInt(-1), dest).output(buf);
 				} else {
 					return IXor(type, src, neg1, dest).output(buf);
 				}
@@ -603,12 +615,12 @@ namespace CodeGen {
 
 	class INeg : public IUnOp {
 		public:
-			INeg(SubType _width, Label _src, Label _dest)
+			INeg(SubType _width, SSA _src, SSA _dest)
 				   	: IUnOp(_width, _src, _dest) {
 			}
 
 			unsigned int output(char* buf){
-				return ISub(type, Label::genSInt(0), src, dest).output(buf);
+				return ISub(type, SSA::genSInt(0), src, dest).output(buf);
 			}
 	};
 
@@ -622,5 +634,3 @@ namespace CodeGen {
 }
 
 #endif
-
-

@@ -18,11 +18,13 @@
 
 
 // allocator constructed before lexing, freed when compilation ends
+
 Global::Alloc* allocator = nullptr;
 Global::Alloc* Global::getAllocator() {
     return allocator;
 }
 
+/*
 Parse::GroupFinder* groupFinder = nullptr;
 Parse::GroupFinder* Parse::gf(){
 	return groupFinder;
@@ -52,6 +54,7 @@ Control _globScope;
 Control* Parse::globScope(){
 	return &_globScope;
 }
+*/
 
 CodeGen::SSA _nextSSA = CodeGen::SSA(1);
 CodeGen::SSA CodeGen::nextSSA(){
@@ -63,6 +66,12 @@ CodeGen::Label CodeGen::nextLabel(){
 	return _nextLbl++;
 }
 
+int main(){
+	Label l1 = CodeGen::nextLabel()
+	Label l2 = CodeGen:
+}
+
+/*
 static const int FILE_SIZE_MULTIPLIER = 10;
 static const int CONSOLE_WIDTH = 100;
 
@@ -119,3 +128,4 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 }
+*/
