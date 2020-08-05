@@ -6,7 +6,7 @@
 using namespace Parse;
 
 void Variable::set(const char* _name, char _len, Lex::SubType _type, char _ptrLvl){
-	name = _name;
+    name = _name;
     len = _len;
     switch(_type){
         case Lex::SubType::INT:
@@ -33,11 +33,11 @@ void Variable::set(const char* _name, char _len, Lex::SubType _type, char _ptrLv
     }
     ptrLvl = _ptrLvl;
     _unsigned = false; 
-	// RIGHT NOW, IGNORE UNSIGNED VALUES. WILL INCORPORATE THEM LATER.
+    // RIGHT NOW, IGNORE UNSIGNED VALUES. WILL INCORPORATE THEM LATER.
 }
 
 Variable::Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLvl){
-	set(_name, _len, _type, _ptrLvl);
+    set(_name, _len, _type, _ptrLvl);
 }
 
 Variable::~Variable(){

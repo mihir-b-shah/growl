@@ -2,7 +2,7 @@
 $args = @()
 $items = Get-ChildItem -path $my_path -Recurse -Filter *.cpp 
 foreach ($file in $items){
-	$args += ($file).FullName;
+    $args += ($file).FullName;
 }
 $args += "-std=c++14"
 $args += "-g"

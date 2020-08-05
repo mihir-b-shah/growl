@@ -27,42 +27,42 @@ Global::Alloc* Global::getAllocator() {
 
 Parse::GroupFinder* groupFinder = nullptr;
 Parse::GroupFinder* Parse::gf(){
-	return groupFinder;
+    return groupFinder;
 }
 
 Parse::SymbolTable* symbolTable = nullptr;
 Parse::SymbolTable* Parse::st(){
-	return symbolTable;
+    return symbolTable;
 }
 
 char* _program = nullptr;
 char* Lex::program(){
-	return _program;
+    return _program;
 }
 
 Parse::Variable* _emptyVar = nullptr;
 Parse::Variable* Parse::emptyVar(){
-	return _emptyVar;
+    return _emptyVar;
 }
 
 Parse::Variable* _tombsVar = nullptr;
 Parse::Variable* Parse::tombsVar(){
-	return _tombsVar;
+    return _tombsVar;
 }
 
 Control _globScope;
 Control* Parse::globScope(){
-	return &_globScope;
+    return &_globScope;
 }
 
 CodeGen::SSA _nextSSA = CodeGen::SSA(1);
 CodeGen::SSA CodeGen::nextSSA(){
-	return _nextSSA++;
+    return _nextSSA++;
 }
 
 CodeGen::Label _nextLbl = CodeGen::Label(1);
 CodeGen::Label CodeGen::nextLabel(){
-	return _nextLbl++;
+    return _nextLbl++;
 }
 
 static const int FILE_SIZE_MULTIPLIER = 10;
@@ -70,13 +70,13 @@ static const int CONSOLE_WIDTH = 100;
 
 // i just want this to be heap allocated for some reason.
 static void singletonVars(){
-	// char is a dummy here
-	_tombsVar = new Parse::Variable("TOMBS_3022", 10, Lex::SubType::CHAR, 0);
-	_emptyVar = new Parse::Variable("EMPTY_2930", 10, Lex::SubType::CHAR, 0);	
+    // char is a dummy here
+    _tombsVar = new Parse::Variable("TOMBS_3022", 10, Lex::SubType::CHAR, 0);
+    _emptyVar = new Parse::Variable("EMPTY_2930", 10, Lex::SubType::CHAR, 0);    
 }
 
 int main(int argc, char** argv) {
-	Global::Alloc alloc(0);
+    Global::Alloc alloc(0);
     allocator = &alloc;
 
     if(argc != 2) {
@@ -89,27 +89,27 @@ int main(int argc, char** argv) {
     
     std::rewind(file);
 
-	// HUGE WARNING MIGHT GET OPTIMIZED AWAY
+    // HUGE WARNING MIGHT GET OPTIMIZED AWAY
     char* program = Global::getAllocator()->allocate<char>(size+1);
-	_program = program;
-	
+    _program = program;
+    
     std::fread(program, 1, size, file);
     std::fflush(file);
     std::fclose(file);
     program[size] = '\0';
     // lex
     Lex::LexStream tokens(size/sizeof(char));
-	try {
+    try {
         Lex::lex(tokens, size, program);
         tokens.persist("test.txt");
-		Parse::GroupFinder _gf(tokens.begin(), tokens.end());
-		groupFinder = &_gf;
-		singletonVars();
-		Parse::SymbolTable _st;
-		symbolTable = &_st;
-		
-		Parse::parseAST(0, tokens.begin(), tokens.end(), 
-						Parse::globScope());
+        Parse::GroupFinder _gf(tokens.begin(), tokens.end());
+        groupFinder = &_gf;
+        singletonVars();
+        Parse::SymbolTable _st;
+        symbolTable = &_st;
+        
+        Parse::parseAST(0, tokens.begin(), tokens.end(), 
+                        Parse::globScope());
 
         return EXIT_SUCCESS;
     } catch (int exc) {

@@ -46,8 +46,8 @@ namespace Utils {
             
             Set(T* st, size_t s, size_t c){
                 if(__builtin_expect(c > MAX_CAPACITY,false)){
-					Global::specifyError("Too much memory req.\n");
-                	throw Global::MemoryRequestError; 
+                    Global::specifyError("Too much memory req.\n");
+                    throw Global::MemoryRequestError; 
                 }
                 front = st;
                 _size = s;
@@ -60,12 +60,12 @@ namespace Utils {
                 size_t idx = Traits::hash(key) & _capacity-1;
                 size_t jmp = 0;
                 while(!Traits::equal(_table[idx], Traits::emptyVal()) 
-								&& !Traits::equal(_table[idx], Traits::tombstoneVal()) 
-								&& !Traits::equal(_table[idx], key)){
+                                && !Traits::equal(_table[idx], Traits::tombstoneVal()) 
+                                && !Traits::equal(_table[idx], key)){
                     idx += 2*jmp+1;
                     ++jmp;
                     idx &= _capacity - 1; // to optimize away, just getting the easy way first.
-				}
+                }
                 if(__builtin_expect(Traits::equal(_table[idx], key), false)){
                     return false;
                 }
@@ -87,14 +87,14 @@ namespace Utils {
                     case HEAP_GROW:
                     {
                         if(__builtin_expect(realCapacity*2 > MAX_CAPACITY,false)){
-							Global::specifyError("Too much memory req.\n");
-                			throw Global::MemoryRequestError; 
+                            Global::specifyError("Too much memory req.\n");
+                            throw Global::MemoryRequestError; 
                         }
                         
                         T* aux = new T[realCapacity*2]();
                         for(int i = 0; i<realCapacity; ++i){
                             if(!Traits::equal(front[i], Traits::emptyVal()) 
-											&& !Traits::equal(front[i], Traits::tombstoneVal())){
+                                            && !Traits::equal(front[i], Traits::tombstoneVal())){
                                 // guaranteed to fit.
                                 fastInsert(front[i], aux, realCapacity*2);
                             }
@@ -122,7 +122,7 @@ namespace Utils {
                 size_t idx = Traits::hash(key) & realCapacity-1;
                 size_t jmp = 0;
                 while(!Traits::equal(front[idx], Traits::emptyVal()) && 
-								!Traits::equal(front[idx], key)){
+                                !Traits::equal(front[idx], key)){
                     idx += 2*jmp+1;
                     ++jmp;
                     idx &= realCapacity-1; // to optimize away, just getting the easy way first.

@@ -42,7 +42,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             Global::specifyError("Line 40");
             throw Global::InvalidLiteral;
         }
-		base->size = ct;
+        base->size = ct;
         base->value.iof = IOF::UNDEFINED;
         base->type = Type::ID;
         base->subType = SubType::NAME;
@@ -58,7 +58,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             throw Global::InvalidLiteral;
         } else if(data[ct] == '.') {
             // use a float
-			// might have bugs... 
+            // might have bugs... 
             ++ct;
             char* dotPtr = data+ct;
             while(ct < 255 && std::isdigit(data[ct])) {
@@ -97,7 +97,7 @@ static inline char* const parseWord(Token* base, char* const data) {
                 res += *readPtr-'0';
                 ++readPtr;
             }
-			base->size = ct;
+            base->size = ct;
             base->type = Type::LITERAL;
             base->subType = SubType::INT_LITERAL;
             base->value.iof = IOF::INT_VAL;
@@ -395,8 +395,8 @@ static char* const parse(Token* base, char* const data) {
                 base->subType = SubType::LONG;
                 base->value.iof = IOF::PTRLVL;
                 base->size = 4+(base->value.holder.ptrLvl = scanPtrLvl(data+4));
-            	return data+4+base->value.holder.ptrLvl;
-			} else {
+                return data+4+base->value.holder.ptrLvl;
+            } else {
                 return parseWord(base, data); 
             }
         case 'r':
@@ -451,12 +451,12 @@ static char* const parse(Token* base, char* const data) {
 void Lex::lex(LexStream& tokens, int size, char* const program) {
     char* moving = program;
     while(isspace(*moving)) {
-    	++moving;
+        ++moving;
     }
     while(*moving != '\0') {
         Token* token = tokens.allocate();
         moving = parse(token, moving);
-		while(isspace(*moving)) {
+        while(isspace(*moving)) {
             ++moving;
         }
     }

@@ -15,7 +15,7 @@ void traverse(Parse::AST* ast){
  * x = 0;
  * 
  * while(x < 5) {
- * 	x = x + 1;
+ *     x = x + 1;
  * }
  *
  * Simple ASM (LC3 style):
@@ -36,6 +36,6 @@ void traverse(Parse::AST* ast){
  */
 
 void genASM(Utils::Vector<IInstr>& instrs){
-	traverse(Parse::globScope()->getSeq());
+    traverse(Parse::globScope()->getSeq());
 }
 

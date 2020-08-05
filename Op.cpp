@@ -79,7 +79,7 @@ Op::Op(SubType op, Expr* e1, Expr* e2){
     Op::inputs.twoArgs[0] = e1;
     inputs.twoArgs[1] = e2;
    
-	Op::intrinsic = true;
+    Op::intrinsic = true;
     switch(op) {
         case SubType::PLUS:
             driver.intr = IntrOps::ADD;
@@ -123,8 +123,8 @@ Op::Op(SubType op, Expr* e1, Expr* e2){
         case SubType::LSHIFT:
             driver.intr = IntrOps::LSHIFT;
             break;
-		case SubType::RSHIFT:
-			driver.intr = IntrOps::RSHIFT;
+        case SubType::RSHIFT:
+            driver.intr = IntrOps::RSHIFT;
         default:
             Global::specifyError("Invalid invocation of operator.");
             throw Global::InvalidOperatorInvocation;
@@ -155,7 +155,7 @@ static inline Syntax::OpType detOpType(IntrOps type) {
         case IntrOps::XOR:
         case IntrOps::ASSN:
         case IntrOps::LSHIFT:
-		case IntrOps::RSHIFT:
+        case IntrOps::RSHIFT:
             return Syntax::OpType::BINARY;
         default:
             Global::specifyError("Invalid operator encountered.");

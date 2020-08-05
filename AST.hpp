@@ -13,105 +13,105 @@
 
 namespace Parse {
    
-	class IInstr;	
+    class IInstr;    
     class AST {
-		public:
-			virtual void debugPrint(std::ostream& out) = 0;
+        public:
+            virtual void debugPrint(std::ostream& out) = 0;
             virtual ArgIterator iterator() = 0;
-			virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
+            virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
     };
 
     class Expr : public AST {
         friend class ArgIterator;
         public:
             virtual int printRoot(char* buf) const = 0;
-			void print(const int width, std::ostream& out);
-			virtual void debugPrint(std::ostream& out){
-				out << "Expr\n";
-			}
-			virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
+            void print(const int width, std::ostream& out);
+            virtual void debugPrint(std::ostream& out){
+                out << "Expr\n";
+            }
+            virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
     };
 
-	class Sequence : public AST {
-		private:
-			Utils::SmallVector<AST*,5> seq;
-		public:
-			Sequence(){
-			}
-			~Sequence(){
-			}
-			/** Returns start iterator */
-			AST** begin(){
-				return seq.begin();
-			}
-			/** Returns end iterator */
-			AST** end(){
-				return seq.end();
-			}
-			/** Return back element */
-			AST* back(){
-				return seq.eback();
-			}
-			AST* at(unsigned int idx){
-				return seq[idx];
-			}
-			void push(AST* item){
-				return seq.push_back(item);
-			}
-			void pop(){
-				return seq.pop_back();
-			}
-			unsigned int size(){
-				return seq.size();
-			}
-			void debugPrint(std::ostream& out){
-				out << "sequence\n";
-			}
-			ArgIterator iterator(){
-				return ArgIterator(SupportedType::_Seq, this);
-			}
-			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
-	};
+    class Sequence : public AST {
+        private:
+            Utils::SmallVector<AST*,5> seq;
+        public:
+            Sequence(){
+            }
+            ~Sequence(){
+            }
+            /** Returns start iterator */
+            AST** begin(){
+                return seq.begin();
+            }
+            /** Returns end iterator */
+            AST** end(){
+                return seq.end();
+            }
+            /** Return back element */
+            AST* back(){
+                return seq.eback();
+            }
+            AST* at(unsigned int idx){
+                return seq[idx];
+            }
+            void push(AST* item){
+                return seq.push_back(item);
+            }
+            void pop(){
+                return seq.pop_back();
+            }
+            unsigned int size(){
+                return seq.size();
+            }
+            void debugPrint(std::ostream& out){
+                out << "sequence\n";
+            }
+            ArgIterator iterator(){
+                return ArgIterator(SupportedType::_Seq, this);
+            }
+            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+    };
 
-	class Control : public AST {
-		private:
-			char* openBrace;
-			Sequence seq;
-    	protected:
-			Control(char* ob){
-				openBrace = ob;
-			}
-		public:
-			Control(){
-				openBrace = Lex::program()-1;
-			}
-			void setBracket(char* ob){
-				openBrace = ob;
-			}
-			char* getBracket(){
-				return openBrace;
-			}
-			unsigned int seqSize(){
-				return seq.size();
-			}
-			void seqAdd(AST* a){
-				seq.push(a);
-			}
-			Sequence* getSeq(){
-				return &seq;
-			}
-			virtual void debugPrint(std::ostream& out){
-				out << "Control\n";
-			}
-			virtual ArgIterator iterator(){
-				return ArgIterator(SupportedType::_Ctl, this);
-			}
-			virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect){
-				Global::specifyError("Code gen on Control* not sup.\n");
-				throw Global::DeveloperError;
-			}
-	};
-	Control* globScope();
+    class Control : public AST {
+        private:
+            char* openBrace;
+            Sequence seq;
+        protected:
+            Control(char* ob){
+                openBrace = ob;
+            }
+        public:
+            Control(){
+                openBrace = Lex::program()-1;
+            }
+            void setBracket(char* ob){
+                openBrace = ob;
+            }
+            char* getBracket(){
+                return openBrace;
+            }
+            unsigned int seqSize(){
+                return seq.size();
+            }
+            void seqAdd(AST* a){
+                seq.push(a);
+            }
+            Sequence* getSeq(){
+                return &seq;
+            }
+            virtual void debugPrint(std::ostream& out){
+                out << "Control\n";
+            }
+            virtual ArgIterator iterator(){
+                return ArgIterator(SupportedType::_Ctl, this);
+            }
+            virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect){
+                Global::specifyError("Code gen on Control* not sup.\n");
+                throw Global::DeveloperError;
+            }
+    };
+    Control* globScope();
 
     class FuncDef : public Control {
         private:
@@ -124,37 +124,37 @@ namespace Parse {
     };
 
     class Branch : public Control {
-		friend class ArgIterator;
-		private:
-			// essentially a link list of branches. last one 
-			// guaranteed to have a null predicate pointer.
-			Expr* pred = nullptr;
-			Branch* next = nullptr;
-		public:
-			Branch() : Control(nullptr){
-			}
-			Branch(char* ob, Expr* _pred) : Control(ob){
-				pred = _pred;
-			}
-			~Branch(){
-			}
-			Branch* addBranch(){
-				next = new Branch();
-				return next;
-			}
-			void setPred(Expr* _pred){
-				pred = _pred;
-			}	
-			Expr* getPred(){
-				return pred;
-			}
-			void debugPrint(std::ostream& out){
-				out << "Branch\n";
-			}
-			ArgIterator iterator(){
-				return ArgIterator(SupportedType::_Br, this);
-			}
-			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+        friend class ArgIterator;
+        private:
+            // essentially a link list of branches. last one 
+            // guaranteed to have a null predicate pointer.
+            Expr* pred = nullptr;
+            Branch* next = nullptr;
+        public:
+            Branch() : Control(nullptr){
+            }
+            Branch(char* ob, Expr* _pred) : Control(ob){
+                pred = _pred;
+            }
+            ~Branch(){
+            }
+            Branch* addBranch(){
+                next = new Branch();
+                return next;
+            }
+            void setPred(Expr* _pred){
+                pred = _pred;
+            }    
+            Expr* getPred(){
+                return pred;
+            }
+            void debugPrint(std::ostream& out){
+                out << "Branch\n";
+            }
+            ArgIterator iterator(){
+                return ArgIterator(SupportedType::_Br, this);
+            }
+            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     /*
@@ -166,33 +166,33 @@ namespace Parse {
         };
     */
 
-	class Loop : public Control {
-		private:
-			Expr* pred;
-		public:
-			Loop() : Control(nullptr) {
-			}
-			Loop(char* ob, Expr* _pred) : Control(ob) {
-				pred = _pred;
-			}
-			~Loop(){
-			}
-			void setBracket(char* ob){
-				
-			}
-			void setPred(Expr* _pred){
-				pred = _pred;
-			}	
-			Expr* getPred(){
-				return pred;
-			}
-			void debugPrint(std::ostream& out){
-				out << "Loop\n";
-			}
-			ArgIterator iterator(){
-				return ArgIterator(SupportedType::_Lp, this);
-			}
-			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+    class Loop : public Control {
+        private:
+            Expr* pred;
+        public:
+            Loop() : Control(nullptr) {
+            }
+            Loop(char* ob, Expr* _pred) : Control(ob) {
+                pred = _pred;
+            }
+            ~Loop(){
+            }
+            void setBracket(char* ob){
+                
+            }
+            void setPred(Expr* _pred){
+                pred = _pred;
+            }    
+            Expr* getPred(){
+                return pred;
+            }
+            void debugPrint(std::ostream& out){
+                out << "Loop\n";
+            }
+            ArgIterator iterator(){
+                return ArgIterator(SupportedType::_Lp, this);
+            }
+            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, LSHIFT, RSHIFT};
@@ -224,12 +224,12 @@ namespace Parse {
             int arity() const;
             int printRoot(char* buf) const;
             ArgIterator iterator();
-			void debugPrint(std::ostream& out){
-				char buf[5] = {'\0'};
-				printRoot(buf);
-				out << buf << '\n';
-			}
-			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+            void debugPrint(std::ostream& out){
+                char buf[5] = {'\0'};
+                printRoot(buf);
+                out << buf << '\n';
+            }
+            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
     class Literal : public Expr {
@@ -276,16 +276,16 @@ namespace Parse {
             Parse::ArgIterator iterator() override {
                 return ArgIterator(SupportedType::_Lit, this);
             }
-			void debugPrint(std::ostream& out) override {
-				char buf[5] = {'\0'};
-				printRoot(buf);
-				out << buf << '\n';
-			}
-			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+            void debugPrint(std::ostream& out) override {
+                char buf[5] = {'\0'};
+                printRoot(buf);
+                out << buf << '\n';
+            }
+            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
     };
 
     enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
-	static const char* varstrs[6] = {"int", "long", "char", "float", "bool", "void"};
+    static const char* varstrs[6] = {"int", "long", "char", "float", "bool", "void"};
     class Variable : public Expr {
         friend class ArgIterator;
         
@@ -298,52 +298,52 @@ namespace Parse {
         bool _unsigned; // true if so.
 
         public:
-			Variable(){}
+            Variable(){}
             Variable(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
             ~Variable();
-			void set(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
-			char* namePtr(){return const_cast<char*>(name);}
-			byte getLen(){return len;}
+            void set(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
+            char* namePtr(){return const_cast<char*>(name);}
+            byte getLen(){return len;}
             int printRoot(char* buf) const override;
             Parse::ArgIterator iterator() override;
-			void debugPrint(std::ostream& out) override {
-				out << "Name: ";
-				out.write(name, len);
-				out << " Len: " << static_cast<int>(len);
-				out << " VarType: " << varstrs[static_cast<int>(type)];
-			   	out << " PtrLvl: " << static_cast<int>(ptrLvl);
-				out << '\n';	
-			}
-			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+            void debugPrint(std::ostream& out) override {
+                out << "Name: ";
+                out.write(name, len);
+                out << " Len: " << static_cast<int>(len);
+                out << " VarType: " << varstrs[static_cast<int>(type)];
+                   out << " PtrLvl: " << static_cast<int>(ptrLvl);
+                out << '\n';    
+            }
+            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
     };
-	Variable* emptyVar();
-	Variable* tombsVar();
-	
-	class Decl : public AST {
-		private:
-			Variable* var;
-			char* index;
-		public:
-			Decl(Variable* v, char* idx){
-				var = v;
-				index = idx;
-			}
-			~Decl(){
-			}
-			Variable* getVar(){
-				return var;
-			}
-			int getDist(){
-				return index-Lex::program();
-			}
-			void debugPrint(std::ostream& out){
-				var->debugPrint(out);
-			}
-			Parse::ArgIterator iterator() override {
-				return ArgIterator(SupportedType::_Decl, this);
-			}
-			unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
-	};
+    Variable* emptyVar();
+    Variable* tombsVar();
+    
+    class Decl : public AST {
+        private:
+            Variable* var;
+            char* index;
+        public:
+            Decl(Variable* v, char* idx){
+                var = v;
+                index = idx;
+            }
+            ~Decl(){
+            }
+            Variable* getVar(){
+                return var;
+            }
+            int getDist(){
+                return index-Lex::program();
+            }
+            void debugPrint(std::ostream& out){
+                var->debugPrint(out);
+            }
+            Parse::ArgIterator iterator() override {
+                return ArgIterator(SupportedType::_Decl, this);
+            }
+            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+    };
 }
 
 #endif

@@ -9,11 +9,11 @@
 
 /** None */
 unsigned int Parse::Sequence::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	unsigned int accm = 0;
-	for(auto iter = this->iterator(); !iter.done(); iter.next()){
-		accm += iter.get()->codeGen(output);
-	}
-	return accm;
+    unsigned int accm = 0;
+    for(auto iter = this->iterator(); !iter.done(); iter.next()){
+        accm += iter.get()->codeGen(output);
+    }
+    return accm;
 }
 
 /**
@@ -28,10 +28,10 @@ unsigned int Parse::Sequence::codeGen(Utils::Vector<CodeGen::IInstr>& output){
  * Else is an unconditional branch if exists.
  */
 unsigned int Parse::Branch::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	for(auto iter = this->iterator(); !iter.done(); iter.next()){
+    for(auto iter = this->iterator(); !iter.done(); iter.next()){
 
-	}	
-	return 0;
+    }    
+    return 0;
 }
 
 /** Compute the Expr, Setup a loop 
@@ -46,7 +46,7 @@ unsigned int Parse::Branch::codeGen(Utils::Vector<CodeGen::IInstr>& output){
  *     br L1
  */
 unsigned int Parse::Loop::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	return 0;	
+    return 0;    
 }
 
 /** Setup an operator 
@@ -55,24 +55,24 @@ unsigned int Parse::Loop::codeGen(Utils::Vector<CodeGen::IInstr>& output){
  * then get the % node for each of them. Then call my operator.
  */
 unsigned int Parse::Op::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	return 0;
+    return 0;
 }
 
 /** Simple substitution */
 unsigned int Parse::Literal::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	return 0;
+    return 0;
 }
 
 /** Simple substitution...? */
 unsigned int Parse::Variable::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	return 0;
+    return 0;
 }
 
 /** An alloca <type> */
 unsigned int Parse::Decl::codeGen(Utils::Vector<CodeGen::IInstr>& output){
-	return 0;
+    return 0;
 }
 
 unsigned int genIR(Utils::Vector<CodeGen::IInstr>& buf){
-	return 0;
+    return 0;
 }

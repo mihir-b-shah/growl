@@ -4,7 +4,7 @@
 
 namespace Lex {
    
-	char* program();	
+    char* program();    
     enum class Type:char {
         CONTROL, DATATYPE, GROUP, LITERAL, OPERATOR, ID
     };

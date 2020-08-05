@@ -27,7 +27,7 @@ OpType Syntax::opType(SubType type) {
         case SubType::OR:
         case SubType::PLUS:
         case SubType::LSHIFT:
-		case SubType::RSHIFT:
+        case SubType::RSHIFT:
             return OpType::BINARY;
         default:
             Global::specifyError("Occurred in Operator.cpp. 31");
@@ -65,7 +65,7 @@ Syntax::Assoc Syntax::associate(SubType type, OpType opType) {
         case SubType::OR:
         case SubType::PLUS:
         case SubType::LSHIFT:
-		case SubType::RSHIFT:
+        case SubType::RSHIFT:
             return Assoc::LEFT;
         default:
             Global::specifyError("Occurred in Operator.cpp.");
@@ -110,7 +110,7 @@ int Syntax::precedence(SubType type, OpType opType) {
         case SubType::PLUS:
             return 8;
         case SubType::LSHIFT:
-		case SubType::RSHIFT:
+        case SubType::RSHIFT:
             return 7;
         case SubType::GREATER:
         case SubType::LESS:

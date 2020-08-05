@@ -8,17 +8,17 @@
 namespace Parse {    
     enum class SupportedType:char {_Expr, _Op, _Lit, _Var, _Decl, _Lp, _Br, _Ctl, _Seq};
 
-	class AST;
+    class AST;
     class Expr;
     class Loop;
-	class Variable;
+    class Variable;
     class Control;
-	class Branch;
+    class Branch;
 
     class ArgIterator {
         SupportedType type;
         AST* handle;
-		int pos;
+        int pos;
         
         public:
             ArgIterator(SupportedType mType, AST* mHandle);
@@ -27,18 +27,18 @@ namespace Parse {
             AST* get();
     };
 
-	void parseAST(int offset, Lex::Token* begin, Lex::Token* end, Control* within);
+    void parseAST(int offset, Lex::Token* begin, Lex::Token* end, Control* within);
     Expr* parseExpr(Lex::Token* begin, Lex::Token* end);
-	Lex::Token* parseLoop(int offset, Lex::Token* begin, Loop* lp);
+    Lex::Token* parseLoop(int offset, Lex::Token* begin, Loop* lp);
 
-	Lex::Token* parseBranch(int offset, Lex::Token* begin, Branch* br);
+    Lex::Token* parseBranch(int offset, Lex::Token* begin, Branch* br);
 
-	Lex::Token* parseDecl(Lex::Token* begin, Variable* v, Control* within);
-	GroupFinder* gf();
+    Lex::Token* parseDecl(Lex::Token* begin, Variable* v, Control* within);
+    GroupFinder* gf();
 
-	class SymbolTable;
-	SymbolTable* st();
-	
+    class SymbolTable;
+    SymbolTable* st();
+    
 }
 
 #endif
