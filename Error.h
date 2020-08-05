@@ -19,6 +19,7 @@ namespace Global {
 	const int InvalidLoop = 0x18;
 	const int InvalidDeclaration = 0x19;
 	const int InvalidBranch = 0x1A;
+	const int InvalidInstrInvocation = 0x1B;
 
     const int ERROR_BUFFER_SIZE = 255;
     const int ERROR_REFERENCE_SIZE = 31;

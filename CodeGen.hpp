@@ -6,6 +6,7 @@
 #include "Vector.hpp"
 #include "Error.h"
 #include <cstdio>
+#include <cstring>
 #include <utility>
 
 namespace CodeGen {
@@ -92,8 +93,10 @@ namespace CodeGen {
 		unsigned int extract(){return ssa;}
 	};
 
-	static const unsigned int INSTR_BUF_SIZE = 57;
+	static const unsigned int INSTR_BUF_SIZE = 100;
 	static const char* const ERROR_INSTR = "NEVER USED. ERROR.";
+	static const char* const EMPTY_INSTR = "";
+	static const char* const EMPTY_FLAG = "";
 	constexpr unsigned int instrBufSize(){return INSTR_BUF_SIZE;}
 
 	struct OpUtils {
@@ -113,7 +116,19 @@ namespace CodeGen {
 					throw Global::DeveloperError;
 			}
 		}
+
+		static inline bool isUnsigned(SubType type){
+			return LType::USIGN_LIT == genLType(type);
+		}
 		
+		static inline bool isSigned(SubType type){
+			return LType::SIGN_LIT == genLType(type);
+		}
+
+		static inline bool isFloat(SubType type){
+			return LType::USIGN_LIT == genLType(type);
+		}
+
 		/** Returns 0 if should be signed */
 		static unsigned long long genAllOne(SubType type){
 			switch(type){
@@ -136,20 +151,20 @@ namespace CodeGen {
 		static inline const char* formatSpec(LType lt){
 			switch(lt){	
 				case LType::FLT_LIT: 
-					return "Lf";
+					return "%%Lf";
 				case LType::LBL:
-					return "u";
+					return "s%%%%u";
 				case LType::SIGN_LIT:
-					return "lld";
+					return "%%lld";
 				case LType::USIGN_LIT:
-					return "llu";
+					return "%%llu";
 			}
 		}
 	};	
 
 	// inheritance hierarchy for all the different inclassions	
 	class IInstr {
-		virtual void output(char buf[INSTR_BUF_SIZE]) = 0;
+		virtual unsigned int output(char* buf) = 0;
 	};
 
 	class IBranch : public IInstr {
@@ -163,34 +178,81 @@ namespace CodeGen {
 			elsebr = _elsebr;
 		}
 
-		void output(char buf[INSTR_BUF_SIZE]){
+		unsigned int output(char* buf){
 			if(pred == SSA::nullSSA()) { 
-				std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr.extractLbl());
+				return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr.extractLbl());
 			} else {
-				std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
+				return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
 								pred.extract(), ifbr.extractLbl(), elsebr.extractLbl()); 
 			}
 		}	
 	};
 
-	class IBinOp : public IInstr {
+	class IOp : public IInstr {
+		protected:
+			SubType type;
+			IOp(SubType _type){
+				type = _type;
+			}
+
+			virtual void assertTypeError(SubType type) = 0;
+			virtual unsigned int printOp(char* buf, const char* const instr, const char* const flg,
+						 const char* const dType, bool sign, bool flt);
+
+			unsigned int outputHelp(char* buf, const char* const iflg, 
+							const char* const fflg, const char* const unsignInstr, 
+							const char* const signInstr, const char* const fltInstr, 
+							bool dispFltType){
+				assertTypeError(type);
+				int ret;
+				switch(type){
+					case SubType::CHAR:
+						ret = printOp(buf, unsignInstr, iflg, "i8", false, false);	
+						break;
+					case SubType::INT:
+						ret = printOp(buf, signInstr, iflg, "i32", true, false);
+						break;
+					case SubType::LONG:
+						ret = printOp(buf, unsignInstr, iflg, "i64", false, false);
+						break;
+					case SubType::BOOL:
+						ret = printOp(buf, unsignInstr, iflg, "i1", false, false);
+						break;
+					case SubType::FLOAT:
+						if(__builtin_expect(std::strcmp(fltInstr, ERROR_INSTR) == 0,false)){
+							Global::specifyError("Flt type used in int-only instruction.\n");	
+							throw Global::InvalidInstrInvocation;
+						}
+						// right now, floats in Growl are 64-bit doubles in LLVM.	
+						ret = printOp(buf, fltInstr, fflg, dispFltType ? "double" : "", true, true);
+						break;
+					default:
+						Global::specifyError("Invalid type encountered.\n");
+						throw Global::DeveloperError;
+				}
+
+				return ret;
+			}	
+		public:
+			virtual unsigned int output(char* buf) = 0;
+	};
+
+	class IBinOp : public IOp {
 		private:
 			enum:char {LIT_LIT_INT, LIT_LIT_FLT, LIT_LBL_INT, LIT_LBL_FLT, 
 						LBL_LIT_INT, LBL_LIT_FLT, LBL_LBL_INT, LBL_LBL_FLT};
 		protected:
-			SubType type;
 			Label src1;
 			Label src2;
 			Label dest;
 
-			IBinOp(SubType _width, Label _src1, Label _src2, Label _dest){
-				type = _width;
+			IBinOp(SubType _width, Label _src1, Label _src2, Label _dest) : IOp (_width) {
 				src1 = _src1;
 				src2 = _src2;
 				dest = _dest;
 			}
 
-			void assertTypeError(SubType type) {				
+			void assertTypeError(SubType type) override {				
 				// these are the unsigned types right now.
 				LType corresp = OpUtils::genLType(type);
 				if(__builtin_expect(dest.which != LType::LBL && (src1.which != corresp 
@@ -201,19 +263,19 @@ namespace CodeGen {
 				}
 			}
 
-			/** "instr" should be followed by space.*/
-			void printOp(char buf[INSTR_BUF_SIZE], const char* const instr, 
-							const char* const dType, bool sign, bool flt) {
+			/** "instr" and :"flg" should be followed by space.*/
+			unsigned int printOp(char* buf, const char* const instr, const char* const flg,
+						 const char* const dType, bool sign, bool flt) override {
 				
 				const char* spec1 = OpUtils::formatSpec(src1.which);
 				const char* spec2 = OpUtils::formatSpec(src2.which);
 
 				// the max number of chars it can be.
-				constexpr int FSBUF_LEN = 22;
+				constexpr int FSBUF_LEN = 30;
 				
 				char fsbuf[FSBUF_LEN] = {'\0'};
 				// setup the printf. bad for efficiency but whatever...
-				int chk = std::snprintf(fsbuf, FSBUF_LEN, "s%%u = %%s%%s %%%s %%%s",
+				int chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s %s %s",
 								spec1, spec2);
 				
 				if(chk >= FSBUF_LEN) {
@@ -221,37 +283,37 @@ namespace CodeGen {
 					throw Global::DeveloperError;
 				}
 				
-				// example fsbuf later: "s%u = %s %s %lld %lld"
+				// example fsbuf later: "s%u = %s%s%s %lld %lld"
 
 				switch(((src1.which == LType::LBL) << 2) + ((src2.which == LType::LBL) << 1) + flt){
 					case LIT_LIT_INT:
-						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, dType, 
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							sign ? src1.extractSignedInt() : src1.extractUnsignedInt(),
 							sign ? src2.extractSignedInt() : src2.extractUnsignedInt());
 						break;
 					case LIT_LIT_FLT:
-						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, dType, 
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractFlt(), src2.extractFlt());
 						break;
 					case LIT_LBL_INT:
-						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, dType, 
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							sign ? src1.extractSignedInt() : src1.extractUnsignedInt(), src2.extractLbl());
 						break;
 					case LIT_LBL_FLT:
-						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, dType, 
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							sign ? src1.extractFlt() : src2.extractLbl());
 						break;
 					case LBL_LIT_INT:
-						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, dType, 
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractLbl(), sign ? src2.extractSignedInt() : src2.extractUnsignedInt());
 						break;
 					case LBL_LIT_FLT:
-						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, dType, 
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractLbl(), src2.extractFlt());
 						break;
 					case LBL_LBL_INT:
 					case LBL_LBL_FLT:
-						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, dType, 
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
 							src1.extractLbl(), src2.extractLbl());
 						break;
 					default:
@@ -263,34 +325,9 @@ namespace CodeGen {
 					Global::specifyError("Buffer for snprintf too small.\n");
 					throw Global::DeveloperError;			
 				}
-			}
 
-			void outputHelp(char buf[INSTR_BUF_SIZE], const char* const unsignInstr, 
-							const char* const signInstr, const char* const fltInstr){
-				assertTypeError(type);
-				switch(type){
-					case SubType::CHAR:
-						printOp(buf, unsignInstr, "i8", false, false);	
-						break;
-					case SubType::INT:
-						printOp(buf, signInstr, "i32", true, false);
-						break;
-					case SubType::LONG:
-						printOp(buf, unsignInstr, "i64", false, false);
-						break;
-					case SubType::BOOL:
-						printOp(buf, unsignInstr, "i1", false, false);
-						break;
-					case SubType::FLOAT:
-						printOp(buf, fltInstr, "", true, true);
-						break;
-					default:
-						Global::specifyError("Invalid type encountered.\n");
-						throw Global::DeveloperError;
-				}	
-			}	
-		public:
-			virtual void output(char buf[INSTR_BUF_SIZE]);
+				return chk;
+			}
 	};
 
 	class IAdd : public IBinOp {
@@ -299,8 +336,8 @@ namespace CodeGen {
 				  	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 			
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "add ", "add ", "fadd ");
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "add ", "add ", "fadd ", false);
 			}
 	};
 
@@ -310,8 +347,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "sub ", "sub ", "fsub ");	
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "sub ", "sub ", "fsub ", false);	
 			}
 	};
 
@@ -321,8 +358,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "mul ", "mul ", "fmul ");
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "mul ", "mul ", "fmul ", false);
 			}
 	};
 
@@ -332,8 +369,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "udiv ", "sdiv ", "fdiv ");
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "udiv ", "sdiv ", "fdiv ", false);
 			}
 	};
 
@@ -343,8 +380,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "urem ", "srem ", "frem ");	
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "urem ", "srem ", "frem ", false);	
 			}
 	};
 
@@ -354,8 +391,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "shl ", "shl ", ERROR_INSTR);	
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "shl ", "shl ", ERROR_INSTR, false);	
 			}
 	};
 
@@ -365,8 +402,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "lshr ", "ashr ", ERROR_INSTR);	
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "lshr ", "ashr ", ERROR_INSTR, false);	
 			}
 	};
 
@@ -376,8 +413,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "and ", "and ", ERROR_INSTR);
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "and ", "and ", ERROR_INSTR, false);
 			}
 	};
 
@@ -387,8 +424,8 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "or ", "or ", ERROR_INSTR);
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "or ", "or ", ERROR_INSTR, false);
 			}
 	};
 
@@ -398,25 +435,79 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "xor ", "xor ", ERROR_INSTR);
+			unsigned int output(char* buf){
+				return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "xor ", "xor ", ERROR_INSTR, false);
 			}
 	};
 
-	class IUnOp : public IInstr {
+	class IUnOp : public IOp {
+		private:
+			enum:char {LIT_INT, LIT_FLT, LBL_INT, LBL_FLT};
 		protected:
-			SubType type;
 			Label src;
 			Label dest;
 	
-			IUnOp(SubType _width, Label _src, Label _dest){
-				type = _width;
+			IUnOp(SubType _width, Label _src, Label _dest) : IOp(_width) {
 				src = _src;
 				dest = _dest;
 			}
-			
-		public:
-			virtual void output(char buf[INSTR_BUF_SIZE]);
+
+			void assertTypeError(SubType type) override {				
+				// these are the unsigned types right now.
+				LType corresp = OpUtils::genLType(type);
+				if(__builtin_expect(dest.which != LType::LBL && (src.which != corresp 
+						|| src.which != LType::LBL) ,false)){
+					Global::specifyError("Incorrect types passed to IR generator.\n");
+					throw Global::DeveloperError;
+				}
+			}
+
+			/** "instr" and :"flg" should be followed by space.*/
+			unsigned int printOp(char* buf, const char* const instr, const char* const flg,
+						 const char* const dType, bool sign, bool flt) override {
+				
+				const char* spec = OpUtils::formatSpec(src.which);
+
+				// the max number of chars it can be.
+				constexpr int FSBUF_LEN = 30;
+				
+				char fsbuf[FSBUF_LEN] = {'\0'};
+				// setup the printf. bad for efficiency but whatever...
+				int chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s %s", spec);
+				
+				if(chk >= FSBUF_LEN) {
+					Global::specifyError("Buffer for snprintf too small.\n");
+					throw Global::DeveloperError;
+				}
+				
+				// example fsbuf later: "s%u = %s%s%s %lld %lld"
+
+				switch(((src.which == LType::LBL) << 2) + flt){
+					case LIT_INT:
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
+							sign ? src.extractSignedInt() : src.extractUnsignedInt());
+						break;
+					case LIT_FLT:
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
+							src.extractFlt());
+						break;
+					case LBL_INT:
+					case LBL_FLT:
+						chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
+							src.extractLbl());
+						break;
+					default:
+						Global::specifyError("Bool mask overflowed.\n");
+						throw Global::DeveloperError;			
+				}
+
+				if(chk >= INSTR_BUF_SIZE){
+					Global::specifyError("Buffer for snprintf too small.\n");
+					throw Global::DeveloperError;			
+				}
+
+				return chk;
+			}
 	};
 
 	// not done yet
@@ -426,8 +517,11 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "xor ", "xor ", ERROR_INSTR);
+			/** This uses the "ugt" instruction, which means floats can be NaN or special
+			 * values. Optimize later to get to use "ogt" which is much faster */
+			unsigned int output(char* buf){
+				return outputHelp(buf, OpUtils::isUnsigned(type) ? "ugt" : "sgt", 
+								"ugt ", "icmp ", "icmp ", "fcmp ", true);
 			}
 	};
 
@@ -437,13 +531,57 @@ namespace CodeGen {
 				   	: IBinOp(_width, _src1, _src2, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
-				return outputHelp(buf, "xor ", "xor ", ERROR_INSTR);
+			unsigned int output(char* buf){
+				return outputHelp(buf, OpUtils::isUnsigned(type) ? "ult" : "slt", 
+								"ult ", "icmp ", "icmp ", "fcmp ", true);
 			}
 	};
 
+	class IEqual : public IBinOp {
+		public:
+			IEqual(SubType _width, Label _src1, Label _src2, Label _dest)
+				   	: IBinOp(_width, _src1, _src2, _dest) {
+			}
+
+			unsigned int output(char* buf){
+				return outputHelp(buf, OpUtils::isUnsigned(type) ? "ult" : "slt", 
+								"ueq ", "icmp ", "icmp ", "fcmp ", true);
+			}
+	};
+
+	/** For use in IAssn */
+	class IDummy : public IUnOp {
+		public:
+			IDummy(Label _src, Label _dest) 
+					: IUnOp(SubType::CHAR, _src, _dest) {
+			}
+
+			unsigned int output(char* buf) {
+				return outputHelp(buf, "", "", "", "", "", false);
+			}
+	};
+
+	/** 
+	 * This is slightly peculiar.
+	 * We use this:
+	 *
+	 * Suppose high level code is y = x.
+	 * Turns into %y = %x
+	 * Followed by %z = %y. %z is the exported value.
+	 */
 	class IAssn : public IBinOp {
 	
+		public:
+			IAssn(SubType _width, Label _src1, Label _src2, Label _dest)
+				   	: IBinOp(_width, _src1, _src2, _dest) {
+			}
+
+			/** Should still fit in INSTR_BUF_SIZE-1 */
+			unsigned int output(char* buf){
+				unsigned int len1 = IDummy(src1, src2).output(buf);
+				buf[len1++] = '\n';
+				return len1+IDummy(src2, dest).output(buf);
+			}
 	};
 
 	// credits to godbolt!
@@ -453,7 +591,7 @@ namespace CodeGen {
 				   	: IUnOp(_width, _src, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
+			unsigned int output(char* buf){
 				unsigned long long neg1 = OpUtils::genAllOne(type);
 				if(neg1 == 0){
 					return IXor(type, src, Label::genSInt(-1), dest).output(buf);
@@ -469,7 +607,7 @@ namespace CodeGen {
 				   	: IUnOp(_width, _src, _dest) {
 			}
 
-			void output(char buf[INSTR_BUF_SIZE]){
+			unsigned int output(char* buf){
 				return ISub(type, Label::genSInt(0), src, dest).output(buf);
 			}
 	};
