@@ -166,10 +166,12 @@ namespace CodeGen {
         }
     };    
 
-    // inheritance hierarchy for all the different inclassions    
+    // inheritance hierarchy for all the different instructions
+    // same situation as ArgIterator, a polymorphic value type. 
     class IInstr {
         public:
             virtual unsigned int output(char* buf) = 0;
+            virtual SSA* getDest() = 0;
     };
 
     class IBranch : public IInstr {
@@ -178,7 +180,16 @@ namespace CodeGen {
             Label ifbr;
             Label elsebr;
         public:
+            IBranch(){
+            }
+
             IBranch(SSA _pred, Label _ifbr, Label _elsebr){
+                pred = _pred;
+                ifbr = _ifbr;
+                elsebr = _elsebr;
+            }
+
+            void set(SSA _pred, Label _ifbr, Label _elsebr){
                 pred = _pred;
                 ifbr = _ifbr;
                 elsebr = _elsebr;
@@ -204,6 +215,10 @@ namespace CodeGen {
                     }
                 }
             }    
+            
+            SSA* getDest(){
+                return &pred;
+            }
     };
 
     class IOp : public IInstr {
@@ -350,6 +365,10 @@ namespace CodeGen {
                 }
 
                 return chk;
+            }
+
+            SSA* getDest() override {
+                return &dest;
             }
     };
 
@@ -538,6 +557,10 @@ namespace CodeGen {
                 }
 
                 return chk;
+            }
+
+            SSA* getDest() override {
+                return &dest;
             }
     };
 

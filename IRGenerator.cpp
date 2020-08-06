@@ -28,9 +28,15 @@ unsigned int Parse::Sequence::codeGen(Utils::Vector<CodeGen::IInstr>& output){
  * Else is an unconditional branch if exists.
  */
 unsigned int Parse::Branch::codeGen(Utils::Vector<CodeGen::IInstr>& output){
+    Utils::SmallVector<CodeGen::SSA*, 4> queue;
+    int ctr = 0;
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
+        // call codegen on the expr.
+        static_cast<Branch*>(iter.get())->getPred()->codeGen(output);
+        output.push_back(CodeGen::IBranch());
+        queue.push_back(output.back()->getDest());
+    }
 
-    }    
     return 0;
 }
 
