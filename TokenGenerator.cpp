@@ -105,7 +105,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             return ret;
         }
     } else {
-        Global::specifyError(data);
+        Global::specifyError(data, __FILE__, __LINE__);
         throw Global::InvalidIdentifier;
     }
 }
@@ -154,13 +154,13 @@ static char* const parseCharLiteral(LitValue::VHolder* holder, char* const ptr) 
                 holder->ival = '\\';
                 break;
             default:
-                Global::specifyError(ptr);
+                Global::specifyError(ptr, __FILE__, __LINE__);
                 throw Global::InvalidEscapeSequence;
                 break;
         }
         return ptr+4;
     } else {
-        Global::specifyError(ptr);
+        Global::specifyError(ptr, __FILE__, __LINE__);
         throw Global::InvalidCharacter;
     }
 }

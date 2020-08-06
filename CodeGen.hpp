@@ -35,7 +35,7 @@ namespace CodeGen {
         }
 
         SSA operator++(int){
-            if(__builtin_expect(which == SType::REF,true)){
+            if(__builtin_expect(which == SType::REF, true)){
                 return SSA(holder.ref++);
             } else {
                 Global::specifyError("SSA increment called on literal.\n", __FILE__, __LINE__);
@@ -97,8 +97,9 @@ namespace CodeGen {
     static const char* const ERROR_INSTR = "NEVER USED. ERROR.";
     static const char* const EMPTY_INSTR = "";
     static const char* const EMPTY_FLAG = "";
-    constexpr unsigned int instrBufSize(){return INSTR_BUF_SIZE;}
 
+    static const SubType EMPTY_TYPE = SubType::WHILE;
+    
     struct OpUtils {
         static SType genSType(SubType type){
             switch(type){
@@ -110,6 +111,8 @@ namespace CodeGen {
                     return SType::SIGN_LIT;
                 case SubType::FLOAT:
                     return SType::FLT_LIT;
+                case EMPTY_TYPE:
+                    return SType::REF; // shouldnt matter.
                 case SubType::VOID:
                 default:
                     Global::specifyError("Type void or other passed to IR generator.\n", __FILE__, __LINE__);
@@ -151,53 +154,56 @@ namespace CodeGen {
         static inline const char* formatSpec(SType lt){
             switch(lt){    
                 case SType::FLT_LIT: 
-                    return "%%Lf";
+                    return "%Lf";
                 case SType::REF:
-                    return "s%%%%u";
+                    return "%%s%u";
                 case SType::SIGN_LIT:
-                    return "%%lld";
+                    return "%lld";
                 case SType::USIGN_LIT:
-                    return "%%llu";
+                    return "%llu";
             }
+            return nullptr;
         }
     };    
 
     // inheritance hierarchy for all the different inclassions    
     class IInstr {
-        virtual unsigned int output(char* buf) = 0;
+        public:
+            virtual unsigned int output(char* buf) = 0;
     };
 
     class IBranch : public IInstr {
-        SSA pred;
-        Label ifbr;
-        Label elsebr;
-
-        IBranch(SSA _pred, Label _ifbr, Label _elsebr){
-            pred = _pred;
-            ifbr = _ifbr;
-            elsebr = _elsebr;
-        }
-
-        unsigned int output(char* buf){
-            if(pred.isNull()) { 
-                return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr.extract());
-            } else {
-                switch(pred.which){
-                    case SType::FLT_LIT:
-                        Global::specifyError("Float passed to branch predicate.\n", __FILE__, __LINE__);
-                        throw Global::InvalidBranch;
-                    case SType::SIGN_LIT:
-                        return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
-                                pred.extractSignedInt() != 0 ? ifbr.extract() : elsebr.extract());
-                    case SType::USIGN_LIT:
-                        return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
-                                pred.extractUnsignedInt() != 0 ? ifbr.extract() : elsebr.extract());
-                    case SType::REF:
-                        return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
-                                pred.extractLbl(), ifbr.extract(), elsebr.extract()); 
-                }
+        private:
+            SSA pred;
+            Label ifbr;
+            Label elsebr;
+        public:
+            IBranch(SSA _pred, Label _ifbr, Label _elsebr){
+                pred = _pred;
+                ifbr = _ifbr;
+                elsebr = _elsebr;
             }
-        }    
+
+            unsigned int output(char* buf){
+                if(pred.isNull()) { 
+                    return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr.extract());
+                } else {
+                    switch(pred.which){
+                        case SType::FLT_LIT:
+                            Global::specifyError("Float passed to branch predicate.\n", __FILE__, __LINE__);
+                            throw Global::InvalidBranch;
+                        case SType::SIGN_LIT:
+                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
+                                    pred.extractSignedInt() != 0 ? ifbr.extract() : elsebr.extract());
+                        case SType::USIGN_LIT:
+                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
+                                    pred.extractUnsignedInt() != 0 ? ifbr.extract() : elsebr.extract());
+                        case SType::REF:
+                            return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
+                                    pred.extractLbl(), ifbr.extract(), elsebr.extract()); 
+                    }
+                }
+            }    
     };
 
     class IOp : public IInstr {
@@ -209,26 +215,27 @@ namespace CodeGen {
 
             virtual void assertTypeError(SubType type) = 0;
             virtual unsigned int printOp(char* buf, const char* const instr, const char* const flg,
-                         const char* const dType, bool sign, bool flt);
+                         const char* const dType, bool sign, bool flt) = 0;
 
             unsigned int outputHelp(char* buf, const char* const iflg, 
                             const char* const fflg, const char* const unsignInstr, 
                             const char* const signInstr, const char* const fltInstr, 
                             bool dispFltType){
+                
                 assertTypeError(type);
                 int ret;
                 switch(type){
                     case SubType::CHAR:
-                        ret = printOp(buf, unsignInstr, iflg, "i8", false, false);    
+                        ret = printOp(buf, unsignInstr, iflg, "i8 ", false, false);    
                         break;
                     case SubType::INT:
-                        ret = printOp(buf, signInstr, iflg, "i32", true, false);
+                        ret = printOp(buf, signInstr, iflg, "i32 ", true, false);
                         break;
                     case SubType::LONG:
-                        ret = printOp(buf, unsignInstr, iflg, "i64", false, false);
+                        ret = printOp(buf, unsignInstr, iflg, "i64 ", false, false);
                         break;
                     case SubType::BOOL:
-                        ret = printOp(buf, unsignInstr, iflg, "i1", false, false);
+                        ret = printOp(buf, unsignInstr, iflg, "i1 ", false, false);
                         break;
                     case SubType::FLOAT:
                         if(__builtin_expect(std::strcmp(fltInstr, ERROR_INSTR) == 0,false)){
@@ -236,7 +243,10 @@ namespace CodeGen {
                             throw Global::InvalidInstrInvocation;
                         }
                         // right now, floats in Growl are 64-bit doubles in LLVM.    
-                        ret = printOp(buf, fltInstr, fflg, dispFltType ? "double" : "", true, true);
+                        ret = printOp(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
+                        break;
+                    case EMPTY_TYPE:
+                        ret = printOp(buf, unsignInstr, iflg, "", false, false);
                         break;
                     default:
                         Global::specifyError("Invalid type encountered.\n", __FILE__, __LINE__);
@@ -245,8 +255,6 @@ namespace CodeGen {
 
                 return ret;
             }    
-        public:
-            virtual unsigned int output(char* buf) = 0;
     };
 
     class IBinOp : public IOp {
@@ -287,14 +295,17 @@ namespace CodeGen {
                 
                 char fsbuf[FSBUF_LEN] = {'\0'};
                 // setup the printf. bad for efficiency but whatever...
-                int chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s %s %s",
-                                spec1, spec2);
                 
+                int chk;
+
+                // checks if the instr is null, thats how ASSN is coded.
+                chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s%s, %s",
+                            spec1, spec2);
                 if(chk >= FSBUF_LEN) {
                     Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
-                
+               
                 // example fsbuf later: "s%u = %s%s%s %lld %lld"
 
                 switch(((src1.which == SType::REF) << 2) + ((src2.which == SType::REF) << 1) + flt){
@@ -485,16 +496,24 @@ namespace CodeGen {
                 
                 char fsbuf[FSBUF_LEN] = {'\0'};
                 // setup the printf. bad for efficiency but whatever...
-                int chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s %s", spec);
+                
+                int chk;
+                
+                // check if instr is null (assn case)
+                if(strlen(instr) == 0){
+                    chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s%s", spec);
+                } else {
+                    chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s %s", spec);
+                }
                 
                 if(chk >= FSBUF_LEN) {
                     Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
-                
+               
                 // example fsbuf later: "s%u = %s%s%s %lld %lld"
-
-                switch(((src.which == SType::REF) << 2) + flt){
+                
+                switch(((src.which == SType::REF) << 1) + flt){
                     case LIT_INT:
                         chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
                             sign ? src.extractSignedInt() : src.extractUnsignedInt());
@@ -532,7 +551,7 @@ namespace CodeGen {
             /** This uses the "ugt" instruction, which means floats can be NaN or special
              * values. Optimize later to get to use "ogt" which is much faster */
             unsigned int output(char* buf){
-                return outputHelp(buf, OpUtils::isUnsigned(type) ? "ugt" : "sgt", 
+                return outputHelp(buf, OpUtils::isUnsigned(type) ? "ugt " : "sgt ", 
                                 "ugt ", "icmp ", "icmp ", "fcmp ", true);
             }
     };
@@ -544,7 +563,7 @@ namespace CodeGen {
             }
 
             unsigned int output(char* buf){
-                return outputHelp(buf, OpUtils::isUnsigned(type) ? "ult" : "slt", 
+                return outputHelp(buf, OpUtils::isUnsigned(type) ? "ult " : "slt ", 
                                 "ult ", "icmp ", "icmp ", "fcmp ", true);
             }
     };
@@ -556,7 +575,7 @@ namespace CodeGen {
             }
 
             unsigned int output(char* buf){
-                return outputHelp(buf, OpUtils::isUnsigned(type) ? "ult" : "slt", 
+                return outputHelp(buf, OpUtils::isUnsigned(type) ? "eq " : "eq ", 
                                 "ueq ", "icmp ", "icmp ", "fcmp ", true);
             }
     };
@@ -565,7 +584,9 @@ namespace CodeGen {
     class IDummy : public IUnOp {
         public:
             IDummy(SSA _src, SSA _dest) 
-                    : IUnOp(SubType::CHAR, _src, _dest) {
+                    // note, WHILE is a placeholder for nothing.
+                    // see the code in IUnOp
+                    : IUnOp(EMPTY_TYPE, _src, _dest) {
             }
 
             unsigned int output(char* buf) {
@@ -592,7 +613,7 @@ namespace CodeGen {
             unsigned int output(char* buf){
                 unsigned int len1 = IDummy(src1, src2).output(buf);
                 buf[len1++] = '\n';
-                return len1+IDummy(src2, dest).output(buf);
+                return len1+IDummy(src2, dest).output(buf+len1);
             }
     };
 

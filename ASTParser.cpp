@@ -40,7 +40,7 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
         case Type::OPERATOR:
             if(Syntax::opType(begin->subType) == Syntax::OpType::BINARY){
                 Global::specifyError(
-                                "Presence of binary operator invalidates expr.\n");
+                                "Presence of binary operator invalidates expr.\n", __FILE__, __LINE__);
                 throw Global::InvalidExpression;
             }
         case Type::ID:

@@ -75,10 +75,16 @@ static void singletonVars(){
     _emptyVar = new Parse::Variable("EMPTY_2930", 10, Lex::SubType::CHAR, 0);    
 }
 
+void test(CodeGen::IInstr& node){
+    char buf[50] = {'\0'};
+    node.output(buf);
+    std::cout << buf << '\n';
+}
+
 int main(int argc, char** argv) {
     Global::Alloc alloc(0);
     allocator = &alloc;
-
+    
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
