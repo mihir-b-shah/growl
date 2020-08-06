@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include "Vector.hpp"
 #include "CodeGen.hpp"
+#include <type_traits>
 
 namespace Parse {
    
@@ -195,8 +196,6 @@ namespace Parse {
             unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
     };
 
-    enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT, GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, LSHIFT, RSHIFT};
-    
     class Op : public Expr {
         friend class ArgIterator;
         private:
@@ -284,8 +283,7 @@ namespace Parse {
             unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
     };
 
-    enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID};
-    static const char* varstrs[6] = {"int", "long", "char", "float", "bool", "void"};
+    static const char* varstrs[7] = {"int", "long", "char", "float", "bool", "void", "other"};
     class Variable : public Expr {
         friend class ArgIterator;
         
@@ -311,7 +309,7 @@ namespace Parse {
                 out.write(name, len);
                 out << " Len: " << static_cast<int>(len);
                 out << " VarType: " << varstrs[static_cast<int>(type)];
-                   out << " PtrLvl: " << static_cast<int>(ptrLvl);
+                out << " PtrLvl: " << static_cast<int>(ptrLvl);
                 out << '\n';    
             }
             unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
@@ -336,7 +334,7 @@ namespace Parse {
             int getDist(){
                 return index-Lex::program();
             }
-            void debugPrint(std::ostream& out){
+            void debugPrint(std::ostream& out) override {
                 var->debugPrint(out);
             }
             Parse::ArgIterator iterator() override {

@@ -84,7 +84,47 @@ void test(CodeGen::IInstr& node){
 int main(int argc, char** argv) {
     Global::Alloc alloc(0);
     allocator = &alloc;
+  
+    CodeGen::SSA s1 = CodeGen::nextSSA();
+    CodeGen::SSA s2 = CodeGen::nextSSA();
+    CodeGen::SSA s3 = CodeGen::nextSSA(); 
+
+    CodeGen::IInstr ins;
+
+    ins = CodeGen::IInstr(Parse::IntrOps::ADD, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::MINUS, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::MULT, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::DIV, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::MOD, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::LSHIFT, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::RSHIFT, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::AND, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::OR, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::XOR, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::GREATER, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::LESS, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::EQUAL, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::ASSN, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::FLIP, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::IntrOps::NEG, Parse::VarType::INT, s1, s2, s3); 
+    test(ins);
     
+    /* 
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
@@ -126,4 +166,5 @@ int main(int argc, char** argv) {
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }
+    */
 }

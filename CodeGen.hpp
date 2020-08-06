@@ -2,7 +2,7 @@
 #ifndef CODE_GEN_HPP
 #define CODE_GEN_HPP
 
-#include "Lex.h"
+#include "Parse.h"
 #include "Vector.hpp"
 #include "Error.h"
 #include <cstdio>
@@ -10,8 +10,6 @@
 #include <utility>
 
 namespace CodeGen {
-
-    using Lex::SubType;
 
     enum class SType:char {FLT_LIT, SIGN_LIT, USIGN_LIT, REF};
     
@@ -64,7 +62,9 @@ namespace CodeGen {
             return ref;
         }
 
+        static SSA nullValue(){return SSA();}
         bool isNull(){return which == SType::REF && holder.ref== 0;} 
+        
         unsigned int extractLbl(){return holder.ref;}
         long long extractSignedInt(){return holder.sint;}
         unsigned long long extractUnsignedInt(){return holder.sint;}
@@ -98,53 +98,57 @@ namespace CodeGen {
     static const char* const EMPTY_INSTR = "";
     static const char* const EMPTY_FLAG = "";
 
-    static const SubType EMPTY_TYPE = SubType::WHILE;
+    using Parse::IntrOps;
+    using Parse::VarType;
     
+    static const IntrOps EMPTY_OP = IntrOps::OTHER;
+    static const VarType EMPTY_TYPE = VarType::OTHER;
+
     struct OpUtils {
-        static SType genSType(SubType type){
+        static SType genSType(VarType type){
             switch(type){
-                case SubType::CHAR:
-                case SubType::LONG:
-                case SubType::BOOL:
+                case VarType::CHAR:
+                case VarType::LONG:
+                case VarType::BOOL:
                     return SType::USIGN_LIT;
-                case SubType::INT:
+                case VarType::INT:
                     return SType::SIGN_LIT;
-                case SubType::FLOAT:
+                case VarType::FLOAT:
                     return SType::FLT_LIT;
-                case EMPTY_TYPE:
-                    return SType::REF; // shouldnt matter.
-                case SubType::VOID:
+                case VarType::OTHER:
+                    return SType::REF;
+                case VarType::VOID:
                 default:
                     Global::specifyError("Type void or other passed to IR generator.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
             }
         }
 
-        static inline bool isUnsigned(SubType type){
+        static inline bool isUnsigned(VarType type){
             return SType::USIGN_LIT == genSType(type);
         }
         
-        static inline bool isSigned(SubType type){
+        static inline bool isSigned(VarType type){
             return SType::SIGN_LIT == genSType(type);
         }
 
-        static inline bool isFloat(SubType type){
+        static inline bool isFloat(VarType type){
             return SType::FLT_LIT == genSType(type);
         }
 
         /** Returns 0 if should be signed */
-        static unsigned long long genAllOne(SubType type){
+        static unsigned long long genAllOne(VarType type){
             switch(type){
-                case SubType::CHAR:
+                case VarType::CHAR:
                     return 0xff;
-                case SubType::LONG:
+                case VarType::LONG:
                     return 0xffffffffffffffffULL;
-                case SubType::BOOL:
+                case VarType::BOOL:
                     return 1;
-                case SubType::INT:
+                case VarType::INT:
                     return 0;
-                case SubType::FLOAT:
-                case SubType::VOID:
+                case VarType::FLOAT:
+                case VarType::VOID:
                 default:
                     Global::specifyError("Non integer type passed.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
@@ -166,144 +170,62 @@ namespace CodeGen {
         }
     };    
 
+    enum class LLVMInstr:char {_Br, _Add, _Sub, _Mul, _Div, _Mod, _Shl, _Shr, 
+            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg};
+
+    enum class UOB:char {UNARY, BINARY, OTHER};
+
     // inheritance hierarchy for all the different instructions
     // same situation as ArgIterator, a polymorphic value type. 
     class IInstr {
-        public:
-            virtual unsigned int output(char* buf) = 0;
-            virtual SSA* getDest() = 0;
-    };
-
-    class IBranch : public IInstr {
         private:
-            SSA pred;
-            Label ifbr;
-            Label elsebr;
-        public:
-            IBranch(){
-            }
-
-            IBranch(SSA _pred, Label _ifbr, Label _elsebr){
-                pred = _pred;
-                ifbr = _ifbr;
-                elsebr = _elsebr;
-            }
-
-            void set(SSA _pred, Label _ifbr, Label _elsebr){
-                pred = _pred;
-                ifbr = _ifbr;
-                elsebr = _elsebr;
-            }
-
-            unsigned int output(char* buf){
-                if(pred.isNull()) { 
-                    return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr.extract());
-                } else {
-                    switch(pred.which){
-                        case SType::FLT_LIT:
-                            Global::specifyError("Float passed to branch predicate.\n", __FILE__, __LINE__);
-                            throw Global::InvalidBranch;
-                        case SType::SIGN_LIT:
-                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
-                                    pred.extractSignedInt() != 0 ? ifbr.extract() : elsebr.extract());
-                        case SType::USIGN_LIT:
-                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
-                                    pred.extractUnsignedInt() != 0 ? ifbr.extract() : elsebr.extract());
-                        case SType::REF:
-                            return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
-                                    pred.extractLbl(), ifbr.extract(), elsebr.extract()); 
-                    }
-                }
-            }    
-            
-            SSA* getDest(){
-                return &pred;
-            }
-    };
-
-    class IOp : public IInstr {
-        protected:
-            SubType type;
-            IOp(SubType _type){
-                type = _type;
-            }
-
-            virtual void assertTypeError(SubType type) = 0;
-            virtual unsigned int printOp(char* buf, const char* const instr, const char* const flg,
-                         const char* const dType, bool sign, bool flt) = 0;
-
-            unsigned int outputHelp(char* buf, const char* const iflg, 
-                            const char* const fflg, const char* const unsignInstr, 
-                            const char* const signInstr, const char* const fltInstr, 
-                            bool dispFltType){
-                
-                assertTypeError(type);
-                int ret;
-                switch(type){
-                    case SubType::CHAR:
-                        ret = printOp(buf, unsignInstr, iflg, "i8 ", false, false);    
-                        break;
-                    case SubType::INT:
-                        ret = printOp(buf, signInstr, iflg, "i32 ", true, false);
-                        break;
-                    case SubType::LONG:
-                        ret = printOp(buf, unsignInstr, iflg, "i64 ", false, false);
-                        break;
-                    case SubType::BOOL:
-                        ret = printOp(buf, unsignInstr, iflg, "i1 ", false, false);
-                        break;
-                    case SubType::FLOAT:
-                        if(__builtin_expect(std::strcmp(fltInstr, ERROR_INSTR) == 0,false)){
-                            Global::specifyError("Flt type used in int-only instruction.\n", __FILE__, __LINE__);    
-                            throw Global::InvalidInstrInvocation;
-                        }
-                        // right now, floats in Growl are 64-bit doubles in LLVM.    
-                        ret = printOp(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
-                        break;
-                    case EMPTY_TYPE:
-                        ret = printOp(buf, unsignInstr, iflg, "", false, false);
-                        break;
-                    default:
-                        Global::specifyError("Invalid type encountered.\n", __FILE__, __LINE__);
-                        throw Global::DeveloperError;
-                }
-
-                return ret;
-            }    
-    };
-
-    class IBinOp : public IOp {
-        private:
-            enum:char {LIT_LIT_INT, LIT_LIT_FLT, LIT_REF_INT, LIT_REF_FLT, 
+            enum BinEnum:char {LIT_LIT_INT, LIT_LIT_FLT, LIT_REF_INT, LIT_REF_FLT, 
                         REF_LIT_INT, REF_LIT_FLT, REF_REF_INT, REF_REF_FLT};
-        protected:
-            SSA src1;
-            SSA src2;
-            SSA dest;
+            enum UnEnum:char {LIT_INT, LIT_FLT, REF_INT, REF_FLT};
 
-            IBinOp(SubType _width, SSA _src1, SSA _src2, SSA _dest) : IOp (_width) {
-                src1 = _src1;
-                src2 = _src2;
-                dest = _dest;
-            }
+            LLVMInstr _instr;
+            union Hold {
+                struct {
+                    SSA _pred;
+                    Label _ifbr;
+                    Label _elsebr;
+                } br;
+                struct {
+                    VarType _type;
+                    SSA _src1;
+                    SSA _src2;
+                    SSA _dest;
+                } opr;
+                
+                Hold(){}
+            } bop;
+            
+            inline LLVMInstr& instr() {return _instr;} 
+            inline SSA& pred(){return bop.br._pred;}
+            inline Label& ifbr(){return bop.br._ifbr;}
+            inline Label& elsebr(){return bop.br._elsebr;}
 
-            void assertTypeError(SubType type) override {                
+            inline VarType& type(){return bop.opr._type;}
+            inline SSA& src1(){return bop.opr._src1;}
+            inline SSA& src2(){return bop.opr._src2;}
+            inline SSA& dest(){return bop.opr._dest;}
+
+            void assertTypeErrorBinary(VarType type) {                
                 // these are the unsigned types right now.
                 SType corresp = OpUtils::genSType(type);
-                if(__builtin_expect(dest.which != SType::REF && (src1.which != corresp 
-                        || src1.which != SType::REF) && (src2.which != corresp 
-                        || src2.which != SType::REF),false)){
+                if(__builtin_expect(dest().which != SType::REF && (src1().which != corresp 
+                        || src1().which != SType::REF) && (src2().which != corresp 
+                        || src2().which != SType::REF),false)){
                     Global::specifyError("Incorrect types passed to IR generator.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
             }
 
-            /** "instr" and :"flg" should be followed by space.*/
-            unsigned int printOp(char* buf, const char* const instr, const char* const flg,
-                         const char* const dType, bool sign, bool flt) override {
+            unsigned int printOpBinary(char* buf, const char* const instr, const char* const flg,
+                         const char* const dType, bool sign, bool flt) {
                 
-                const char* spec1 = OpUtils::formatSpec(src1.which);
-                const char* spec2 = OpUtils::formatSpec(src2.which);
+                const char* spec1 = OpUtils::formatSpec(src1().which);
+                const char* spec2 = OpUtils::formatSpec(src2().which);
 
                 // the max number of chars it can be.
                 constexpr int FSBUF_LEN = 30;
@@ -323,36 +245,36 @@ namespace CodeGen {
                
                 // example fsbuf later: "s%u = %s%s%s %lld %lld"
 
-                switch(((src1.which == SType::REF) << 2) + ((src2.which == SType::REF) << 1) + flt){
+                switch(((src1().which == SType::REF) << 2) + ((src2().which == SType::REF) << 1) + flt){
                     case LIT_LIT_INT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            sign ? src1.extractSignedInt() : src1.extractUnsignedInt(),
-                            sign ? src2.extractSignedInt() : src2.extractUnsignedInt());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            sign ? src1().extractSignedInt() : src1().extractUnsignedInt(),
+                            sign ? src2().extractSignedInt() : src2().extractUnsignedInt());
                         break;
                     case LIT_LIT_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            src1.extractFlt(), src2.extractFlt());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            src1().extractFlt(), src2().extractFlt());
                         break;
                     case LIT_REF_INT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            sign ? src1.extractSignedInt() : src1.extractUnsignedInt(), src2.extractLbl());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            sign ? src1().extractSignedInt() : src1().extractUnsignedInt(), src2().extractLbl());
                         break;
                     case LIT_REF_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            sign ? src1.extractFlt() : src2.extractLbl());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            sign ? src1().extractFlt() : src2().extractLbl());
                         break;
                     case REF_LIT_INT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            src1.extractLbl(), sign ? src2.extractSignedInt() : src2.extractUnsignedInt());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            src1().extractLbl(), sign ? src2().extractSignedInt() : src2().extractUnsignedInt());
                         break;
                     case REF_LIT_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            src1.extractLbl(), src2.extractFlt());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            src1().extractLbl(), src2().extractFlt());
                         break;
                     case REF_REF_INT:
                     case REF_REF_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            src1.extractLbl(), src2.extractLbl());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            src1().extractLbl(), src2().extractLbl());
                         break;
                     default:
                         Global::specifyError("Bool mask overflowed.\n", __FILE__, __LINE__);
@@ -366,149 +288,21 @@ namespace CodeGen {
 
                 return chk;
             }
-
-            SSA* getDest() override {
-                return &dest;
-            }
-    };
-
-    class IAdd : public IBinOp {
-        public:
-            IAdd(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                      : IBinOp(_width, _src1, _src2, _dest) {
-            }
-            
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "add ", "add ", "fadd ", false);
-            }
-    };
-
-    class ISub : public IBinOp {
-        public:
-            ISub(SubType _width,  SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "sub ", "sub ", "fsub ", false);    
-            }
-    };
-
-    class IMul : public IBinOp {
-        public:
-            IMul(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "mul ", "mul ", "fmul ", false);
-            }
-    };
-
-    class IDiv : public IBinOp {
-        public:
-            IDiv(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "udiv ", "sdiv ", "fdiv ", false);
-            }
-    };
-
-    class IMod : public IBinOp {    
-        public:
-            IMod(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "urem ", "srem ", "frem ", false);    
-            }
-    };
-
-    class IShiftLeft : public IBinOp {
-        public:
-            IShiftLeft(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "shl ", "shl ", ERROR_INSTR, false);    
-            }
-    };
-
-    class IShiftRight : public IBinOp {
-        public:
-            IShiftRight(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "lshr ", "ashr ", ERROR_INSTR, false);    
-            }
-    };
-
-    class IAnd : public IBinOp {
-        public:
-            IAnd(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "and ", "and ", ERROR_INSTR, false);
-            }
-    };
-
-    class IOr : public IBinOp {
-        public:
-            IOr(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "or ", "or ", ERROR_INSTR, false);
-            }
-    };
-
-    class IXor : public IBinOp {
-        public:
-            IXor(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "xor ", "xor ", ERROR_INSTR, false);
-            }
-    };
-
-    class IUnOp : public IOp {
-        private:
-            enum:char {LIT_INT, LIT_FLT, REF_INT, REF_FLT};
-        protected:
-            SSA src;
-            SSA dest;
-    
-            IUnOp(SubType _width, SSA _src, SSA _dest) : IOp(_width) {
-                src = _src;
-                dest = _dest;
-            }
-
-            void assertTypeError(SubType type) override {                
+            void assertTypeErrorUnary(VarType type) {                
                 // these are the unsigned types right now.
                 SType corresp = OpUtils::genSType(type);
-                if(__builtin_expect(dest.which != SType::REF && (src.which != corresp 
-                        || src.which != SType::REF) ,false)){
+                if(__builtin_expect(dest().which != SType::REF && (src1().which != corresp 
+                        || src1().which != SType::REF) ,false)){
                     Global::specifyError("Incorrect types passed to IR generator.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
             }
 
             /** "instr" and :"flg" should be followed by space.*/
-            unsigned int printOp(char* buf, const char* const instr, const char* const flg,
-                         const char* const dType, bool sign, bool flt) override {
+            unsigned int printOpUnary(char* buf, const char* const instr, const char* const flg,
+                         const char* const dType, bool sign, bool flt) {
                 
-                const char* spec = OpUtils::formatSpec(src.which);
+                const char* spec = OpUtils::formatSpec(src1().which);
 
                 // the max number of chars it can be.
                 constexpr int FSBUF_LEN = 30;
@@ -532,19 +326,19 @@ namespace CodeGen {
                
                 // example fsbuf later: "s%u = %s%s%s %lld %lld"
                 
-                switch(((src.which == SType::REF) << 1) + flt){
+                switch(((src1().which == SType::REF) << 1) + flt){
                     case LIT_INT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            sign ? src.extractSignedInt() : src.extractUnsignedInt());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            sign ? src1().extractSignedInt() : src1().extractUnsignedInt());
                         break;
                     case LIT_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            src.extractFlt());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            src1().extractFlt());
                         break;
                     case REF_INT:
                     case REF_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest.extractLbl(), instr, flg, dType, 
-                            src.extractLbl());
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                            src1().extractLbl());
                         break;
                     default:
                         Global::specifyError("Bool mask overflowed.\n", __FILE__, __LINE__);
@@ -559,116 +353,295 @@ namespace CodeGen {
                 return chk;
             }
 
-            SSA* getDest() override {
-                return &dest;
-            }
-    };
-
-    // not done yet
-    class IGreater : public IBinOp {
-        public:
-            IGreater(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            /** This uses the "ugt" instruction, which means floats can be NaN or special
-             * values. Optimize later to get to use "ogt" which is much faster */
-            unsigned int output(char* buf){
-                return outputHelp(buf, OpUtils::isUnsigned(type) ? "ugt " : "sgt ", 
-                                "ugt ", "icmp ", "icmp ", "fcmp ", true);
-            }
-    };
-
-    class ILess : public IBinOp {
-        public:
-            ILess(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, OpUtils::isUnsigned(type) ? "ult " : "slt ", 
-                                "ult ", "icmp ", "icmp ", "fcmp ", true);
-            }
-    };
-
-    class IEqual : public IBinOp {
-        public:
-            IEqual(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                return outputHelp(buf, OpUtils::isUnsigned(type) ? "eq " : "eq ", 
-                                "ueq ", "icmp ", "icmp ", "fcmp ", true);
-            }
-    };
-
-    /** For use in IAssn */
-    class IDummy : public IUnOp {
-        public:
-            IDummy(SSA _src, SSA _dest) 
-                    // note, WHILE is a placeholder for nothing.
-                    // see the code in IUnOp
-                    : IUnOp(EMPTY_TYPE, _src, _dest) {
-            }
-
-            unsigned int output(char* buf) {
-                return outputHelp(buf, "", "", "", "", "", false);
-            }
-    };
-
-    /** 
-     * This is slightly peculiar.
-     * We use this:
-     *
-     * Suppose high level code is y = x.
-     * Turns into %y = %x
-     * Followed by %z = %y. %z is the exported value.
-     */
-    class IAssn : public IBinOp {
-    
-        public:
-            IAssn(SubType _width, SSA _src1, SSA _src2, SSA _dest)
-                       : IBinOp(_width, _src1, _src2, _dest) {
-            }
-
-            /** Should still fit in INSTR_BUF_SIZE-1 */
-            unsigned int output(char* buf){
-                unsigned int len1 = IDummy(src1, src2).output(buf);
-                buf[len1++] = '\n';
-                return len1+IDummy(src2, dest).output(buf+len1);
-            }
-    };
-
-    // credits to godbolt!
-    class IFlip : public IUnOp {
-        public:
-            IFlip(SubType _width, SSA _src, SSA _dest)
-                       : IUnOp(_width, _src, _dest) {
-            }
-
-            unsigned int output(char* buf){
-                unsigned long long neg1 = OpUtils::genAllOne(type);
-                if(neg1 == 0){
-                    return IXor(type, src, SSA::genSInt(-1), dest).output(buf);
+            unsigned int brOutput(char* buf) {
+                if(pred().isNull()) { 
+                    return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr().extract());
                 } else {
-                    return IXor(type, src, neg1, dest).output(buf);
+                    switch(pred().which){
+                        case SType::FLT_LIT:
+                            Global::specifyError("Float passed to branch predicate.\n", __FILE__, __LINE__);
+                            throw Global::InvalidBranch;
+                        case SType::SIGN_LIT:
+                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
+                                    pred().extractSignedInt() != 0 ? ifbr().extract() : elsebr().extract());
+                        case SType::USIGN_LIT:
+                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
+                                    pred().extractUnsignedInt() != 0 ? ifbr().extract() : elsebr().extract());
+                        case SType::REF:
+                            return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
+                                    pred().extractLbl(), ifbr().extract(), elsebr().extract()); 
+                    }
+                }
+                return 0;
+            }
+
+            UOB getUOB(){
+                switch(instr()){
+                    case LLVMInstr::_Add:
+                    case LLVMInstr::_Sub:
+                    case LLVMInstr::_Mul:
+                    case LLVMInstr::_Div: 
+                    case LLVMInstr::_Mod:
+                    case LLVMInstr::_Shl:
+                    case LLVMInstr::_Shr:
+                    case LLVMInstr::_And:
+                    case LLVMInstr::_Or:
+                    case LLVMInstr::_Xor:
+                    case LLVMInstr::_Gr:
+                    case LLVMInstr::_Ls:
+                    case LLVMInstr::_Eq:
+                    case LLVMInstr::_Asn:
+                        return UOB::BINARY;
+                    case LLVMInstr::_Flp:
+                    case LLVMInstr::_Neg:
+                    case LLVMInstr::_Dmy:
+                        return UOB::UNARY;
+                    case LLVMInstr::_Br:
+                        return UOB::OTHER; 
+                }
+                return UOB::OTHER;
+            }
+
+            IInstr(SSA _Src, SSA _Dest){
+                src1() = _Src;
+                src2() = SSA::nullValue();
+                dest() = _Dest;
+                instr() = LLVMInstr::_Dmy;
+                type() = VarType::OTHER;
+            }
+
+            unsigned int outputHelp(char* buf, const char* const iflg, 
+                            const char* const fflg, const char* const unsignInstr, 
+                            const char* const signInstr, const char* const fltInstr, 
+                            bool dispFltType){
+                
+                switch(getUOB()){
+                    case UOB::UNARY:
+                    {
+                        assertTypeErrorUnary(type());
+                        int ret;
+                        switch(type()){
+                            case VarType::CHAR:
+                                ret = printOpUnary(buf, unsignInstr, iflg, "i8 ", false, false);    
+                                break;
+                            case VarType::INT:
+                                ret = printOpUnary(buf, signInstr, iflg, "i32 ", true, false);
+                                break;
+                            case VarType::LONG:
+                                ret = printOpUnary(buf, unsignInstr, iflg, "i64 ", false, false);
+                                break;
+                            case VarType::BOOL:
+                                ret = printOpUnary(buf, unsignInstr, iflg, "i1 ", false, false);
+                                break;
+                            case VarType::FLOAT:
+                                if(__builtin_expect(std::strcmp(fltInstr, ERROR_INSTR) == 0,false)){
+                                    Global::specifyError("Flt type used in int-only instruction.\n", __FILE__, __LINE__);    
+                                    throw Global::InvalidInstrInvocation;
+                                }
+                                // right now, floats in Growl are 64-bit doubles in LLVM.    
+                                ret = printOpUnary(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
+                                break;
+                            case VarType::OTHER:
+                                ret = printOpUnary(buf, unsignInstr, iflg, "", false, false);
+                                break;
+                            default:
+                                Global::specifyError("Invalid type encountered.\n", __FILE__, __LINE__);
+                                throw Global::DeveloperError;
+                        }
+                        return ret;
+                    }
+                    case UOB::BINARY:
+                    {
+                        assertTypeErrorBinary(type());
+                        int ret;
+                        switch(type()){
+                            case VarType::CHAR:
+                                ret = printOpBinary(buf, unsignInstr, iflg, "i8 ", false, false);    
+                                break;
+                            case VarType::INT:
+                                ret = printOpBinary(buf, signInstr, iflg, "i32 ", true, false);
+                                break;
+                            case VarType::LONG:
+                                ret = printOpBinary(buf, unsignInstr, iflg, "i64 ", false, false);
+                                break;
+                            case VarType::BOOL:
+                                ret = printOpBinary(buf, unsignInstr, iflg, "i1 ", false, false);
+                                break;
+                            case VarType::FLOAT:
+                                if(__builtin_expect(std::strcmp(fltInstr, ERROR_INSTR) == 0,false)){
+                                    Global::specifyError("Flt type used in int-only instruction.\n", __FILE__, __LINE__);    
+                                    throw Global::InvalidInstrInvocation;
+                                }
+                                // right now, floats in Growl are 64-bit doubles in LLVM.    
+                                ret = printOpBinary(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
+                                break;
+                            case VarType::OTHER:
+                                ret = printOpBinary(buf, unsignInstr, iflg, "", false, false);
+                                break;
+                            default:
+                                Global::specifyError("Invalid type encountered.\n", __FILE__, __LINE__);
+                                throw Global::DeveloperError;
+                        }
+                        break;
+                    }
+                    default:
+                        // big bad wolf, _Dmy node doesnt need type check anyway.
+                        return 0;
+                }
+                // never happens
+                return 0;
+            }    
+        /*
+        enum class LLVMInstr:char {_Add, _Sub, _Mul, _Div, _Mod, _Shl, _Shr, 
+            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg, _Unid}; 
+        enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT,
+            GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, LSHIFT, RSHIFT, OTHER}; */
+            LLVMInstr opToLLVM(IntrOps stype){
+                switch(stype){
+                    case IntrOps::ADD:
+                        return LLVMInstr::_Add;
+                    case IntrOps::MINUS:
+                        return LLVMInstr::_Sub;
+                    case IntrOps::MULT:
+                        return LLVMInstr::_Mul;
+                    case IntrOps::NEG:
+                        return LLVMInstr::_Neg;
+                    case IntrOps::FLIP:
+                        return LLVMInstr::_Flp;
+                    case IntrOps::DIV:
+                        return LLVMInstr::_Div;
+                    case IntrOps::MOD:
+                        return LLVMInstr::_Mod;
+                    case IntrOps::LSHIFT:
+                        return LLVMInstr::_Shl;
+                    case IntrOps::RSHIFT:
+                        return LLVMInstr::_Shr;
+                    case IntrOps::AND:
+                        return LLVMInstr::_And;
+                    case IntrOps::OR:
+                        return LLVMInstr::_Or;
+                    case IntrOps::XOR:
+                        return LLVMInstr::_Xor;
+                    case IntrOps::GREATER:
+                        return LLVMInstr::_Gr;
+                    case IntrOps::LESS:
+                        return LLVMInstr::_Ls;
+                    case IntrOps::EQUAL:
+                        return LLVMInstr::_Eq;
+                    case IntrOps::ASSN:
+                        return LLVMInstr::_Asn;
+                    default:
+                        Global::specifyError("Operation not supported.", __FILE__, __LINE__);
+                        throw Global::NotSupportedError;
                 }
             }
-    };
 
-    class INeg : public IUnOp {
         public:
-            INeg(SubType _width, SSA _src, SSA _dest)
-                       : IUnOp(_width, _src, _dest) {
+            // just for default constr in vector.
+            IInstr(){
+                instr() = LLVMInstr::_Dmy;
+                src1() = SSA::nullValue();
+                src2() = SSA::nullValue();
+                dest() = SSA::nullValue();
+                type() = VarType::OTHER;
+            }
+
+            // for branches.
+            IInstr(SSA _Pred, Label _Ifbr, Label _Elsebr){
+                pred() = _Pred;
+                ifbr() = _Ifbr;
+                elsebr() = _Elsebr;
+            }
+
+            // for binary op.
+            IInstr(IntrOps _Instr, VarType _Type, SSA _Src1, SSA _Src2, SSA _Dest){
+                src1() = _Src1;
+                src2() = _Src2;
+                dest() = _Dest;
+                instr() = opToLLVM(_Instr);
+                type() = _Type;
+            }
+
+            // for unary op.
+            IInstr(IntrOps _Instr, VarType _Type, SSA _Src, SSA _Dest){
+                src1() = _Src;
+                src2() = SSA::nullValue();
+                dest() = _Dest;
+                instr() = opToLLVM(_Instr);
+                type() = _Type;
             }
 
             unsigned int output(char* buf){
-                return ISub(type, SSA::genSInt(0), src, dest).output(buf);
+                switch(instr()){
+                    case LLVMInstr::_Br:
+                        return brOutput(buf);
+                    case LLVMInstr::_Add:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "add ", "add ", "fadd ", false);
+                    case LLVMInstr::_Sub:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "sub ", "sub ", "fsub ", false);    
+                    case LLVMInstr::_Mul:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "mul ", "mul ", "fmul ", false);
+                    case LLVMInstr::_Div: 
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "udiv ", "sdiv ", "fdiv ", false);
+                    case LLVMInstr::_Mod:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "urem ", "srem ", "frem ", false);    
+                    case LLVMInstr::_Shl:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "shl ", "shl ", ERROR_INSTR, false);    
+                    case LLVMInstr::_Shr:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "lshr ", "ashr ", ERROR_INSTR, false);
+                    case LLVMInstr::_And:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "and ", "and ", ERROR_INSTR, false);
+                    case LLVMInstr::_Or:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "or ", "or ", ERROR_INSTR, false);
+                    case LLVMInstr::_Xor:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "xor ", "xor ", ERROR_INSTR, false);
+                    case LLVMInstr::_Gr:
+                        return outputHelp(buf, OpUtils::isUnsigned(type()) ? "ugt " : "sgt ", 
+                                "ugt ", "icmp ", "icmp ", "fcmp ", true);
+                    case LLVMInstr::_Ls:
+                        return outputHelp(buf, OpUtils::isUnsigned(type()) ? "ult " : "slt ", 
+                                "ult ", "icmp ", "icmp ", "fcmp ", true);
+                    case LLVMInstr::_Eq:
+                        return outputHelp(buf, OpUtils::isUnsigned(type()) ? "eq " : "eq ", 
+                                "ueq ", "icmp ", "icmp ", "fcmp ", true);
+                    case LLVMInstr::_Dmy:
+                        return outputHelp(buf, "", "", "", "", "", false);
+                    // write out a construction.
+                    case LLVMInstr::_Asn:
+                    {
+                        unsigned int len1 = IInstr(src1(), src2()).output(buf);
+                        buf[len1++] = '\n';
+                        return len1+IInstr(src2(), dest()).output(buf+len1);
+                    }
+                    case LLVMInstr::_Flp:
+                    {
+                        unsigned long long neg1 = OpUtils::genAllOne(type());
+                        if(neg1 == 0){
+                            return IInstr(IntrOps::XOR, type(), src1(), 
+                                            SSA::genSInt(-1), dest()).output(buf);
+                        } else {
+                            return IInstr(IntrOps::XOR, type(), 
+                                            src1(), neg1, dest()).output(buf);
+                        }
+                    }
+                    case LLVMInstr::_Neg:
+                    {
+                        if(OpUtils::isFloat(type())){
+                            return IInstr(IntrOps::MINUS, type(), SSA::genFlt(0), 
+                                            src1(), dest()).output(buf);
+                        } else {
+                            return IInstr(IntrOps::MINUS, type(), SSA::genSInt(0), 
+                                            src1(), dest()).output(buf);
+                        }
+                    }
+                }
+                return 0;
+            }
+            SSA* getDest(){
+                return &dest(); 
             }
     };
 
-    // my next ssa is "s" plus this number.
     SSA nextSSA();
     // next label. Note, num is big enough 
     // that scoping shouldnt matter

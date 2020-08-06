@@ -33,7 +33,6 @@ unsigned int Parse::Branch::codeGen(Utils::Vector<CodeGen::IInstr>& output){
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
         // call codegen on the expr.
         static_cast<Branch*>(iter.get())->getPred()->codeGen(output);
-        output.push_back(CodeGen::IBranch());
         queue.push_back(output.back()->getDest());
     }
 

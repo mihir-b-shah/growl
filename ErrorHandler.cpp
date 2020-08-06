@@ -54,6 +54,9 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
         case Global::InvalidInstrInvocation:
             std::strncpy(buffer, "Invalid use of instruction.", Global::ERROR_BUFFER_SIZE);
             break;
+        case Global::NotSupportedError:
+            std::strncpy(buffer, "Not supported yet.", Global::ERROR_BUFFER_SIZE);
+            break;
         default:
             std::strncpy(buffer, "Unnamed exception encountered.", 
                         Global::ERROR_BUFFER_SIZE);

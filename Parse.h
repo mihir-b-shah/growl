@@ -15,6 +15,10 @@ namespace Parse {
     class Control;
     class Branch;
 
+    enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID, OTHER};
+    enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT,
+            GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, LSHIFT, RSHIFT, OTHER};
+
     class ArgIterator {
         SupportedType type;
         AST* handle;
