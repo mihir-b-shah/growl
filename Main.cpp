@@ -74,10 +74,10 @@ void Parse::incrASTCtr(){
 }
 
 Utils::SmallVector<CodeGen::Label,50> labels;
-CodeGen::Label getFromAST(unsigned AST_Extract){
+CodeGen::Label CodeGen::getFromAST(unsigned AST_Extract){
     return labels[AST_Extract];
 }
-void insertASTLbl(unsigned AST_Extr, CodeGen::Label lbl){
+void CodeGen::insertASTLbl(unsigned AST_Extr, CodeGen::Label lbl){
     labels[AST_Extr] = lbl;
 }
 
@@ -106,13 +106,12 @@ int main(int argc, char** argv) {
     Global::Alloc alloc(0);
     allocator = &alloc;
 
-  /*
+
     CodeGen::SSA s1 = CodeGen::nextSSA();
     CodeGen::SSA s2 = CodeGen::nextSSA();
     CodeGen::SSA s3 = CodeGen::nextSSA(); 
 
     CodeGen::IInstr ins;
-
     ins = CodeGen::IInstr(Parse::IntrOps::ADD, Parse::VarType::INT, s1, s2, s3); 
     test(ins);
     ins = CodeGen::IInstr(Parse::IntrOps::MINUS, Parse::VarType::INT, s1, s2, s3); 
@@ -145,9 +144,10 @@ int main(int argc, char** argv) {
     test(ins);
     ins = CodeGen::IInstr(Parse::IntrOps::NEG, Parse::VarType::INT, s1, s2, s3); 
     test(ins);
-    
-    */
-    
+    ins = CodeGen::IInstr(Parse::VarType::INT, s1); 
+    test(ins);
+   
+    /* 
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
         /*
         CodeGen::IRProg irProg;
         CodeGen::genIR(irProg);
-        */
+        
 
         return EXIT_SUCCESS;
     } catch (int exc) {
@@ -194,4 +194,5 @@ int main(int argc, char** argv) {
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }
+    */
 }

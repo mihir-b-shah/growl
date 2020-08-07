@@ -16,7 +16,6 @@ namespace Parse {
     unsigned int getASTCtr();
     void incrASTCtr();
 
-    class IInstr;    
     class AST {
         unsigned id;
         protected:
@@ -63,7 +62,9 @@ namespace Parse {
             }
             Sequence* getBack(){return back;}
             unsigned getIdx(){return idx;}
-            AST* getSequential();
+
+            /* Implemented in ASTParser */
+            AST* getSequentialBase();
             void setBack(Sequence* _back, unsigned _idx){
                 back = _back;
                 idx = _idx;
@@ -87,8 +88,7 @@ namespace Parse {
             Utils::SmallVector<AST*,6> seq;
         protected:
             void setBackTrace(Sequence* _back, unsigned _idx){
-                static_cast<ControlNode*>(back())
-                        ->setBack(_back, _idx);
+                getControlNode()->setBack(_back, _idx);
             }
         public:
             Sequence(){
@@ -114,6 +114,12 @@ namespace Parse {
             AST* at(unsigned int idx){
                 return seq[idx];
             }
+            ControlNode* getControlNode(){
+                return static_cast<ControlNode*>(seq[seq.size()-1]);
+            }
+            AST* getSequential(){
+                return getControlNode()->getSequentialBase();
+            }
             void push(AST* item){
                 seq.push_back(item);
                 seq.swap(seq.size()-2, seq.size()-1); 
@@ -132,11 +138,6 @@ namespace Parse {
             }
             unsigned int codeGen(CodeGen::IRProg prog);
     };
-
-    // Associated method with control node, bc forward decl.
-    AST* ControlNode::getSequential(){
-        return getBack()->at(getIdx()+1);
-    }
 
     class Control : public AST {
         private:
@@ -170,7 +171,7 @@ namespace Parse {
                 seq.setBackTrace(same->getBack(), same->getIdx());
             }
             ControlNode* getBackTrace(){
-                return static_cast<ControlNode*>(seq.back());
+                return static_cast<ControlNode*>(seq.getControlNode());
             }
             void seqAdd(AST* a){
                 seq.push(a);
@@ -201,6 +202,7 @@ namespace Parse {
             }
     };
 
+    // Else statement is guaranteeed to exist.
     class Branch : public Control {
         friend class ArgIterator;
         private:

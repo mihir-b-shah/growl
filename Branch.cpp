@@ -51,6 +51,8 @@ Lex::Token* Parse::parseBranch(int _offset, Lex::Token* _begin, Branch* _br){
     if((_begin+matchBrack+1)->subType == SubType::ELSE){
         return parseBranch(_offset+matchBrack+2, _begin+matchBrack+2, _br->addBranch());
     } else {
+        // ensures there is an else branch regardless.
+        _br->addBranch();
         return _begin+matchBrack+1;    
     }    
 }

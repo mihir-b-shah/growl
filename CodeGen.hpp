@@ -172,7 +172,7 @@ namespace CodeGen {
     };    
 
     enum class LLVMInstr:char {_Br, _Add, _Sub, _Mul, _Div, _Mod, _Shl, _Shr, 
-            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg};
+            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg, _Decl};
 
     static constexpr LLVMInstr unusedLLVMInstr(){
         return LLVMInstr::_Dmy;
@@ -304,8 +304,12 @@ namespace CodeGen {
                 }
             }
 
+            bool needsNoSpace(){
+                return instr() == LLVMInstr::_Dmy || instr() == LLVMInstr::_Decl;
+            }
+
             /** "instr" and :"flg" should be followed by space.*/
-            unsigned int printOpUnary(char* buf, const char* const instr, const char* const flg,
+            unsigned int printOpUnary(char* buf, const char* const iinstr, const char* const flg,
                          const char* const dType, bool sign, bool flt) {
                 
                 const char* spec = OpUtils::formatSpec(src1().which);
@@ -319,7 +323,7 @@ namespace CodeGen {
                 int chk;
                 
                 // check if instr is null (assn case)
-                if(strlen(instr) == 0){
+                if(needsNoSpace()){
                     chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s%s", spec);
                 } else {
                     chk = std::snprintf(fsbuf, FSBUF_LEN, "%%%%s%%u = %%s%%s%%s %s", spec);
@@ -334,16 +338,16 @@ namespace CodeGen {
                 
                 switch(((src1().which == SType::REF) << 1) + flt){
                     case LIT_INT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), iinstr, flg, dType, 
                             sign ? src1().extractSignedInt() : src1().extractUnsignedInt());
                         break;
                     case LIT_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), iinstr, flg, dType, 
                             src1().extractFlt());
                         break;
                     case REF_INT:
                     case REF_FLT:
-                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), instr, flg, dType, 
+                        chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), iinstr, flg, dType, 
                             src1().extractLbl());
                         break;
                     default:
@@ -355,7 +359,6 @@ namespace CodeGen {
                     Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;            
                 }
-
                 return chk;
             }
 
@@ -401,9 +404,10 @@ namespace CodeGen {
                     case LLVMInstr::_Flp:
                     case LLVMInstr::_Neg:
                     case LLVMInstr::_Dmy:
+                    case LLVMInstr::_Decl:
                         return UOB::UNARY;
                     case LLVMInstr::_Br:
-                        return UOB::OTHER; 
+                        return UOB::OTHER;
                 }
                 return UOB::OTHER;
             }
@@ -580,6 +584,23 @@ namespace CodeGen {
                 elsebr() = _Elsebr;
             }
 
+            // special for decl.
+            IInstr(VarType _Type, SSA _Name){
+                instr() = LLVMInstr::_Decl;
+                dest() = _Name;
+                type() = _Type;
+                src1() = SSA::nullValue();
+                src2() = SSA::nullValue();
+            }
+
+            void setDecl(VarType _Type, SSA _Name){
+                instr() = LLVMInstr::_Decl;
+                dest() = _Name;
+                type() = _Type;
+                src1() = SSA::nullValue();
+                src2() = SSA::nullValue();
+            }
+
             // for binary op.
             IInstr(IntrOps _Instr, VarType _Type, SSA _Src1, SSA _Src2, SSA _Dest){
                 src1() = _Src1;
@@ -656,6 +677,9 @@ namespace CodeGen {
                         buf[len1++] = '\n';
                         return len1+IInstr(src2(), dest()).output(buf+len1);
                     }
+                    case LLVMInstr::_Decl:
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, 
+                                        "alloca ", "alloca ", "alloca ", true);
                     case LLVMInstr::_Flp:
                     {
                         unsigned long long neg1 = OpUtils::genAllOne(type());

@@ -8,6 +8,12 @@
 
 using namespace Parse;
 
+
+// Associated method with control node, bc forward decl.
+AST* ControlNode::getSequentialBase(){
+    return getBack()->at(getIdx()+1);
+}
+
 static inline void unsupported(){
     Global::specifyError("Not supported yet.", __FILE__, __LINE__);
     throw Global::DeveloperError;
@@ -66,18 +72,18 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
                 case SubType::WHILE:
                 {
                     Loop* loop = new Loop();
-                    Lex::Token* next = parseLoop(offset, begin, loop); 
                     cntrl->seqAdd(loop);
                     loop->setBackTrace(cntrl);
+                    Lex::Token* next = parseLoop(offset, begin, loop); 
                     parse(offset + (next - begin), next, end, cntrl);
                     break;
                 }
                 case SubType::IF:
                 {
                     Branch* br = new Branch();
-                    Lex::Token* next = parseBranch(offset, begin, br); 
-                    br->setBackTrace(cntrl);
                     cntrl->seqAdd(br);
+                    br->setBackTrace(cntrl);
+                    Lex::Token* next = parseBranch(offset, begin, br); 
                     parse(offset + (next - begin), next, end, cntrl);
                     break;
                 }
