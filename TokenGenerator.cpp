@@ -12,7 +12,7 @@ using namespace Lex;
  * This is bare bones
  * 
  * Control: if, else, goto, return, while, switch, case, default, break (done!)
- * Data types/modifier: user-def type, int, long, char, float, void, and pointers. (done!)
+ * Data types/modifier: user-def type, int, long, char, double, void, and pointers. (done!)
  * Group: (, ), :, {, }, ',', ';' (done!)
  * Literals: number, char, floating-pt. (done!)
  * Operators: +, -, /, %, ~, ., *, <, >, &, |, ^, =, ==, << (done!)
@@ -27,7 +27,7 @@ static inline bool validLetter(const char letter) {
 
 /*  parse an identifier or int/flt litera
     right now... only a decimal int literal of arbitrary size
-    and a float of arbitrary size. no suffixes either.
+    and a double of arbitrary size. no suffixes either.
     all of this will be handled by a regex enabled preprocessor. */
 static inline char* const parseWord(Token* base, char* const data) {
     if(validLetter(data[0])) {
@@ -48,7 +48,7 @@ static inline char* const parseWord(Token* base, char* const data) {
         base->subType = SubType::NAME;
         return data+ct;
     } else if(std::isdigit(data[0])) {
-        // int/float
+        // int/double
         int ct = 0;
         while(ct < 255 && std::isdigit(data[ct]) && data[ct] != '.') {
             ++ct;
@@ -57,7 +57,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             Global::specifyError("Line 51", __FILE__, __LINE__);
             throw Global::InvalidLiteral;
         } else if(data[ct] == '.') {
-            // use a float
+            // use a double
             // might have bugs... 
             ++ct;
             char* dotPtr = data+ct;
@@ -68,7 +68,7 @@ static inline char* const parseWord(Token* base, char* const data) {
                 Global::specifyError("Line 61.", __FILE__, __LINE__);
                 throw Global::InvalidLiteral;
             }
-            long double res = 0;
+            double res = 0;
             char* readPtr = data+ct-1;
             while(readPtr != data) {
                 res *= 10;
@@ -76,7 +76,7 @@ static inline char* const parseWord(Token* base, char* const data) {
                 --readPtr;
             }
             readPtr = data+ct;
-            long double power = 0.1;
+            double power = 0.1;
             while(dotPtr != readPtr) {
                 res += power*(*dotPtr);
                 ++dotPtr;
@@ -349,7 +349,7 @@ static char* const parse(Token* base, char* const data) {
                 return parseWord(base, data); 
             }
         case 'f':
-            // float
+            // double
             if(std::strncmp("float", data, 5) == 0 && !validLetter(data[5])) {
                 base->type = Type::DATATYPE;
                 base->subType = SubType::FLOAT;

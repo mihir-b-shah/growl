@@ -18,6 +18,21 @@ namespace Utils {
             static const size_t FLAG_SFT = 1ULL << FLAG_POS;
             static const size_t MAX_CAPACITY = (1ULL << FLAG_POS-1)-1;
             enum:char {STACK_PUSH, STACK_MOVE_HEAP, HEAP_PUSH, HEAP_GROW};
+            
+            void grow(bool heap, bool leqc){
+                if(__builtin_expect(length*2 > MAX_CAPACITY,false)){
+                    Global::specifyError("Vector requested more than 1 << sizeof(size_t)-2 capacity.", __FILE__, __LINE__);
+                    throw Global::MemoryRequestError;
+                }
+                T* aux = Global::getAllocator()->allocate<T>(length*2);
+                std::copy(front, front+capacity, aux); 
+                capacity = FLAG_SFT+length*2;
+                if(__builtin_expect((heap<<1)+leqc==HEAP_GROW,true)){
+                    Global::getAllocator()->deallocate<T>(front);
+                }
+                front = aux;
+            }
+
         protected:
             T* front;
             size_t length;
@@ -41,17 +56,7 @@ namespace Utils {
                     case STACK_MOVE_HEAP:
                     case HEAP_GROW:
                     {
-                        if(__builtin_expect(length*2 > MAX_CAPACITY,false)){
-                            Global::specifyError("Vector requested more than 1 << sizeof(size_t)-2 capacity.", __FILE__, __LINE__);
-                            throw Global::MemoryRequestError;
-                        }
-                        T* aux = Global::getAllocator()->allocate<T>(length*2);
-                        std::copy(front, front+capacity, aux); 
-                        capacity = FLAG_SFT+length*2;
-                        if(__builtin_expect((heap<<1)+leqc==HEAP_GROW,true)){
-                            Global::getAllocator()->deallocate<T>(front);
-                        }
-                        front = aux;
+                        grow(heap, leqc);
                     }
                     case STACK_PUSH:
                     case HEAP_PUSH:
@@ -93,6 +98,27 @@ namespace Utils {
             const T* cback() const {
                 return length-1+begin();
             }
+            /** Try not to resize beyond the small buffer capacity. */
+            void resize(int newSize){
+                if(__builtin_expect(newSize > (capacity & FLAG_SFT-1), true)){
+                    const bool heap = capacity>>FLAG_POS;
+                    const bool leqc = length == (capacity&FLAG_SFT-1);
+                    grow(heap, leqc);
+                }
+                length = newSize;
+            }
+            void allocate(int howMany){
+                resize(length+howMany);
+            }
+            T& ref(unsigned int idx){
+                return *(begin() + idx);
+            }
+            void swap(unsigned i1, unsigned i2){
+                T _swap = *(begin()+i1);
+                *(begin()+i1) = *(begin()+i2);
+                *(begin()+i2) = _swap;
+            }
+
     };
     
     /*based on Chandler Carruth's talk at CppCon 2016 */

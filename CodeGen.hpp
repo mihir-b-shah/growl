@@ -21,7 +21,7 @@ namespace CodeGen {
             unsigned int ref;
             long long sint;
             unsigned long long uint;
-            long double flt;
+            double flt;
         } holder;
         SType which;
 
@@ -55,7 +55,7 @@ namespace CodeGen {
             return ref;
         }
         
-        static SSA genFlt(long double v){
+        static SSA genFlt(double v){
             SSA ref;
             ref.which = SType::FLT_LIT;
             ref.holder.flt = v;
@@ -68,10 +68,11 @@ namespace CodeGen {
         unsigned int extractLbl(){return holder.ref;}
         long long extractSignedInt(){return holder.sint;}
         unsigned long long extractUnsignedInt(){return holder.sint;}
-        long double extractFlt(){return holder.flt;}
+        double extractFlt(){return holder.flt;}
     };
 
     /* SSA is rep as %s1 for instance, good type safety too!*/
+    class IInstr;
     struct Label {
         unsigned int lbl;
 
@@ -173,6 +174,10 @@ namespace CodeGen {
     enum class LLVMInstr:char {_Br, _Add, _Sub, _Mul, _Div, _Mod, _Shl, _Shr, 
             _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg};
 
+    static constexpr LLVMInstr unusedLLVMInstr(){
+        return LLVMInstr::_Dmy;
+    }
+
     enum class UOB:char {UNARY, BINARY, OTHER};
 
     // inheritance hierarchy for all the different instructions
@@ -184,6 +189,7 @@ namespace CodeGen {
             enum UnEnum:char {LIT_INT, LIT_FLT, REF_INT, REF_FLT};
 
             LLVMInstr _instr;
+
             union Hold {
                 struct {
                     SSA _pred;
@@ -438,8 +444,8 @@ namespace CodeGen {
                                     Global::specifyError("Flt type used in int-only instruction.\n", __FILE__, __LINE__);    
                                     throw Global::InvalidInstrInvocation;
                                 }
-                                // right now, floats in Growl are 64-bit doubles in LLVM.    
-                                ret = printOpUnary(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
+                                // right now, floats in Growl are 64-bit floats in LLVM.    
+                                ret = printOpUnary(buf, fltInstr, fflg, dispFltType ? "float " : "", true, true);
                                 break;
                             case VarType::OTHER:
                                 ret = printOpUnary(buf, unsignInstr, iflg, "", false, false);
@@ -472,8 +478,8 @@ namespace CodeGen {
                                     Global::specifyError("Flt type used in int-only instruction.\n", __FILE__, __LINE__);    
                                     throw Global::InvalidInstrInvocation;
                                 }
-                                // right now, floats in Growl are 64-bit doubles in LLVM.    
-                                ret = printOpBinary(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
+                                // right now, floats in Growl are 64-bit floats in LLVM.    
+                                ret = printOpBinary(buf, fltInstr, fflg, dispFltType ? "float " : "", true, true);
                                 break;
                             case VarType::OTHER:
                                 ret = printOpBinary(buf, unsignInstr, iflg, "", false, false);
@@ -546,8 +552,29 @@ namespace CodeGen {
                 type() = VarType::OTHER;
             }
 
+            void setInstr(IInstr& is){
+                if(is.instr() == LLVMInstr::_Br){
+                    pred() = is.pred();
+                    ifbr() = is.ifbr();
+                    elsebr() = is.elsebr();
+                } else {
+                    type() = is.type();
+                    src1() = is.src1();
+                    src2() = is.src2();
+                    dest() = is.dest();
+                }
+            }
+
             // for branches.
             IInstr(SSA _Pred, Label _Ifbr, Label _Elsebr){
+                instr() = LLVMInstr::_Br;
+                pred() = _Pred;
+                ifbr() = _Ifbr;
+                elsebr() = _Elsebr;
+            }
+
+            void setBranch(SSA _Pred, Label _Ifbr, Label _Elsebr){
+                instr() = LLVMInstr::_Br;
                 pred() = _Pred;
                 ifbr() = _Ifbr;
                 elsebr() = _Elsebr;
@@ -562,8 +589,24 @@ namespace CodeGen {
                 type() = _Type;
             }
 
+            void setBinOp(IntrOps _Instr, VarType _Type, SSA _Src1, SSA _Src2, SSA _Dest){
+                src1() = _Src1;
+                src2() = _Src2;
+                dest() = _Dest;
+                instr() = opToLLVM(_Instr);
+                type() = _Type;
+            }
+
             // for unary op.
             IInstr(IntrOps _Instr, VarType _Type, SSA _Src, SSA _Dest){
+                src1() = _Src;
+                src2() = SSA::nullValue();
+                dest() = _Dest;
+                instr() = opToLLVM(_Instr);
+                type() = _Type;
+            }
+
+            void setUnOp(IntrOps _Instr, VarType _Type, SSA _Src, SSA _Dest){
                 src1() = _Src;
                 src2() = SSA::nullValue();
                 dest() = _Dest;
@@ -647,7 +690,56 @@ namespace CodeGen {
     // that scoping shouldnt matter
     Label nextLabel();
 
+    Label getFromAST(unsigned int AST_Extract);
+    void insertASTLbl(unsigned int AST_Extr, Label lbl);
+
+    class IRProg {
+        private:
+            // labels are 1-indexed. No collisions.
+            Utils::SmallVector<unsigned, 20> map;
+            Utils::SmallVector<CodeGen::IInstr, 100> list;
+        public:
+            IRProg(){
+            }
+
+            ~IRProg(){
+            }
+
+            IInstr* getInstr(Label& labl){
+                return list.begin() + map[labl.extract()];
+            }
+
+            unsigned int size(){
+                return list.size();
+            }
+
+            inline void allocate(int howMany){
+                list.allocate(howMany);
+            }
+
+            inline void addInstr(IInstr& instr){
+                list.back()->setInstr(instr);
+            }
+
+            /** Only safe when not adding */
+            inline IInstr* getInstr(unsigned idx){
+                return list.begin() + idx;
+            }
+
+            void addInstr(Label& lbl, IInstr& instr){
+                addInstr(instr);
+                map.ref(lbl.extract()) = list.size() - 1;
+            }
+
+            void associate(Label lbl, unsigned idx){
+                map.ref(lbl.extract()) = map.ref(idx);
+            } 
+    };
+
+    void genIR(IRProg& program);
     void genASM(Utils::Vector<IInstr>& buf);
+
+    IRProg& getIRProg();
 }
 
 #endif

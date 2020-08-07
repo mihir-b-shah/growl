@@ -108,7 +108,7 @@ AST* ArgIterator::get(){
         case SupportedType::_Seq:
         {
             Sequence* _seq = static_cast<Sequence*>(handle);
-            return _seq->at(pos);
+            return *(_seq->begin()+pos);
         }
         case SupportedType::_Br:
             return handle;

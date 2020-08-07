@@ -33,7 +33,7 @@ namespace Utils {
     template<typename T, typename Traits = SetTraits<T>>
     class Set {
         private:
-            static constexpr float LOAD_FACTOR = 0.5;
+            static constexpr double LOAD_FACTOR = 0.5;
             static constexpr int FLAG_POS = (sizeof(size_t)*8)-1;
             static constexpr size_t FLAG_SFT = 1ULL << FLAG_POS;
             static constexpr size_t MAX_CAPACITY = (1ULL << FLAG_POS-1)-1;

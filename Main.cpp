@@ -65,6 +65,22 @@ CodeGen::Label CodeGen::nextLabel(){
     return _nextLbl++;
 }
 
+unsigned ASTCtr = 0;
+unsigned int Parse::getASTCtr(){
+    return ASTCtr;
+}
+void Parse::incrASTCtr(){
+    ++ASTCtr;
+}
+
+Utils::SmallVector<CodeGen::Label,50> labels;
+CodeGen::Label getFromAST(unsigned AST_Extract){
+    return labels[AST_Extract];
+}
+void insertASTLbl(unsigned AST_Extr, CodeGen::Label lbl){
+    labels[AST_Extr] = lbl;
+}
+
 static const int FILE_SIZE_MULTIPLIER = 10;
 static const int CONSOLE_WIDTH = 100;
 
@@ -73,6 +89,11 @@ static void singletonVars(){
     // char is a dummy here
     _tombsVar = new Parse::Variable("TOMBS_3022", 10, Lex::SubType::CHAR, 0);
     _emptyVar = new Parse::Variable("EMPTY_2930", 10, Lex::SubType::CHAR, 0);    
+}
+
+CodeGen::IRProg irProg;
+CodeGen::IRProg& getIRProg(){
+    return irProg;
 }
 
 void test(CodeGen::IInstr& node){
@@ -84,7 +105,8 @@ void test(CodeGen::IInstr& node){
 int main(int argc, char** argv) {
     Global::Alloc alloc(0);
     allocator = &alloc;
-  
+
+  /*
     CodeGen::SSA s1 = CodeGen::nextSSA();
     CodeGen::SSA s2 = CodeGen::nextSSA();
     CodeGen::SSA s3 = CodeGen::nextSSA(); 
@@ -124,7 +146,8 @@ int main(int argc, char** argv) {
     ins = CodeGen::IInstr(Parse::IntrOps::NEG, Parse::VarType::INT, s1, s2, s3); 
     test(ins);
     
-    /* 
+    */
+    
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
@@ -157,6 +180,11 @@ int main(int argc, char** argv) {
         Parse::parseAST(0, tokens.begin(), tokens.end(), 
                         Parse::globScope());
 
+        /*
+        CodeGen::IRProg irProg;
+        CodeGen::genIR(irProg);
+        */
+
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
@@ -166,5 +194,4 @@ int main(int argc, char** argv) {
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }
-    */
 }

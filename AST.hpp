@@ -10,16 +10,25 @@
 #include <cstdlib>
 #include "Vector.hpp"
 #include "CodeGen.hpp"
-#include <type_traits>
 
 namespace Parse {
-   
+  
+    unsigned int getASTCtr();
+    void incrASTCtr();
+
     class IInstr;    
     class AST {
+        unsigned id;
+        protected:
+            AST(){
+                id = getASTCtr();
+                incrASTCtr();
+            }
         public:
+            unsigned getHash(){return id;}
             virtual void debugPrint(std::ostream& out) = 0;
             virtual ArgIterator iterator() = 0;
-            virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
+            virtual unsigned int codeGen(CodeGen::IRProg prog) = 0;
     };
 
     class Expr : public AST {
@@ -30,14 +39,62 @@ namespace Parse {
             virtual void debugPrint(std::ostream& out){
                 out << "Expr\n";
             }
-            virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) = 0;
+            virtual unsigned int codeGen(CodeGen::IRProg prog) = 0;
+    };
+
+    class Sequence;
+    /*
+     * How to manage labels.
+     *
+     * Keep a static integer for the AST class.
+     * Each time an AST gets allocated assign it the current value
+     * and increment.
+     *
+     * Now create a Map<AST_Int, Label>. Look before creating label.
+     */
+    class ControlNode : public AST {
+        private:
+            Sequence* back; 
+            unsigned idx;      
+        public:
+            ControlNode(){
+            }
+            ~ControlNode(){
+            }
+            Sequence* getBack(){return back;}
+            unsigned getIdx(){return idx;}
+            AST* getSequential();
+            void setBack(Sequence* _back, unsigned _idx){
+                back = _back;
+                idx = _idx;
+            }
+            void debugPrint(std::ostream& out){
+                out << "ControlNode\n";
+            }
+            // never will be called.
+            ArgIterator iterator(){ 
+                return ArgIterator(SupportedType::_Ctl, this); 
+            }
+            // never will be called.
+            unsigned int codeGen(CodeGen::IRProg prog){
+                return 0;
+            }
     };
 
     class Sequence : public AST {
+        friend class Control;
         private:
-            Utils::SmallVector<AST*,5> seq;
+            Utils::SmallVector<AST*,6> seq;
+        protected:
+            void setBackTrace(Sequence* _back, unsigned _idx){
+                static_cast<ControlNode*>(back())
+                        ->setBack(_back, _idx);
+            }
         public:
             Sequence(){
+                // a single null AST at the "back"
+                // helps in transferring control.
+                seq.push_back(new ControlNode());
             }
             ~Sequence(){
             }
@@ -47,23 +104,25 @@ namespace Parse {
             }
             /** Returns end iterator */
             AST** end(){
-                return seq.end();
+                return seq.end() - 1;
             }
-            /** Return back element */
+            /** Return back element. Dont inclue ControlNode */
             AST* back(){
-                return seq.eback();
+                return seq.at(seq.size()-2);
             }
+            // prob should never be called.
             AST* at(unsigned int idx){
                 return seq[idx];
             }
             void push(AST* item){
-                return seq.push_back(item);
+                seq.push_back(item);
+                seq.swap(seq.size()-2, seq.size()-1); 
             }
             void pop(){
-                return seq.pop_back();
+                seq.pop_back();
             }
             unsigned int size(){
-                return seq.size();
+                return seq.size()-1;
             }
             void debugPrint(std::ostream& out){
                 out << "sequence\n";
@@ -71,13 +130,21 @@ namespace Parse {
             ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Seq, this);
             }
-            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+            unsigned int codeGen(CodeGen::IRProg prog);
     };
+
+    // Associated method with control node, bc forward decl.
+    AST* ControlNode::getSequential(){
+        return getBack()->at(getIdx()+1);
+    }
 
     class Control : public AST {
         private:
             char* openBrace;
             Sequence seq;
+            void setBackTrace(Sequence* _back, unsigned _idx){
+                seq.setBackTrace(_back, _idx);
+            }
         protected:
             Control(char* ob){
                 openBrace = ob;
@@ -95,6 +162,16 @@ namespace Parse {
             unsigned int seqSize(){
                 return seq.size();
             }
+            void setBackTrace(Control* parent){
+                seq.setBackTrace(parent->getSeq(),
+                                parent->getSeq()->size()-1);
+            }
+            void setBackTrace(ControlNode* same){
+                seq.setBackTrace(same->getBack(), same->getIdx());
+            }
+            ControlNode* getBackTrace(){
+                return static_cast<ControlNode*>(seq.back());
+            }
             void seqAdd(AST* a){
                 seq.push(a);
             }
@@ -107,7 +184,7 @@ namespace Parse {
             virtual ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Ctl, this);
             }
-            virtual unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect){
+            virtual unsigned int codeGen(CodeGen::IRProg prog){
                 Global::specifyError("Code gen on Control* not sup.\n", __FILE__, __LINE__);
                 throw Global::DeveloperError;
             }
@@ -141,6 +218,7 @@ namespace Parse {
             }
             Branch* addBranch(){
                 next = new Branch();
+                next->setBackTrace(getBackTrace());
                 return next;
             }
             void setPred(Expr* _pred){
@@ -155,7 +233,7 @@ namespace Parse {
             ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Br, this);
             }
-            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+            unsigned int codeGen(CodeGen::IRProg prog);
     };
 
     /*
@@ -193,7 +271,7 @@ namespace Parse {
             ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Lp, this);
             }
-            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+            unsigned int codeGen(CodeGen::IRProg prog);
     };
 
     class Op : public Expr {
@@ -228,7 +306,7 @@ namespace Parse {
                 printRoot(buf);
                 out << buf << '\n';
             }
-            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect);
+            unsigned int codeGen(CodeGen::IRProg prog);
     };
 
     class Literal : public Expr {
@@ -240,7 +318,7 @@ namespace Parse {
             } type;
             union {
                 long long intVal;
-                long double fltVal;
+                double fltVal;
             } value;
             static inline int min(int a, int b){
                 return a<b?a:b;
@@ -249,14 +327,14 @@ namespace Parse {
             Literal(){}
             ~Literal(){}
             long long getInt(){ return value.intVal;}
-            long double getFlt(){ return value.fltVal;}
+            double getFlt(){ return value.fltVal;}
             bool isInt(){ return type == INT;}
             bool isFloat(){ return type == FLOAT;}
             void setInt(long long v){
                 type = INT;
                 value.intVal = v;
             }
-            void setFlt(long double v){
+            void setFlt(double v){
                 type = FLOAT;
                 value.fltVal = v;
             }
@@ -280,7 +358,7 @@ namespace Parse {
                 printRoot(buf);
                 out << buf << '\n';
             }
-            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+            unsigned int codeGen(CodeGen::IRProg prog) override;
     };
 
     static const char* varstrs[7] = {"int", "long", "char", "float", "bool", "void", "other"};
@@ -312,7 +390,7 @@ namespace Parse {
                 out << " PtrLvl: " << static_cast<int>(ptrLvl);
                 out << '\n';    
             }
-            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+            unsigned int codeGen(CodeGen::IRProg prog) override;
     };
     Variable* emptyVar();
     Variable* tombsVar();
@@ -340,7 +418,7 @@ namespace Parse {
             Parse::ArgIterator iterator() override {
                 return ArgIterator(SupportedType::_Decl, this);
             }
-            unsigned int codeGen(Utils::Vector<CodeGen::IInstr>& vect) override;
+            unsigned int codeGen(CodeGen::IRProg prog) override;
     };
 }
 

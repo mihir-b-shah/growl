@@ -68,6 +68,7 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
                     Loop* loop = new Loop();
                     Lex::Token* next = parseLoop(offset, begin, loop); 
                     cntrl->seqAdd(loop);
+                    loop->setBackTrace(cntrl);
                     parse(offset + (next - begin), next, end, cntrl);
                     break;
                 }
@@ -75,6 +76,7 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
                 {
                     Branch* br = new Branch();
                     Lex::Token* next = parseBranch(offset, begin, br); 
+                    br->setBackTrace(cntrl);
                     cntrl->seqAdd(br);
                     parse(offset + (next - begin), next, end, cntrl);
                     break;
