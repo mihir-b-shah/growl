@@ -412,14 +412,6 @@ namespace CodeGen {
                 return UOB::OTHER;
             }
 
-            IInstr(SSA _Src, SSA _Dest){
-                src1() = _Src;
-                src2() = SSA::nullValue();
-                dest() = _Dest;
-                instr() = LLVMInstr::_Dmy;
-                type() = VarType::OTHER;
-            }
-
             unsigned int outputHelp(char* buf, const char* const iflg, 
                             const char* const fflg, const char* const unsignInstr, 
                             const char* const signInstr, const char* const fltInstr, 
@@ -553,6 +545,14 @@ namespace CodeGen {
                 src1() = SSA::nullValue();
                 src2() = SSA::nullValue();
                 dest() = SSA::nullValue();
+                type() = VarType::OTHER;
+            }
+
+            IInstr(SSA _Src, SSA _Dest){
+                src1() = _Src;
+                src2() = SSA::nullValue();
+                dest() = _Dest;
+                instr() = LLVMInstr::_Dmy;
                 type() = VarType::OTHER;
             }
 
@@ -713,6 +713,10 @@ namespace CodeGen {
     // next label. Note, num is big enough 
     // that scoping shouldnt matter
     Label nextLabel();
+    
+    // just 12 bytes 
+    void insertVarSSA(unsigned int Var_Extr, SSA ssa);
+    SSA getFromVar(unsigned int Var_Extract);
 
     Label getFromAST(unsigned int AST_Extract);
     void insertASTLbl(unsigned int AST_Extr, Label lbl);
@@ -760,7 +764,7 @@ namespace CodeGen {
             } 
     };
 
-    void genIR(IRProg& program);
+    unsigned int genIR(IRProg& program);
     void genASM(Utils::Vector<IInstr>& buf);
 
     IRProg& getIRProg();

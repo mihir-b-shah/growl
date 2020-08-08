@@ -25,20 +25,18 @@ namespace Parse {
             }
         public:
             unsigned getHash(){return id;}
-            virtual void debugPrint(std::ostream& out) = 0;
             virtual ArgIterator iterator() = 0;
-            virtual unsigned int codeGen(CodeGen::IRProg prog) = 0;
+            virtual unsigned int codeGen(CodeGen::IRProg& prog) = 0;
     };
 
+    enum class ExprId:char {_OP, _LIT, _VAR};
     class Expr : public AST {
         friend class ArgIterator;
         public:
+            virtual ExprId exprID() = 0;
             virtual int printRoot(char* buf) const = 0;
             void print(const int width, std::ostream& out);
-            virtual void debugPrint(std::ostream& out){
-                out << "Expr\n";
-            }
-            virtual unsigned int codeGen(CodeGen::IRProg prog) = 0;
+            unsigned int codeGen(CodeGen::IRProg& prog);
     };
 
     class Sequence;
@@ -69,17 +67,11 @@ namespace Parse {
                 back = _back;
                 idx = _idx;
             }
-            void debugPrint(std::ostream& out){
-                out << "ControlNode\n";
-            }
             // never will be called.
-            ArgIterator iterator(){ 
+            ArgIterator iterator() override { 
                 return ArgIterator(SupportedType::_Ctl, this); 
             }
-            // never will be called.
-            unsigned int codeGen(CodeGen::IRProg prog){
-                return 0;
-            }
+            unsigned int codeGen(CodeGen::IRProg& prog){return 0;}
     };
 
     class Sequence : public AST {
@@ -130,13 +122,10 @@ namespace Parse {
             unsigned int size(){
                 return seq.size()-1;
             }
-            void debugPrint(std::ostream& out){
-                out << "sequence\n";
-            }
             ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Seq, this);
             }
-            unsigned int codeGen(CodeGen::IRProg prog);
+            unsigned int codeGen(CodeGen::IRProg& prog);
     };
 
     class Control : public AST {
@@ -179,13 +168,10 @@ namespace Parse {
             Sequence* getSeq(){
                 return &seq;
             }
-            virtual void debugPrint(std::ostream& out){
-                out << "Control\n";
-            }
             virtual ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Ctl, this);
             }
-            virtual unsigned int codeGen(CodeGen::IRProg prog){
+            virtual unsigned int codeGen(CodeGen::IRProg& prog){
                 Global::specifyError("Code gen on Control* not sup.\n", __FILE__, __LINE__);
                 throw Global::DeveloperError;
             }
@@ -229,13 +215,10 @@ namespace Parse {
             Expr* getPred(){
                 return pred;
             }
-            void debugPrint(std::ostream& out){
-                out << "Branch\n";
-            }
             ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Br, this);
             }
-            unsigned int codeGen(CodeGen::IRProg prog);
+            unsigned int codeGen(CodeGen::IRProg& prog);
     };
 
     /*
@@ -267,13 +250,10 @@ namespace Parse {
             Expr* getPred(){
                 return pred;
             }
-            void debugPrint(std::ostream& out){
-                out << "Loop\n";
-            }
             ArgIterator iterator(){
                 return ArgIterator(SupportedType::_Lp, this);
             }
-            unsigned int codeGen(CodeGen::IRProg prog);
+            unsigned int codeGen(CodeGen::IRProg& prog);
     };
 
     class Op : public Expr {
@@ -303,12 +283,12 @@ namespace Parse {
             int arity() const;
             int printRoot(char* buf) const;
             ArgIterator iterator();
-            void debugPrint(std::ostream& out){
-                char buf[5] = {'\0'};
-                printRoot(buf);
-                out << buf << '\n';
-            }
-            unsigned int codeGen(CodeGen::IRProg prog);
+            unsigned int codeGen(CodeGen::IRProg& prog);
+            ExprId exprID() {return ExprId::_OP;}
+            Expr* getUnaryArg(){return inputs.arg;}
+            Expr* getBinaryArg1(){return inputs.twoArgs[0];}
+            Expr* getBinaryArg2(){return inputs.twoArgs[1];}
+            IntrOps getIntrinsicOp(){return driver.intr;}
     };
 
     class Literal : public Expr {
@@ -316,10 +296,11 @@ namespace Parse {
         private:
             enum:char {
                 INT,
-                FLOAT
+                FLOAT,
             } type;
+            // literals can never be negative.
             union {
-                long long intVal;
+                unsigned long long intVal;
                 double fltVal;
             } value;
             static inline int min(int a, int b){
@@ -328,7 +309,7 @@ namespace Parse {
         public:
             Literal(){}
             ~Literal(){}
-            long long getInt(){ return value.intVal;}
+            unsigned long long getInt(){ return value.intVal;}
             double getFlt(){ return value.fltVal;}
             bool isInt(){ return type == INT;}
             bool isFloat(){ return type == FLOAT;}
@@ -355,12 +336,8 @@ namespace Parse {
             Parse::ArgIterator iterator() override {
                 return ArgIterator(SupportedType::_Lit, this);
             }
-            void debugPrint(std::ostream& out) override {
-                char buf[5] = {'\0'};
-                printRoot(buf);
-                out << buf << '\n';
-            }
-            unsigned int codeGen(CodeGen::IRProg prog) override;
+            unsigned int codeGen(CodeGen::IRProg& prog) override;
+            ExprId exprID() override {return ExprId::_LIT;}
     };
 
     static const char* varstrs[7] = {"int", "long", "char", "float", "bool", "void", "other"};
@@ -384,15 +361,8 @@ namespace Parse {
             byte getLen(){return len;}
             int printRoot(char* buf) const override;
             Parse::ArgIterator iterator() override;
-            void debugPrint(std::ostream& out) override {
-                out << "Name: ";
-                out.write(name, len);
-                out << " Len: " << static_cast<int>(len);
-                out << " VarType: " << varstrs[static_cast<int>(type)];
-                out << " PtrLvl: " << static_cast<int>(ptrLvl);
-                out << '\n';    
-            }
-            unsigned int codeGen(CodeGen::IRProg prog) override;
+            VarType vtype(){return type;}
+            unsigned int codeGen(CodeGen::IRProg& prog) override;
     };
     Variable* emptyVar();
     Variable* tombsVar();
@@ -411,16 +381,17 @@ namespace Parse {
             Variable* getVar(){
                 return var;
             }
+            VarType getType(){
+                return var->vtype();
+            }
             int getDist(){
                 return index-Lex::program();
-            }
-            void debugPrint(std::ostream& out) override {
-                var->debugPrint(out);
             }
             Parse::ArgIterator iterator() override {
                 return ArgIterator(SupportedType::_Decl, this);
             }
-            unsigned int codeGen(CodeGen::IRProg prog) override;
+            unsigned int codeGen(CodeGen::IRProg& prog) override;
+            ExprId exprID(){return ExprId::_VAR;}
     };
 }
 

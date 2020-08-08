@@ -31,8 +31,6 @@ Lex::Token* Parse::parseDecl(Lex::Token* begin, Parse::Variable* var, Parse::Con
         throw Global::InvalidDeclaration;
     }
 
-    var->debugPrint(std::cout);
-
     /** WILL NEED TO CHANGE, THIS IS FOR DEBUGGING PURPOSE. */
     Parse::st()->insert(var, Parse::globScope());
     return 1+begin;

@@ -23,10 +23,10 @@ namespace Lex {
 
     // tagged union
     struct LitValue {
-        IOF iof; // 0 if undefined, 1 if int, 2 if double. 
+        IOF iof; // 0 if undefined, 1 if int, 3 if double 
         union VHolder {
             int ptrLvl;
-            long long ival;
+            unsigned long long ival;
             double fval;
         } holder;
     };

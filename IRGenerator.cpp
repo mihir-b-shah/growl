@@ -23,7 +23,7 @@ static std::pair<Label,bool> getLabel(Parse::AST* ast){
  * We will target LLVM IR.
  */
 
-unsigned int Parse::Sequence::codeGen(IRProg prog){
+unsigned int Parse::Sequence::codeGen(CodeGen::IRProg& prog){
     unsigned int accm = 0;
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
         accm += iter.get()->codeGen(prog);
@@ -61,7 +61,7 @@ unsigned int Parse::Sequence::codeGen(IRProg prog){
  * Label_2:
  * whatever's next in the sequence.
  */
-unsigned int Parse::Branch::codeGen(IRProg prog){
+unsigned int Parse::Branch::codeGen(IRProg& prog){
     int ctr = 0;
     Utils::SmallVector<
             std::pair<unsigned int, Label>, 4> branches;
@@ -112,35 +112,129 @@ unsigned int Parse::Branch::codeGen(IRProg prog){
  * L2: loop ast....
  *     br L1
  */
-unsigned int Parse::Loop::codeGen(IRProg prog){
+unsigned int Parse::Loop::codeGen(IRProg& prog){
     return 0;    
 }
 
-/** Setup an operator 
- * 
- * Call codegen on each of the supporting operators.
- * then get the % node for each of them. Then call my operator.
- */
-unsigned int Parse::Op::codeGen(IRProg prog){
+unsigned int Parse::Op::codeGen(IRProg& prog){
+     
     return 0;
+}
+
+CodeGen::SSA genSSA(Parse::Literal* handle){
+    if(handle->isInt()){
+        return SSA::genUInt(handle->getInt());
+    } else {
+        // is float
+        return SSA::genFlt(handle->getFlt());
+    }
 }
 
 /** Simple substitution */
-unsigned int Parse::Literal::codeGen(IRProg prog){
+unsigned int Parse::Literal::codeGen(IRProg& prog){
     return 0;
 }
 
+CodeGen::SSA genSSA(Parse::Variable* handle){
+    auto ssa = CodeGen::nextSSA();
+    CodeGen::insertVarSSA(handle->getHash(), ssa);
+    return ssa;
+}
+
 /** Simple substitution...? */
-unsigned int Parse::Variable::codeGen(IRProg prog){
+unsigned int Parse::Variable::codeGen(IRProg& prog){
+    return 0;
+}
+
+SSA exprRecur(Parse::Expr* expr){    
+    using Parse::ExprId;
+    // cant handle recursively here. mostly..
+    switch(expr->exprID()){
+        case ExprId::_OP:
+            
+        case ExprId::_LIT:
+            break;
+        case ExprId::_VAR:
+            break;
+    }
+    return SSA::nullValue();
+}
+
+unsigned int Parse::Expr::codeGen(IRProg& prog){
+    using Parse::ExprId;
+    using Parse::IntrOps;
+
+    // cant handle recursively here. mostly..
+    switch(exprID()){
+        case ExprId::_OP:
+        {
+            Op* op = static_cast<Op*>(this);
+            // dont use the iterator bc we need fine grained control.
+            switch(op->arity()){
+                case 1:
+                {
+                    /* dest needs to be analyzed */
+                    SSA res = exprRecur(op->getUnaryArg());
+                    IInstr instr(op->getIntrinsicOp(), VarType::VOID, 
+                                    res, nextSSA());
+                    prog.addInstr(instr);
+                    break;
+                }
+                case 2:
+                {
+                    /* Assignment */
+                    SSA dest = nextSSA();
+                    if(op->getIntrinsicOp() == IntrOps::ASSN){
+                        
+                    } else {
+                    
+                    }
+                    SSA res1 = exprRecur(op->getBinaryArg1());
+                    SSA res2 = exprRecur(op->getBinaryArg2());
+                    IInstr instr(op->getIntrinsicOp(), VarType::VOID, 
+                                    res1, res2, dest);
+                    prog.addInstr(instr);
+                    break;
+                }
+                default:
+                    Global::specifyError("Functions (n-ary ops) not supported yet.\n",
+                                    __FILE__, __LINE__);
+                    throw Global::NotSupportedError;
+            }
+        } 
+        case ExprId::_LIT:
+        {
+            // base case, an assignment from literal.
+            IInstr instr(CodeGen::nextSSA(), 
+                            genSSA(static_cast<Literal*>(this)));
+            prog.addInstr(instr);
+            break;
+        }
+        case ExprId::_VAR:
+        {
+            // base case, an assignment from variable.
+            IInstr instr(CodeGen::nextSSA(), 
+                            genSSA(static_cast<Variable*>(this)));
+            prog.addInstr(instr);
+            break;
+        }
+    }
     return 0;
 }
 
 /** An alloca <type> */
-unsigned int Parse::Decl::codeGen(IRProg prog){
-    
+unsigned int Parse::Decl::codeGen(IRProg& prog){
+    IInstr(this->getType(), genSSA(this->getVar()));
+    return 1;
+}
+
+unsigned int CodeGen::genIR(IRProg& prog){
+    Parse::globScope()->getSeq()->codeGen(prog);
     return 0;
 }
 
-unsigned int genIR(Utils::Vector<IInstr>& buf){
+/*
+unsigned int Parse::ControlNode::codeGen(IRProg& prog){
     return 0;
 }
+*/

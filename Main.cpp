@@ -73,12 +73,28 @@ void Parse::incrASTCtr(){
     ++ASTCtr;
 }
 
-Utils::SmallVector<CodeGen::Label,50> labels;
+// guaranteed to be exclusive since a
+// variable cant be a control str.
+union SSALbl {
+    CodeGen::SSA ssa;
+    CodeGen::Label lbl;
+
+    SSALbl(){}
+};
+
+Utils::SmallVector<SSALbl,50> labels;
 CodeGen::Label CodeGen::getFromAST(unsigned AST_Extract){
-    return labels[AST_Extract];
+    return labels[AST_Extract].lbl;
 }
 void CodeGen::insertASTLbl(unsigned AST_Extr, CodeGen::Label lbl){
-    labels[AST_Extr] = lbl;
+    labels[AST_Extr].lbl = lbl;
+}
+
+void CodeGen::insertVarSSA(unsigned int Var_Extr, CodeGen::SSA ssa){
+    labels[Var_Extr].ssa = ssa;
+}
+CodeGen::SSA CodeGen::getFromVar(unsigned int Var_Extract){
+    return labels[Var_Extract].ssa;
 }
 
 static const int FILE_SIZE_MULTIPLIER = 10;
@@ -106,7 +122,7 @@ int main(int argc, char** argv) {
     Global::Alloc alloc(0);
     allocator = &alloc;
 
-
+/*
     CodeGen::SSA s1 = CodeGen::nextSSA();
     CodeGen::SSA s2 = CodeGen::nextSSA();
     CodeGen::SSA s3 = CodeGen::nextSSA(); 
@@ -146,8 +162,8 @@ int main(int argc, char** argv) {
     test(ins);
     ins = CodeGen::IInstr(Parse::VarType::INT, s1); 
     test(ins);
-   
-    /* 
+   */
+    
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
@@ -180,10 +196,8 @@ int main(int argc, char** argv) {
         Parse::parseAST(0, tokens.begin(), tokens.end(), 
                         Parse::globScope());
 
-        /*
         CodeGen::IRProg irProg;
         CodeGen::genIR(irProg);
-        
 
         return EXIT_SUCCESS;
     } catch (int exc) {
@@ -194,5 +208,4 @@ int main(int argc, char** argv) {
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }
-    */
 }
