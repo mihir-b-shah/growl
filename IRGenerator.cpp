@@ -173,7 +173,16 @@ unsigned int Parse::Expr::codeGen(IRProg& prog){
             switch(op->arity()){
                 case 1:
                 {
-                    /* dest needs to be analyzed */
+                    /* dest needs to be analyzed 
+                     * 
+                     * Operator nodes are only place where static type analysis must be performed.
+                     *
+                     * If its a unary operator, theres only a couple:
+                     *
+                     * Let W be width, T be a generic type.
+                     * Flip bits: Int<W> -> Int<W>
+                     * Negate: 
+                     */
                     SSA res = exprRecur(op->getUnaryArg());
                     IInstr instr(op->getIntrinsicOp(), VarType::VOID, 
                                     res, nextSSA());
@@ -201,6 +210,7 @@ unsigned int Parse::Expr::codeGen(IRProg& prog){
                                     __FILE__, __LINE__);
                     throw Global::NotSupportedError;
             }
+            break;
         } 
         case ExprId::_LIT:
         {
@@ -224,7 +234,7 @@ unsigned int Parse::Expr::codeGen(IRProg& prog){
 
 /** An alloca <type> */
 unsigned int Parse::Decl::codeGen(IRProg& prog){
-    IInstr(this->getType(), genSSA(this->getVar()));
+    IInstr(this->castType(), genSSA(this->getVar()));
     return 1;
 }
 

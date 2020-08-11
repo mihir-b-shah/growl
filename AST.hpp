@@ -29,10 +29,11 @@ namespace Parse {
             virtual unsigned int codeGen(CodeGen::IRProg& prog) = 0;
     };
 
-    enum class ExprId:char {_OP, _LIT, _VAR};
+    enum class ExprId:char {_OP, _LIT, _VAR, _CAST};
     class Expr : public AST {
         friend class ArgIterator;
         public:
+            virtual VarType castType() = 0;
             virtual ExprId exprID() = 0;
             virtual int printRoot(char* buf) const = 0;
             void print(const int width, std::ostream& out);
@@ -288,7 +289,55 @@ namespace Parse {
             Expr* getUnaryArg(){return inputs.arg;}
             Expr* getBinaryArg1(){return inputs.twoArgs[0];}
             Expr* getBinaryArg2(){return inputs.twoArgs[1];}
+            void setUnaryArg(Expr* v){inputs.arg = v;}
+            void setBinaryArg1(Expr* v){inputs.twoArgs[0] = v;}
+            void setBinaryArg2(Expr* v){inputs.twoArgs[1] = v;}
             IntrOps getIntrinsicOp(){return driver.intr;}
+            VarType castType();
+    };
+
+    /* This is an operator inaccessible to the user */
+    class Cast : public Expr {
+        private:
+            VarType out;
+            Expr* in;         
+            static inline int min(int a, int b){
+                return a<b?a:b;
+            }
+        public:
+            Cast(Expr*, VarType);
+            ~Cast();
+            VarType getCastType(){return out;}
+            Expr* getExpr(){return in;}
+            VarType castType() override {
+                Global::specifyError("Should never be called.\n",
+                                __FILE__, __LINE__);
+                throw Global::DeveloperError;
+            }
+            ArgIterator iterator(){
+                return ArgIterator(SupportedType::_Cast, this);
+            }
+            ExprId exprID() override {return ExprId::_CAST;}
+            int printRoot(char* buf) const override {
+                switch(out){
+                    case VarType::CHAR:
+                        return min(std::snprintf(buf, 4, "CHR"),3);
+                    case VarType::BOOL:
+                        return min(std::snprintf(buf, 4, "BLN"),3);
+                    case VarType::FLOAT:
+                        return min(std::snprintf(buf, 4, "FLT"),3);
+                    case VarType::INT:
+                        return min(std::snprintf(buf, 4, "INT"),3);
+                    case VarType::LONG:
+                        return min(std::snprintf(buf, 4, "LNG"),3);
+                    default:
+                        Global::specifyError("Cast not possible.\n", 
+                            __FILE__, __LINE__);
+                        throw Global::InvalidCast;
+                }
+                return 0;
+            }
+            unsigned int codeGen(CodeGen::IRProg& prog);
     };
 
     class Literal : public Expr {
@@ -338,6 +387,8 @@ namespace Parse {
             }
             unsigned int codeGen(CodeGen::IRProg& prog) override;
             ExprId exprID() override {return ExprId::_LIT;}
+            VarType castType();
+            void convType(bool);
     };
 
     static const char* varstrs[7] = {"int", "long", "char", "float", "bool", "void", "other"};
@@ -359,9 +410,10 @@ namespace Parse {
             void set(const char* _name, char _len, Lex::SubType _type, char _ptrLvl);
             char* namePtr(){return const_cast<char*>(name);}
             byte getLen(){return len;}
+            ExprId exprID() override {return ExprId::_VAR;}
             int printRoot(char* buf) const override;
             Parse::ArgIterator iterator() override;
-            VarType vtype(){return type;}
+            VarType castType();
             unsigned int codeGen(CodeGen::IRProg& prog) override;
     };
     Variable* emptyVar();
@@ -381,8 +433,8 @@ namespace Parse {
             Variable* getVar(){
                 return var;
             }
-            VarType getType(){
-                return var->vtype();
+            VarType castType(){
+                return var->castType();
             }
             int getDist(){
                 return index-Lex::program();

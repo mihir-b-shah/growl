@@ -51,6 +51,8 @@ bool ArgIterator::done(){
             return pos == (static_cast<Sequence*>(handle))->size();
         case SupportedType::_Br:
             return static_cast<Branch*>(handle)->next == nullptr;
+        case SupportedType::_Cast:
+            return pos != 1; // unary
         case SupportedType::_Lit:
         case SupportedType::_Var:
         case SupportedType::_Decl:
@@ -69,6 +71,7 @@ void ArgIterator::next(){
     switch(type){
         case SupportedType::_Op:
         case SupportedType::_Seq:
+        case SupportedType::_Cast:
             ++pos;
             break;
         case SupportedType::_Ctl:
@@ -110,6 +113,8 @@ AST* ArgIterator::get(){
             Sequence* _seq = static_cast<Sequence*>(handle);
             return *(_seq->begin()+pos);
         }
+        case SupportedType::_Cast:
+            return static_cast<Cast*>(handle)->getExpr();
         case SupportedType::_Br:
             return handle;
         case SupportedType::_Lit:

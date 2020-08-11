@@ -57,6 +57,9 @@ void Global::genError(char buffer[Global::ERROR_BUFFER_SIZE], int error) {
         case Global::NotSupportedError:
             std::strncpy(buffer, "Not supported yet.", Global::ERROR_BUFFER_SIZE);
             break;
+        case Global::InvalidCast:
+            std::strncpy(buffer, "Cast not supported.", Global::ERROR_BUFFER_SIZE);
+            break;
         default:
             std::strncpy(buffer, "Unnamed exception encountered.", 
                         Global::ERROR_BUFFER_SIZE);

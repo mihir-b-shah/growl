@@ -6,7 +6,7 @@
 #include "GroupFinder.hpp"
 
 namespace Parse {    
-    enum class SupportedType:char {_Expr, _Op, _Lit, _Var, _Decl, _Lp, _Br, _Ctl, _Seq};
+    enum class SupportedType:char {_Expr, _Op, _Lit, _Var, _Decl, _Lp, _Br, _Ctl, _Seq, _Cast};
 
     class AST;
     class Expr;
