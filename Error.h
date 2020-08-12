@@ -27,7 +27,7 @@ namespace Global {
 
     const int ERROR_BUFFER_SIZE = 255;
     const int ERROR_REFERENCE_SIZE = 31;
-    const int FILE_REFERENCE_SIZE = 31;
+    const int FILE_REFERENCE_SIZE = 255;
 
     static const int GROWTH_FACTOR = 2;
 

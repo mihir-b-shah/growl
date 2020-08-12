@@ -376,7 +376,7 @@ namespace Parse {
                         // print len 3.
                         return min(std::snprintf(buf,4,"%lld",value.intVal),3);
                     case FLOAT:
-                        return min(std::snprintf(buf,4,"%lf",static_cast<double>(value.fltVal)),3);
+                        return min(std::snprintf(buf,4,"%lf",value.fltVal),3);
                     default:
                         Global::specifyError("Literal of invalid type.\n", __FILE__, __LINE__);
                         throw Global::DeveloperError;

@@ -39,7 +39,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             ++ct;
         }
         if(ct == 255) {
-            Global::specifyError("Line 40", __FILE__, __LINE__);
+            Global::specifyError("String too long.", __FILE__, __LINE__);
             throw Global::InvalidLiteral;
         }
         base->size = ct;
@@ -54,45 +54,45 @@ static inline char* const parseWord(Token* base, char* const data) {
             ++ct;
         }
         if(ct == 255 || validLetter(data[ct])) {
-            Global::specifyError("Line 51", __FILE__, __LINE__);
+            Global::specifyError("Invalid numeric literal.", __FILE__, __LINE__);
             throw Global::InvalidLiteral;
         } else if(data[ct] == '.') {
             // use a double
             // might have bugs... 
-            ++ct;
             char* dotPtr = data+ct;
+            ++ct;
             while(ct < 255 && std::isdigit(data[ct])) {
                 ++ct;
             }
-            if(ct == 255 || !std::isspace(data[ct])) {
-                Global::specifyError("Line 61.", __FILE__, __LINE__);
+            if(ct == 255 || validLetter(data[ct])) {
+                Global::specifyError("Invalid floating point literal.", __FILE__, __LINE__);
                 throw Global::InvalidLiteral;
             }
             double res = 0;
-            char* readPtr = data+ct-1;
-            while(readPtr != data) {
+            char* readPtr = data;
+            while(readPtr != dotPtr){
                 res *= 10;
-                res += *readPtr;
-                --readPtr;
+                res += *readPtr-'0';
+                ++readPtr;
             }
-            readPtr = data+ct;
+            readPtr = dotPtr+1;
             double power = 0.1;
-            while(dotPtr != readPtr) {
-                res += power*(*dotPtr);
-                ++dotPtr;
+            while(readPtr != data+ct) {
+                res += power*(*readPtr-'0');
+                ++readPtr;
                 power *= 0.1;
             }
+            base->size = ct;
             base->type = Type::LITERAL;
             base->subType = SubType::FLT_LITERAL;
             base->value.iof = IOF::FLOAT_VAL;
-            base->value.holder.ival = res;
-            return dotPtr;
+            base->value.holder.fval = res;
+            return readPtr;
         } else {
             // use an int, num ranges from [data, data+ct).
             char* readPtr = data;
             long long res = 0;
-            char* ret = data+ct;
-            while(readPtr != ret) {
+            while(readPtr != data+ct) {
                 res *= 10;
                 res += *readPtr-'0';
                 ++readPtr;
@@ -102,7 +102,7 @@ static inline char* const parseWord(Token* base, char* const data) {
             base->subType = SubType::INT_LITERAL;
             base->value.iof = IOF::INT_VAL;
             base->value.holder.ival = res;
-            return ret;
+            return readPtr;
         }
     } else {
         Global::specifyError(data, __FILE__, __LINE__);

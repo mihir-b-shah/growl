@@ -52,7 +52,7 @@ bool ArgIterator::done(){
         case SupportedType::_Br:
             return static_cast<Branch*>(handle)->next == nullptr;
         case SupportedType::_Cast:
-            return pos != 1; // unary
+            return pos == 1; // unary
         case SupportedType::_Lit:
         case SupportedType::_Var:
         case SupportedType::_Decl:

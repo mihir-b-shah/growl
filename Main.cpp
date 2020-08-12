@@ -195,16 +195,22 @@ int main(int argc, char** argv) {
         
         Parse::parseAST(0, tokens.begin(), tokens.end(), 
                         Parse::globScope());
-
+        Parse::Expr* expr = static_cast<Parse::Expr*>(Parse::globScope()->getSeq()->at(1));
+        /*
         CodeGen::IRProg irProg;
         CodeGen::genIR(irProg);
+        */
+
+        std::printf("FinType: %s\n", Parse::varstrs[static_cast<int>(expr->castType())]);
+        expr->print(80, std::cout);
 
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];
         Global::genError(buffer, exc);
-        printf("\n%s\n", buffer);
-        printf("%s\n", Global::errorMsg);
+        std::printf("\n%s\n", buffer);
+        std::printf("%s\n", Global::errorMsg);
+        std::printf("%s\n", Global::location);
         Global::getAllocator()->deallocate<char>(program);
         return EXIT_FAILURE;
     }

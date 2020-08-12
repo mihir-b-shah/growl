@@ -1,1 +1,6 @@
-x - 5 = y - t << 3
+int x;
+x = 7.6;
+int y;
+int z;
+y = 'c';
+z = x + y;

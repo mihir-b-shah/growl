@@ -75,7 +75,8 @@ void Expr::print(const int width, std::ostream& out){
         auto iter = obj.bt->iterator();
         
         while(!(iter.done())){
-            queue.push_back(QueueItem(static_cast<Expr*>(iter.get()), 1+obj.height, 2*obj.xJust+ctr));
+            queue.push_back(QueueItem(static_cast<Expr*>(iter.get()), 
+                                    1+obj.height, 2*obj.xJust+ctr));
             iter.next();
             ++ctr;
         }

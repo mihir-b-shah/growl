@@ -30,6 +30,7 @@ static std::pair<VarType,unsigned> getNewType(VarType one, VarType two){
 }
 
 // Type analysis stuff.
+// RUN TOYPROG.GRR, see the lack of casting in assignment operation.
 VarType Op::castType(){
     switch(this->arity()){
         case 1:
@@ -48,9 +49,10 @@ VarType Op::castType(){
                     }
                     /* Implements the special cast-less behavior for literals */
                     Literal* lit;
-                    if(lit = dynamic_cast<Literal*>(this->getBinaryArg2())){
-                        lit->convType(arg2 != VarType::FLOAT);
-                    } else {
+                    if((lit = dynamic_cast<Literal*>(this->getBinaryArg2())) 
+                                    && lit->isFloat()){
+                        lit->convType(false);
+                    } else if(lit == nullptr){
                         Cast* assnCast = new Cast(this->getBinaryArg2(), arg1);
                         this->setBinaryArg2(assnCast);
                         return arg1;
@@ -60,15 +62,16 @@ VarType Op::castType(){
                 Cast* cast;
                 Literal* lit;
                 if(ret.second == 0){
+                    // analysis relies on fact FLOAT is a supertype: anything can promote to it.
                     if(lit = dynamic_cast<Literal*>(this->getBinaryArg1())){
-                        lit->convType(arg2 != VarType::FLOAT);
+                        lit->convType(true);
                     } else {
                         cast = new Cast(this->getBinaryArg1(), ret.first);
                         this->setBinaryArg1(cast);
                     }
                 } else {
                     if(lit = dynamic_cast<Literal*>(this->getBinaryArg2())){
-                        lit->convType(arg2 != VarType::FLOAT);
+                        lit->convType(true);
                     } else {
                         cast = new Cast(this->getBinaryArg2(), ret.first);
                         this->setBinaryArg2(cast);

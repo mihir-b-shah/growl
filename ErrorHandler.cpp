@@ -74,11 +74,18 @@ char Global::location[Global::FILE_REFERENCE_SIZE];
 // https://stackoverflow.com/questions/8487986/file-macro-shows-full-path
 
 static inline const char* extractFile(const char* file){
-    return std::strrchr(file, '/') ? std::strrchr(file, '/') + 1 : file; 
+    const char* ptr1 = std::strrchr(file, '/');
+    const char* ptr2 = std::strrchr(file, '\\');
+    
+    if(__builtin_expect(ptr1 == nullptr && ptr2 == nullptr,false)){
+        return file;
+    } else {
+        return ptr1 == nullptr ? ptr2+1 : ptr1+1;
+    }
 }
 
 void Global::specifyError(const char* spec, const char* file, unsigned int line) {
     std::snprintf(Global::location, Global::FILE_REFERENCE_SIZE, 
-                    "File: %s, Line:%u\n", file, line);
+                    "File: %s, Line:%u\n", extractFile(file), line);
     std::strncpy(Global::errorMsg, spec, Global::ERROR_REFERENCE_SIZE);
 }
