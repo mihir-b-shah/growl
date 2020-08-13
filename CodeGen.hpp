@@ -172,7 +172,7 @@ namespace CodeGen {
     };    
 
     enum class LLVMInstr:char {_Br, _Add, _Sub, _Mul, _Div, _Mod, _Shl, _Shr, 
-            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg, _Decl};
+            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg, _Decl, _Cast};
 
     static constexpr LLVMInstr unusedLLVMInstr(){
         return LLVMInstr::_Dmy;
@@ -202,6 +202,12 @@ namespace CodeGen {
                     SSA _src2;
                     SSA _dest;
                 } opr;
+                struct {
+                    VarType _inType;
+                    VarType _outType;
+                    SSA _src;
+                    SSA _dest;
+                } cast;
                 
                 Hold(){}
             } bop;
@@ -215,6 +221,11 @@ namespace CodeGen {
             inline SSA& src1(){return bop.opr._src1;}
             inline SSA& src2(){return bop.opr._src2;}
             inline SSA& dest(){return bop.opr._dest;}
+
+            inline VarType& iType(){return bop.cast._inType;}
+            inline VarType& oType(){return bop.cast._outType;}
+            inline SSA& cSrc(){return bop.cast._src;}
+            inline SSA& cDest(){return bop.cast._dest;}
 
             void assertTypeErrorBinary(VarType type) {                
                 // these are the unsigned types right now.
@@ -298,7 +309,7 @@ namespace CodeGen {
                 // these are the unsigned types right now.
                 SType corresp = OpUtils::genSType(type);
                 if(__builtin_expect(dest().which != SType::REF && (src1().which != corresp 
-                        || src1().which != SType::REF) ,false)){
+                        || src1().which != SType::REF), false)){
                     Global::specifyError("Incorrect types passed to IR generator.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
@@ -361,6 +372,44 @@ namespace CodeGen {
                 }
                 return chk;
             }
+            
+            static constexpr unsigned ord(VarType type){
+                return static_cast<unsigned>(type);
+            }
+
+            static constexpr unsigned gCv(VarType in, VarType out){
+                constexpr unsigned NUM_TYPES = 5;
+                return ord(in) + NUM_TYPES*ord(out);
+            }
+
+            // fill in the casts.
+            unsigned int castFmt(char* buf){
+                constexpr unsigned NUM_TYPES = 5;
+                switch(ord(iType()) + NUM_TYPES*ord(oType())){
+                    case gCv(VarType::BOOL, VarType::CHAR):
+                    case gCv(VarType::BOOL, VarType::INT):
+                    case gCv(VarType::BOOL, VarType::LONG):
+                    case gCv(VarType::BOOL, VarType::FLOAT):
+                    case gCv(VarType::CHAR, VarType::BOOL):
+                    case gCv(VarType::CHAR, VarType::INT):
+                    case gCv(VarType::CHAR, VarType::LONG):
+                    case gCv(VarType::CHAR, VarType::FLOAT):
+                    case gCv(VarType::INT, VarType::BOOL):
+                    case gCv(VarType::INT, VarType::CHAR):
+                    case gCv(VarType::INT, VarType::LONG):
+                    case gCv(VarType::INT, VarType::FLOAT):
+                    case gCv(VarType::LONG, VarType::BOOL):
+                    case gCv(VarType::LONG, VarType::CHAR):
+                    case gCv(VarType::LONG, VarType::INT):
+                    case gCv(VarType::LONG, VarType::FLOAT):
+                    case gCv(VarType::FLOAT, VarType::BOOL):
+                    case gCv(VarType::FLOAT, VarType::CHAR):
+                    case gCv(VarType::FLOAT, VarType::INT):
+                    case gCv(VarType::FLOAT, VarType::LONG):
+                        return 0;
+                }
+                return 0;
+            }
 
             unsigned int brOutput(char* buf) {
                 if(pred().isNull()) { 
@@ -405,6 +454,7 @@ namespace CodeGen {
                     case LLVMInstr::_Neg:
                     case LLVMInstr::_Dmy:
                     case LLVMInstr::_Decl:
+                    case LLVMInstr::_Cast:
                         return UOB::UNARY;
                     case LLVMInstr::_Br:
                         return UOB::OTHER;
@@ -585,6 +635,23 @@ namespace CodeGen {
             }
 
             // special for decl.
+            IInstr(VarType _InType, VarType _OutType, SSA _Src, SSA _Dest){
+                instr() = LLVMInstr::_Cast;
+                cDest() = _Dest;
+                iType() = _InType;
+                oType() = _OutType;
+                cSrc() = _Src;
+            }
+
+            void set(VarType _InType, VarType _OutType, SSA _Src, SSA _Dest){
+                instr() = LLVMInstr::_Cast;
+                cDest() = _Dest;
+                iType() = _InType;
+                oType() = _OutType;
+                cSrc() = _Src;
+            }
+
+            // special for decl.
             IInstr(VarType _Type, SSA _Name){
                 instr() = LLVMInstr::_Decl;
                 dest() = _Name;
@@ -677,6 +744,8 @@ namespace CodeGen {
                         buf[len1++] = '\n';
                         return len1+IInstr(src2(), dest()).output(buf+len1);
                     }
+                    case LLVMInstr::_Cast:
+                        return castFmt(buf); 
                     case LLVMInstr::_Decl:
                         return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, 
                                         "alloca ", "alloca ", "alloca ", true);

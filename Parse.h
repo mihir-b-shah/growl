@@ -17,7 +17,7 @@ namespace Parse {
 
     enum class VarType:char {INT, LONG, CHAR, FLOAT, BOOL, VOID, OTHER};
     enum class IntrOps:char {ADD, MINUS, NEG, MULT, DEREF, DIV, MOD, FLIP, DOT,
-            GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, LSHIFT, RSHIFT, OTHER};
+            GREATER, LESS, EQUAL, ADDRESS, AND, OR, XOR, ASSN, LSHIFT, RSHIFT, CAST, OTHER};
 
     class ArgIterator {
         SupportedType type;
