@@ -193,16 +193,12 @@ int main(int argc, char** argv) {
         Parse::SymbolTable _st;
         symbolTable = &_st;
         
+        // Parsing
         Parse::parseAST(0, tokens.begin(), tokens.end(), 
                         Parse::globScope());
-        Parse::Expr* expr = static_cast<Parse::Expr*>(Parse::globScope()->getSeq()->at(1));
-        /*
-        CodeGen::IRProg irProg;
-        CodeGen::genIR(irProg);
-        */
 
-        std::printf("FinType: %s\n", Parse::varstrs[static_cast<int>(expr->castType())]);
-        expr->print(80, std::cout);
+        // Static type analysis (add casting)
+        Parse::globScope()->fixTypes();
 
         return EXIT_SUCCESS;
     } catch (int exc) {

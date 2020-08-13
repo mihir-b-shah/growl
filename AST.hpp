@@ -27,6 +27,7 @@ namespace Parse {
             unsigned getHash(){return id;}
             virtual ArgIterator iterator() = 0;
             virtual unsigned int codeGen(CodeGen::IRProg& prog) = 0;
+            virtual void fixTypes() = 0;
     };
 
     enum class ExprId:char {_OP, _LIT, _VAR, _CAST};
@@ -38,6 +39,7 @@ namespace Parse {
             virtual int printRoot(char* buf) const = 0;
             void print(const int width, std::ostream& out);
             unsigned int codeGen(CodeGen::IRProg& prog);
+            void fixTypes() override;
     };
 
     class Sequence;
@@ -73,6 +75,7 @@ namespace Parse {
                 return ArgIterator(SupportedType::_Ctl, this); 
             }
             unsigned int codeGen(CodeGen::IRProg& prog){return 0;}
+            virtual void fixTypes(){}
     };
 
     class Sequence : public AST {
@@ -127,6 +130,7 @@ namespace Parse {
                 return ArgIterator(SupportedType::_Seq, this);
             }
             unsigned int codeGen(CodeGen::IRProg& prog);
+            void fixTypes() override;
     };
 
     class Control : public AST {
@@ -176,6 +180,7 @@ namespace Parse {
                 Global::specifyError("Code gen on Control* not sup.\n", __FILE__, __LINE__);
                 throw Global::DeveloperError;
             }
+            virtual void fixTypes() override;
     };
     Control* globScope();
 
@@ -220,6 +225,7 @@ namespace Parse {
                 return ArgIterator(SupportedType::_Br, this);
             }
             unsigned int codeGen(CodeGen::IRProg& prog);
+            void fixTypes() override;
     };
 
     /*
@@ -255,6 +261,7 @@ namespace Parse {
                 return ArgIterator(SupportedType::_Lp, this);
             }
             unsigned int codeGen(CodeGen::IRProg& prog);
+            void fixTypes() override;
     };
 
     class Op : public Expr {
@@ -444,6 +451,7 @@ namespace Parse {
             }
             unsigned int codeGen(CodeGen::IRProg& prog) override;
             ExprId exprID(){return ExprId::_VAR;}
+            void fixTypes() override {}
     };
 }
 

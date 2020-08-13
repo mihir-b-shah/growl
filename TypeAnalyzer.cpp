@@ -55,8 +55,8 @@ VarType Op::castType(){
                     } else if(lit == nullptr){
                         Cast* assnCast = new Cast(this->getBinaryArg2(), arg1);
                         this->setBinaryArg2(assnCast);
-                        return arg1;
                     }
+                    return arg1;
                 }
                 auto ret = getNewType(arg1, arg2);
                 Cast* cast;
@@ -65,16 +65,25 @@ VarType Op::castType(){
                     // analysis relies on fact FLOAT is a supertype: anything can promote to it.
                     if(lit = dynamic_cast<Literal*>(this->getBinaryArg1())){
                         lit->convType(true);
-                    } else {
+                    } else if(dynamic_cast<Literal*>(this->getBinaryArg2()) == NULL
+                                || (arg1==VarType::FLOAT xor arg2==VarType::FLOAT)) {
+                        // the other type is not a literal of the same class INT/FLOAT
+                        std::cout << (arg1==VarType::FLOAT xor arg2==VarType::FLOAT) << '\n';
                         cast = new Cast(this->getBinaryArg1(), ret.first);
                         this->setBinaryArg1(cast);
+                    } else {
+                        // since theres only one type of float.
+                        return arg2;
                     }
                 } else {
                     if(lit = dynamic_cast<Literal*>(this->getBinaryArg2())){
                         lit->convType(true);
-                    } else {
+                    } else if(dynamic_cast<Literal*>(this->getBinaryArg1()) == NULL 
+                                || (arg1==VarType::FLOAT xor arg2==VarType::FLOAT)) {
                         cast = new Cast(this->getBinaryArg2(), ret.first);
                         this->setBinaryArg2(cast);
+                    } else {
+                       return arg1;
                     }
                 }
                 return ret.first;
@@ -108,6 +117,46 @@ void Literal::convType(bool fltType){
     }
 }
 
+void Control::fixTypes(){
+    return this->getSeq()->fixTypes();
+}
+
+void Expr::fixTypes(){
+    this->castType();
+    this->print(80, std::cout);
+}
+
+void Sequence::fixTypes(){
+    for(auto iter = this->iterator(); !iter.done(); iter.next()){
+        iter.get()->fixTypes();
+    }
+}
+
+// T should extend Control*
+template<typename T>
+static inline void handlePredicate(T* str){
+    VarType outType = str->getPred()->castType();
+    if(outType != VarType::BOOL){
+        Cast* cast = new Cast(str->getPred(), VarType::BOOL);
+        str->setPred(cast);
+    }
+    str->getPred()->print(80, std::cout);
+}
+
+void Branch::fixTypes(){
+    for(auto iter = this->iterator(); !iter.done(); iter.next()){
+        Branch* br = static_cast<Branch*>(iter.get());
+        handlePredicate<Branch>(br);
+        br->getSeq()->fixTypes();
+    }
+}
+
+void Loop::fixTypes(){
+    handlePredicate<Loop>(this);
+    this->getSeq()->fixTypes();
+}
+
 unsigned int Cast::codeGen(CodeGen::IRProg& prog){
+    return 0;
 }
 
