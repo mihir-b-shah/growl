@@ -28,13 +28,17 @@ unsigned int Parse::Sequence::codeGen(CodeGen::IRProg& prog){
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
         accm += iter.get()->codeGen(prog);
     }
-    // unconditional branch
-    auto res = getLabel(this->getSequential());
-    IInstr uncondBr(SSA::nullValue(), res.first, Label::nullLabel());
-    if(!res.second) {
-        prog.addInstr(res.first, uncondBr); 
+    if(this != Parse::globScope()->getSeq()){
+        // unconditional branch
+        auto res = getLabel(this->getSequential());
+        IInstr uncondBr(SSA::nullValue(), res.first, Label::nullLabel());
+        if(!res.second) {
+            prog.addInstr(res.first, uncondBr); 
+            return accm+1;
+        }
     }
-    return 0;
+
+    return accm;
 }
 
 /**
@@ -231,6 +235,8 @@ unsigned int Parse::Expr::codeGen(IRProg& prog){
             return 0;
         }
     }
+
+    return 0;
 }
 
 /** An alloca <type> */

@@ -653,6 +653,11 @@ namespace CodeGen {
                     pred() = is.pred();
                     ifbr() = is.ifbr();
                     elsebr() = is.elsebr();
+                } else if(is.instr() == LLVMInstr::_Cast){
+                    iType() = is.iType();
+                    oType() = is.oType();
+                    cSrc() = is.cSrc();
+                    cDest() = is.cDest();
                 } else {
                     type() = is.type();
                     src1() = is.src1();
@@ -852,6 +857,7 @@ namespace CodeGen {
             }
 
             inline void addInstr(IInstr& instr){
+                list.allocate(1);
                 list.back()->setInstr(instr);
             }
 

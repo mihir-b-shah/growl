@@ -111,10 +111,11 @@ namespace Parse {
             }
             // prob should never be called.
             AST* at(unsigned int idx){
-                return seq[idx];
+                return seq.at(idx);
             }
             ControlNode* getControlNode(){
-                return static_cast<ControlNode*>(seq[seq.size()-1]);
+                return static_cast<ControlNode*>(
+                                seq.at(seq.size()-1));
             }
             AST* getSequential(){
                 return getControlNode()->getSequentialBase();
