@@ -7,6 +7,7 @@
 #include "Error.h"
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <utility>
 
 namespace CodeGen {
@@ -94,6 +95,17 @@ namespace CodeGen {
         unsigned int extract(){return lbl;}
     };
 
+    SSA nextSSA();
+    // next label. Note, num is big enough 
+    // that scoping shouldnt matter
+    Label nextLabel();
+    
+    // just 12 bytes 
+    void insertVarSSA(unsigned int Var_Extr, SSA ssa);
+    SSA getFromVar(unsigned int Var_Extract);
+
+    Label getFromAST(unsigned int AST_Extract);
+    void insertASTLbl(unsigned int AST_Extr, Label lbl);
     static const unsigned int INSTR_BUF_SIZE = 100;
     static const char* const ERROR_INSTR = "NEVER USED. ERROR.";
     static const char* const EMPTY_INSTR = "";
@@ -382,31 +394,61 @@ namespace CodeGen {
                 return ord(in) + NUM_TYPES*ord(out);
             }
 
+            inline unsigned int printCastHelp(char* buf, const char* const instr, ...){
+                return std::snprintf(buf, INSTR_BUF_SIZE, instr, 
+                                cSrc().extractLbl(), cDest().extractLbl());
+            }
+            
             // fill in the casts.
             unsigned int castFmt(char* buf){
                 constexpr unsigned NUM_TYPES = 5;
                 switch(ord(iType()) + NUM_TYPES*ord(oType())){
                     case gCv(VarType::BOOL, VarType::CHAR):
+                        return printCastHelp(buf, "s%u = zext i1 s%u to i8");
                     case gCv(VarType::BOOL, VarType::INT):
+                        return printCastHelp(buf, "s%u = zext i1 s%u to i32");
                     case gCv(VarType::BOOL, VarType::LONG):
+                        return printCastHelp(buf, "s%u = zext i1 s%u to i64");
                     case gCv(VarType::BOOL, VarType::FLOAT):
+                        return printCastHelp(buf, "s%u = uitofp i1 s%u to double"); // right now only f64 supported.
                     case gCv(VarType::CHAR, VarType::BOOL):
+                        return printCastHelp(buf, "s%u = icmp ne i8 s%u 0");
                     case gCv(VarType::CHAR, VarType::INT):
+                        return printCastHelp(buf, "s%u = zext i8 s%u to i32");
                     case gCv(VarType::CHAR, VarType::LONG):
+                        return printCastHelp(buf, "s%u = zext i8 s%u to i32");
                     case gCv(VarType::CHAR, VarType::FLOAT):
+                        return printCastHelp(buf, "s%u = uitofp i8 s%u to double");
                     case gCv(VarType::INT, VarType::BOOL):
+                        return printCastHelp(buf, "s%u = icmp ne i32 s%u 0");
                     case gCv(VarType::INT, VarType::CHAR):
+                        return printCastHelp(buf, "s%u = trunc i32 s%u to i8");
                     case gCv(VarType::INT, VarType::LONG):
+                        return printCastHelp(buf, "s%u = zext i32 s%u to i64");
                     case gCv(VarType::INT, VarType::FLOAT):
+                        return printCastHelp(buf, "s%u = uitofp i32 s%u to double");
                     case gCv(VarType::LONG, VarType::BOOL):
+                        return printCastHelp(buf, "s%u = icmp ne i64 s%u 0");
                     case gCv(VarType::LONG, VarType::CHAR):
+                        return printCastHelp(buf, "s%u = trunc i64 s%u to i8");
                     case gCv(VarType::LONG, VarType::INT):
+                    {
+                        SSA temp = CodeGen::nextSSA().extractLbl();
+                        unsigned adv = std::snprintf(buf, INSTR_BUF_SIZE, "s%u = and i64 s%u, %x", 
+                                cSrc().extractLbl(), temp.extractLbl(), 0x7fff'ffff);
+                        return adv + std::snprintf(buf+adv, INSTR_BUF_SIZE, "s%u = trunc i64 s%u to i32",
+                                        temp.extractLbl(), cDest().extractLbl());
+                    }
                     case gCv(VarType::LONG, VarType::FLOAT):
+                        return printCastHelp(buf, "s%u = uitofp i64 s%u to double");
                     case gCv(VarType::FLOAT, VarType::BOOL):
+                        return printCastHelp(buf, "s%u = fptoui double s%u to i1");
                     case gCv(VarType::FLOAT, VarType::CHAR):
+                        return printCastHelp(buf, "s%u = fptoui double s%u to i8");
                     case gCv(VarType::FLOAT, VarType::INT):
+                        return printCastHelp(buf, "s%u = fptosi double s%u to i32");
                     case gCv(VarType::FLOAT, VarType::LONG):
-                        return 0;
+                        return printCastHelp(buf, "s%u = fptoui double s%u to i64");
                 }
                 return 0;
             }
@@ -634,7 +676,7 @@ namespace CodeGen {
                 elsebr() = _Elsebr;
             }
 
-            // special for decl.
+            // special for cast.
             IInstr(VarType _InType, VarType _OutType, SSA _Src, SSA _Dest){
                 instr() = LLVMInstr::_Cast;
                 cDest() = _Dest;
@@ -649,6 +691,10 @@ namespace CodeGen {
                 iType() = _InType;
                 oType() = _OutType;
                 cSrc() = _Src;
+            }
+
+            inline bool isTwoInstrCast(){
+                return iType() == VarType::LONG && oType() == VarType::INT;
             }
 
             // special for decl.
@@ -778,15 +824,6 @@ namespace CodeGen {
             }
     };
 
-    SSA nextSSA();
-    // next label. Note, num is big enough 
-    // that scoping shouldnt matter
-    Label nextLabel();
-    
-    // just 12 bytes 
-    void insertVarSSA(unsigned int Var_Extr, SSA ssa);
-    SSA getFromVar(unsigned int Var_Extract);
-
     Label getFromAST(unsigned int AST_Extract);
     void insertASTLbl(unsigned int AST_Extr, Label lbl);
 
@@ -830,6 +867,16 @@ namespace CodeGen {
 
             void associate(Label lbl, unsigned idx){
                 map.ref(lbl.extract()) = map.ref(idx);
+            }
+
+            void write(std::ostream& out){
+                char writeBuf[INSTR_BUF_SIZE+1];
+                for(auto iter = list.begin(); iter != list.end(); ++iter){
+                    iter->output(writeBuf);
+                    out << writeBuf;
+                    out << '\n';
+                }
+                out.flush();
             } 
     };
 

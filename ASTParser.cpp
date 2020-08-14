@@ -8,7 +8,6 @@
 
 using namespace Parse;
 
-
 // Associated method with control node, bc forward decl.
 AST* ControlNode::getSequentialBase(){
     return getBack()->at(getIdx()+1);

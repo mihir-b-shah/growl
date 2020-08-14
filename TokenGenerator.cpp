@@ -421,6 +421,17 @@ static char* const parse(Token* base, char* const data) {
             } else {
                 return parseWord(base, data); 
             }
+        case 'u':
+            // unsigned
+            if(std::strncmp("unsigned", data, 8) == 0 && !validLetter(data[8])) {
+                base->type = Type::DATATYPE;
+                base->subType = SubType::UNSIGNED;
+                base->value.iof = IOF::PTRLVL;
+                base->size = 8+(base->value.holder.ptrLvl = scanPtrLvl(data+8));
+                return data+8+base->value.holder.ptrLvl;
+            } else {
+                return parseWord(base, data); 
+            }
         case 'v':
             // void
             if(std::strncmp("void", data, 4) == 0 && !validLetter(data[4])) {

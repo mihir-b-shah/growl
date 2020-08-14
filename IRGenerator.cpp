@@ -116,12 +116,7 @@ unsigned int Parse::Loop::codeGen(IRProg& prog){
     return 0;    
 }
 
-unsigned int Parse::Op::codeGen(IRProg& prog){
-     
-    return 0;
-}
-
-CodeGen::SSA genSSA(Parse::Literal* handle){
+CodeGen::SSA genSSALit(Parse::Literal* handle){
     if(handle->isInt()){
         return SSA::genUInt(handle->getInt());
     } else {
@@ -130,36 +125,87 @@ CodeGen::SSA genSSA(Parse::Literal* handle){
     }
 }
 
-/** Simple substitution */
-unsigned int Parse::Literal::codeGen(IRProg& prog){
-    return 0;
-}
-
-CodeGen::SSA genSSA(Parse::Variable* handle){
+CodeGen::SSA genSSA(Parse::Expr* handle){
     auto ssa = CodeGen::nextSSA();
     CodeGen::insertVarSSA(handle->getHash(), ssa);
     return ssa;
 }
 
-/** Simple substitution...? */
-unsigned int Parse::Variable::codeGen(IRProg& prog){
+unsigned int castCodeGen(Parse::Cast* cast, IRProg& prog){
+    SSA ssaIn = getFromVar(cast->getExpr()->getHash());
+    SSA ssaOut = genSSA(cast);
+    IInstr instr(cast->getExpr()->getType(), cast->getCastType(),
+                    ssaIn, ssaOut);
+    prog.addInstr(instr);
+    return 1 + instr.isTwoInstrCast(); // bool implicit cast.
+}
+
+static inline void funcNotSupported(){
+    Global::specifyError("Function (n-ary op) not supported", 
+                    __FILE__, __LINE__);
+    throw Global::NotSupportedError;
+}
+
+static SSA polymorphGetSSA(Parse::Expr* expr){
+    if(expr->exprID() == Parse::ExprId::_LIT){
+        return genSSALit(static_cast<Parse::Literal*>(expr));
+    } else {
+        return getFromVar(expr->getHash()); 
+    }
+}
+
+unsigned int opCodeGen(Parse::Op* op, IRProg& prog){
+    if(__builtin_expect(!(op->isIntrinsic()), false)){
+        funcNotSupported();
+    }
+    switch(op->arity()){
+        case 1:
+        {
+            SSA ssa = polymorphGetSSA(op->getUnaryArg());
+            IInstr instr(op->getIntrinsicOp(), op->getType(),
+                           ssa, genSSA(op));
+            prog.addInstr(instr);
+            return 1; 
+        }
+        case 2:
+        {
+            SSA ssa1 = polymorphGetSSA(op->getBinaryArg1());
+            SSA ssa2 = polymorphGetSSA(op->getBinaryArg2());
+            IInstr instr(op->getIntrinsicOp(), op->getType(),
+                           ssa1, ssa2, genSSA(op));
+            prog.addInstr(instr);
+            return 1;
+        }
+        default:
+            // already handled by assert at top.
+            break;
+    }
     return 0;
 }
 
-SSA exprRecur(Parse::Expr* expr){    
-    using Parse::ExprId;
-    // cant handle recursively here. mostly..
+unsigned int polymorphExprCodeGen(Parse::Expr* expr, IRProg& prog){
+    using namespace Parse;
     switch(expr->exprID()){
         case ExprId::_OP:
-            
-        case ExprId::_LIT:
-            break;
-        case ExprId::_VAR:
-            break;
+            return opCodeGen(static_cast<Op*>(expr), prog);
+        case ExprId::_CAST:
+            return castCodeGen(static_cast<Cast*>(expr), prog);
+        default:
+            return 0;
     }
-    return SSA::nullValue();
 }
 
+unsigned int exprRecur(Parse::Expr* expr, IRProg& prog){    
+    using namespace Parse;
+    // post order traversal.
+    unsigned accm = 0;
+    for(auto iter = expr->iterator(); !iter.done(); iter.next()){
+        accm += exprRecur(static_cast<Expr*>(iter.get()), prog);
+    }
+    return accm + polymorphExprCodeGen(expr, prog);
+}
+
+// ONLY POINT OF ENTRY FOR EXPR CODEGEN.
 unsigned int Parse::Expr::codeGen(IRProg& prog){
     using Parse::ExprId;
     using Parse::IntrOps;
@@ -167,74 +213,30 @@ unsigned int Parse::Expr::codeGen(IRProg& prog){
     // cant handle recursively here. mostly..
     switch(exprID()){
         case ExprId::_OP:
+        case ExprId::_CAST:
         {
-            Op* op = static_cast<Op*>(this);
-            // dont use the iterator bc we need fine grained control.
-            switch(op->arity()){
-                case 1:
-                {
-                    /* dest needs to be analyzed 
-                     * 
-                     * Operator nodes are only place where static type analysis must be performed.
-                     *
-                     * If its a unary operator, theres only a couple:
-                     *
-                     * Let W be width, T be a generic type.
-                     * Flip bits: Int<W> -> Int<W>
-                     * Negate: 
-                     */
-                    SSA res = exprRecur(op->getUnaryArg());
-                    IInstr instr(op->getIntrinsicOp(), VarType::VOID, 
-                                    res, nextSSA());
-                    prog.addInstr(instr);
-                    break;
-                }
-                case 2:
-                {
-                    /* Assignment */
-                    SSA dest = nextSSA();
-                    if(op->getIntrinsicOp() == IntrOps::ASSN){
-                        
-                    } else {
-                    
-                    }
-                    SSA res1 = exprRecur(op->getBinaryArg1());
-                    SSA res2 = exprRecur(op->getBinaryArg2());
-                    IInstr instr(op->getIntrinsicOp(), VarType::VOID, 
-                                    res1, res2, dest);
-                    prog.addInstr(instr);
-                    break;
-                }
-                default:
-                    Global::specifyError("Functions (n-ary ops) not supported yet.\n",
-                                    __FILE__, __LINE__);
-                    throw Global::NotSupportedError;
-            }
-            break;
-        } 
+            return exprRecur(this, prog);
+        }
         case ExprId::_LIT:
         {
             // base case, an assignment from literal.
             IInstr instr(CodeGen::nextSSA(), 
                             genSSA(static_cast<Literal*>(this)));
             prog.addInstr(instr);
-            break;
+            return 1;
         }
         case ExprId::_VAR:
         {
             // base case, an assignment from variable.
-            IInstr instr(CodeGen::nextSSA(), 
-                            genSSA(static_cast<Variable*>(this)));
-            prog.addInstr(instr);
-            break;
+            return 0;
         }
     }
-    return 0;
 }
 
 /** An alloca <type> */
 unsigned int Parse::Decl::codeGen(IRProg& prog){
-    IInstr(this->castType(), genSSA(this->getVar()));
+    IInstr instr(this->castType(), genSSA(this->getVar()));
+    prog.addInstr(instr);
     return 1;
 }
 
@@ -242,7 +244,6 @@ unsigned int CodeGen::genIR(IRProg& prog){
     Parse::globScope()->getSeq()->codeGen(prog);
     return 0;
 }
-
 /*
 unsigned int Parse::ControlNode::codeGen(IRProg& prog){
     return 0;

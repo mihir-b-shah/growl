@@ -200,6 +200,10 @@ int main(int argc, char** argv) {
         // Static type analysis (add casting)
         Parse::globScope()->fixTypes();
 
+        CodeGen::IRProg irProg;
+        CodeGen::genIR(irProg);
+        irProg.write(std::cout);
+
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];

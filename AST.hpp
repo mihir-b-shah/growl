@@ -33,6 +33,8 @@ namespace Parse {
     enum class ExprId:char {_OP, _LIT, _VAR, _CAST};
     class Expr : public AST {
         friend class ArgIterator;
+        protected:
+            VarType _in;
         public:
             virtual VarType castType() = 0;
             virtual ExprId exprID() = 0;
@@ -40,6 +42,7 @@ namespace Parse {
             void print(const int width, std::ostream& out);
             unsigned int codeGen(CodeGen::IRProg& prog);
             void fixTypes() override;
+            VarType getType(){return _in;}
     };
 
     class Sequence;
@@ -291,7 +294,6 @@ namespace Parse {
             int arity() const;
             int printRoot(char* buf) const;
             ArgIterator iterator();
-            unsigned int codeGen(CodeGen::IRProg& prog);
             ExprId exprID() {return ExprId::_OP;}
             Expr* getUnaryArg(){return inputs.arg;}
             Expr* getBinaryArg1(){return inputs.twoArgs[0];}
@@ -300,6 +302,7 @@ namespace Parse {
             void setBinaryArg1(Expr* v){inputs.twoArgs[0] = v;}
             void setBinaryArg2(Expr* v){inputs.twoArgs[1] = v;}
             IntrOps getIntrinsicOp(){return driver.intr;}
+            bool isIntrinsic(){return intrinsic;}
             VarType castType();
     };
 
@@ -344,7 +347,6 @@ namespace Parse {
                 }
                 return 0;
             }
-            unsigned int codeGen(CodeGen::IRProg& prog);
     };
 
     class Literal : public Expr {
@@ -392,7 +394,6 @@ namespace Parse {
             Parse::ArgIterator iterator() override {
                 return ArgIterator(SupportedType::_Lit, this);
             }
-            unsigned int codeGen(CodeGen::IRProg& prog) override;
             ExprId exprID() override {return ExprId::_LIT;}
             VarType castType();
             void convType(bool);
@@ -408,7 +409,6 @@ namespace Parse {
         byte len;
         VarType type;
         byte ptrLvl;
-        bool _unsigned; // true if so.
 
         public:
             Variable(){}
@@ -421,7 +421,6 @@ namespace Parse {
             int printRoot(char* buf) const override;
             Parse::ArgIterator iterator() override;
             VarType castType();
-            unsigned int codeGen(CodeGen::IRProg& prog) override;
     };
     Variable* emptyVar();
     Variable* tombsVar();

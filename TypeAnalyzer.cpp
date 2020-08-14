@@ -56,6 +56,7 @@ VarType Op::castType(){
                         Cast* assnCast = new Cast(this->getBinaryArg2(), arg1);
                         this->setBinaryArg2(assnCast);
                     }
+                    _in = arg1;
                     return arg1;
                 }
                 auto ret = getNewType(arg1, arg2);
@@ -73,6 +74,7 @@ VarType Op::castType(){
                         this->setBinaryArg1(cast);
                     } else {
                         // since theres only one type of float.
+                        _in = arg2;
                         return arg2;
                     }
                 } else {
@@ -83,12 +85,15 @@ VarType Op::castType(){
                         cast = new Cast(this->getBinaryArg2(), ret.first);
                         this->setBinaryArg2(cast);
                     } else {
+                       _in = arg1;
                        return arg1;
                     }
                 }
+                _in = ret.first;
                 return ret.first;
             }
-
+                
+            _in = arg1;
             return arg1;
         }
         default:
@@ -96,15 +101,18 @@ VarType Op::castType(){
                             __FILE__, __LINE__);
             throw Global::NotSupportedError;
     }
+    _in = VarType::OTHER;
     return VarType::OTHER;
 }
 
 // Maximum width. Literals should never be the limiter.
 VarType Literal::castType(){
-    return this->isInt() ? VarType::LONG : VarType::FLOAT;
+    _in = this->isInt() ? VarType::LONG : VarType::FLOAT;
+    return _in;
 }
 
 VarType Variable::castType(){
+    _in = this->type;
     return this->type;
 }
 
@@ -154,9 +162,5 @@ void Branch::fixTypes(){
 void Loop::fixTypes(){
     handlePredicate<Loop>(this);
     this->getSeq()->fixTypes();
-}
-
-unsigned int Cast::codeGen(CodeGen::IRProg& prog){
-    return 0;
 }
 

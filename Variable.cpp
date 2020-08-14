@@ -33,7 +33,6 @@ void Variable::set(const char* _name, char _len, Lex::SubType _type, char _ptrLv
             throw Global::DeveloperError; // should never occur.
     }
     ptrLvl = _ptrLvl;
-    _unsigned = false; 
     // RIGHT NOW, IGNORE UNSIGNED VALUES. WILL INCORPORATE THEM LATER.
 }
 
