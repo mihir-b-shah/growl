@@ -26,6 +26,7 @@ static std::pair<Label,bool> getLabel(Parse::AST* ast){
 unsigned int Parse::Sequence::codeGen(CodeGen::IRProg& prog){
     unsigned int accm = 0;
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
+        std::cout << "Seq start: " << accm << '\n';
         accm += iter.get()->codeGen(prog);
     }
     if(this != Parse::globScope()->getSeq()){

@@ -121,7 +121,6 @@ void test(CodeGen::IInstr& node){
 int main(int argc, char** argv) {
     Global::Alloc alloc(0);
     allocator = &alloc;
-
 /*
     CodeGen::SSA s1 = CodeGen::nextSSA();
     CodeGen::SSA s2 = CodeGen::nextSSA();
@@ -162,7 +161,7 @@ int main(int argc, char** argv) {
     test(ins);
     ins = CodeGen::IInstr(Parse::VarType::INT, s1); 
     test(ins);
-   */
+    */
     
     if(argc != 2) {
         std::perror("1 argument needed. Too few/many found.\n");

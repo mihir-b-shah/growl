@@ -195,6 +195,7 @@ namespace CodeGen {
     // inheritance hierarchy for all the different instructions
     // same situation as ArgIterator, a polymorphic value type. 
     class IInstr {
+        friend class IRProg;
         private:
             enum BinEnum:char {LIT_LIT_INT, LIT_LIT_FLT, LIT_REF_INT, LIT_REF_FLT, 
                         REF_LIT_INT, REF_LIT_FLT, REF_REF_INT, REF_REF_FLT};
@@ -533,7 +534,7 @@ namespace CodeGen {
                                     throw Global::InvalidInstrInvocation;
                                 }
                                 // right now, floats in Growl are 64-bit floats in LLVM.    
-                                ret = printOpUnary(buf, fltInstr, fflg, dispFltType ? "float " : "", true, true);
+                                ret = printOpUnary(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
                                 break;
                             case VarType::OTHER:
                                 ret = printOpUnary(buf, unsignInstr, iflg, "", false, false);
@@ -649,6 +650,7 @@ namespace CodeGen {
             }
 
             void setInstr(IInstr& is){
+                instr() = is.instr();
                 if(is.instr() == LLVMInstr::_Br){
                     pred() = is.pred();
                     ifbr() = is.ifbr();
@@ -836,7 +838,7 @@ namespace CodeGen {
         private:
             // labels are 1-indexed. No collisions.
             Utils::SmallVector<unsigned, 20> map;
-            Utils::SmallVector<CodeGen::IInstr, 100> list;
+            Utils::SmallVector<CodeGen::IInstr, 1> list;
         public:
             IRProg(){
             }
