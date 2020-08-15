@@ -26,7 +26,6 @@ static std::pair<Label,bool> getLabel(Parse::AST* ast){
 unsigned int Parse::Sequence::codeGen(CodeGen::IRProg& prog){
     unsigned int accm = 0;
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
-        std::cout << "Seq start: " << accm << '\n';
         accm += iter.get()->codeGen(prog);
     }
     if(this != Parse::globScope()->getSeq()){
@@ -176,9 +175,17 @@ unsigned int opCodeGen(Parse::Op* op, IRProg& prog){
         {
             SSA ssa1 = polymorphGetSSA(op->getBinaryArg1());
             SSA ssa2 = polymorphGetSSA(op->getBinaryArg2());
-            IInstr instr(op->getIntrinsicOp(), op->getType(),
+           
+            // i.e, its a literal where assignment ops need to be reversed. 
+            if(op->getIntrinsicOp() == IntrOps::ASSN && ssa2.which != SType::REF){
+                IInstr instr(op->getIntrinsicOp(), op->getType(),
+                           ssa2, ssa1, genSSA(op));
+                prog.addInstr(instr);
+            } else {
+                IInstr instr(op->getIntrinsicOp(), op->getType(),
                            ssa1, ssa2, genSSA(op));
-            prog.addInstr(instr);
+                prog.addInstr(instr);
+            }
             return 1;
         }
         default:
@@ -225,7 +232,7 @@ unsigned int Parse::Expr::codeGen(IRProg& prog){
         case ExprId::_LIT:
         {
             // base case, an assignment from literal.
-            IInstr instr(CodeGen::nextSSA(), 
+            IInstr instr(this->getType(), CodeGen::nextSSA(), 
                             genSSA(static_cast<Literal*>(this)));
             prog.addInstr(instr);
             return 1;

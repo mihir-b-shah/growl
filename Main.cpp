@@ -87,11 +87,11 @@ CodeGen::Label CodeGen::getFromAST(unsigned AST_Extract){
     return labels[AST_Extract].lbl;
 }
 void CodeGen::insertASTLbl(unsigned AST_Extr, CodeGen::Label lbl){
-    labels[AST_Extr].lbl = lbl;
+    labels.ref(AST_Extr).lbl = lbl;
 }
 
 void CodeGen::insertVarSSA(unsigned int Var_Extr, CodeGen::SSA ssa){
-    labels[Var_Extr].ssa = ssa;
+    labels.ref(Var_Extr).ssa = ssa;
 }
 CodeGen::SSA CodeGen::getFromVar(unsigned int Var_Extract){
     return labels[Var_Extract].ssa;

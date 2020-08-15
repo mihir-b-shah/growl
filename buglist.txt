@@ -1,0 +1,9 @@
+Ongoing bug list (check here first before debugging something)
+
+Order of assignment operands.
+
+Current breakpoints:
+
+IRGenerator.cpp:177
+CodeGen.hpp:726
+CodeGen.hpp:901

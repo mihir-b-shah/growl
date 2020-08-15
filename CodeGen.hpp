@@ -357,9 +357,9 @@ namespace CodeGen {
                     Global::specifyError("Buffer for snprintf too small.\n", __FILE__, __LINE__);
                     throw Global::DeveloperError;
                 }
-               
+              
                 // example fsbuf later: "s%u = %s%s%s %lld %lld"
-                
+                std::cout << "Swcode: " << (((src1().which == SType::REF) << 1) + flt) << '\n'; 
                 switch(((src1().which == SType::REF) << 1) + flt){
                     case LIT_INT:
                         chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), iinstr, flg, dType, 
@@ -395,9 +395,9 @@ namespace CodeGen {
                 return ord(in) + NUM_TYPES*ord(out);
             }
 
-            inline unsigned int printCastHelp(char* buf, const char* const instr, ...){
+            inline unsigned int printCastHelp(char* buf, const char* const instr){
                 return std::snprintf(buf, INSTR_BUF_SIZE, instr, 
-                                cSrc().extractLbl(), cDest().extractLbl());
+                                cDest().extractLbl(), cSrc().extractLbl());
             }
             
             // fill in the casts.
@@ -405,53 +405,76 @@ namespace CodeGen {
                 constexpr unsigned NUM_TYPES = 5;
                 switch(ord(iType()) + NUM_TYPES*ord(oType())){
                     case gCv(VarType::BOOL, VarType::CHAR):
-                        return printCastHelp(buf, "s%u = zext i1 s%u to i8");
+                        return printCastHelp(buf, "%%s%u = zext i1 %%s%u to i8");
                     case gCv(VarType::BOOL, VarType::INT):
-                        return printCastHelp(buf, "s%u = zext i1 s%u to i32");
+                        return printCastHelp(buf, "%%s%u = zext i1 %%s%u to i32");
                     case gCv(VarType::BOOL, VarType::LONG):
-                        return printCastHelp(buf, "s%u = zext i1 s%u to i64");
+                        return printCastHelp(buf, "%%s%u = zext i1 %%s%u to i64");
                     case gCv(VarType::BOOL, VarType::FLOAT):
-                        return printCastHelp(buf, "s%u = uitofp i1 s%u to double"); // right now only f64 supported.
+                        return printCastHelp(buf, "%%s%u = uitofp i1 %%s%u to double"); // right now only f64 supported.
                     case gCv(VarType::CHAR, VarType::BOOL):
-                        return printCastHelp(buf, "s%u = icmp ne i8 s%u 0");
+                        return printCastHelp(buf, "%%s%u = icmp ne i8 %%s%u 0");
                     case gCv(VarType::CHAR, VarType::INT):
-                        return printCastHelp(buf, "s%u = zext i8 s%u to i32");
+                        return printCastHelp(buf, "%%s%u = zext i8 %%s%u to i32");
                     case gCv(VarType::CHAR, VarType::LONG):
-                        return printCastHelp(buf, "s%u = zext i8 s%u to i32");
+                        return printCastHelp(buf, "%%s%u = zext i8 %%s%u to i32");
                     case gCv(VarType::CHAR, VarType::FLOAT):
-                        return printCastHelp(buf, "s%u = uitofp i8 s%u to double");
+                        return printCastHelp(buf, "%%s%u = uitofp i8 %%s%u to double");
                     case gCv(VarType::INT, VarType::BOOL):
-                        return printCastHelp(buf, "s%u = icmp ne i32 s%u 0");
+                        return printCastHelp(buf, "%%s%u = icmp ne i32 %%s%u 0");
                     case gCv(VarType::INT, VarType::CHAR):
-                        return printCastHelp(buf, "s%u = trunc i32 s%u to i8");
+                        return printCastHelp(buf, "%%s%u = trunc i32 %%s%u to i8");
                     case gCv(VarType::INT, VarType::LONG):
-                        return printCastHelp(buf, "s%u = zext i32 s%u to i64");
+                        return printCastHelp(buf, "%%s%u = zext i32 %%s%u to i64");
                     case gCv(VarType::INT, VarType::FLOAT):
-                        return printCastHelp(buf, "s%u = uitofp i32 s%u to double");
+                        return printCastHelp(buf, "%%s%u = uitofp i32 %%s%u to double");
                     case gCv(VarType::LONG, VarType::BOOL):
-                        return printCastHelp(buf, "s%u = icmp ne i64 s%u 0");
+                        return printCastHelp(buf, "%%s%u = icmp ne i64 %%s%u 0");
                     case gCv(VarType::LONG, VarType::CHAR):
-                        return printCastHelp(buf, "s%u = trunc i64 s%u to i8");
+                        return printCastHelp(buf, "%%s%u = trunc i64 %%s%u to i8");
                     case gCv(VarType::LONG, VarType::INT):
                     {
                         SSA temp = CodeGen::nextSSA().extractLbl();
-                        unsigned adv = std::snprintf(buf, INSTR_BUF_SIZE, "s%u = and i64 s%u, %x", 
+                        unsigned adv = std::snprintf(buf, INSTR_BUF_SIZE, "%%s%u = and i64 %%s%u, %x", 
                                 cSrc().extractLbl(), temp.extractLbl(), 0x7fff'ffff);
-                        return adv + std::snprintf(buf+adv, INSTR_BUF_SIZE, "s%u = trunc i64 s%u to i32",
+                        return adv + std::snprintf(buf+adv, INSTR_BUF_SIZE, "%%s%u = trunc i64 %%s%u to i32",
                                         temp.extractLbl(), cDest().extractLbl());
                     }
                     case gCv(VarType::LONG, VarType::FLOAT):
-                        return printCastHelp(buf, "s%u = uitofp i64 s%u to double");
+                        return printCastHelp(buf, "%%s%u = uitofp i64 %%s%u to double");
                     case gCv(VarType::FLOAT, VarType::BOOL):
-                        return printCastHelp(buf, "s%u = fptoui double s%u to i1");
+                        return printCastHelp(buf, "%%s%u = fptoui double %%s%u to i1");
                     case gCv(VarType::FLOAT, VarType::CHAR):
-                        return printCastHelp(buf, "s%u = fptoui double s%u to i8");
+                        return printCastHelp(buf, "%%s%u = fptoui double %%s%u to i8");
                     case gCv(VarType::FLOAT, VarType::INT):
-                        return printCastHelp(buf, "s%u = fptosi double s%u to i32");
+                        return printCastHelp(buf, "%%s%u = fptosi double %%s%u to i32");
                     case gCv(VarType::FLOAT, VarType::LONG):
-                        return printCastHelp(buf, "s%u = fptoui double s%u to i64");
+                        return printCastHelp(buf, "%%s%u = fptoui double %%s%u to i64");
                 }
                 return 0;
+            }
+
+            unsigned int assnOutput(char* buf){
+                if(__builtin_expect(dest().which != SType::REF, false)){
+                    Global::specifyError("Assignment to nonvar",
+                                    __FILE__, __LINE__);
+                    throw Global::DeveloperError;
+                }
+                switch(src1().which){
+                    case SType::REF:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "%%s%u = %%s%u",
+                                        dest().extractLbl(), src1().extractLbl()); 
+                    case SType::FLT_LIT:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "%%s%u = %f",
+                                        dest().extractLbl(), src1().extractFlt()); 
+                    case SType::SIGN_LIT:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "%%s%u = %lld",
+                                        dest().extractLbl(), src1().extractSignedInt()); 
+                    case SType::USIGN_LIT:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "%%s%u = %llu",
+                                        dest().extractLbl(), src1().extractUnsignedInt()); 
+                }
+                return 0; 
             }
 
             unsigned int brOutput(char* buf) {
@@ -533,7 +556,7 @@ namespace CodeGen {
                                     Global::specifyError("Flt type used in int-only instruction.\n", __FILE__, __LINE__);    
                                     throw Global::InvalidInstrInvocation;
                                 }
-                                // right now, floats in Growl are 64-bit floats in LLVM.    
+                                // right now, floats in Growl are 64-bit floats in LLVM.
                                 ret = printOpUnary(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
                                 break;
                             case VarType::OTHER:
@@ -641,12 +664,12 @@ namespace CodeGen {
                 type() = VarType::OTHER;
             }
 
-            IInstr(SSA _Src, SSA _Dest){
+            IInstr(VarType _Type, SSA _Src, SSA _Dest){
                 src1() = _Src;
                 src2() = SSA::nullValue();
                 dest() = _Dest;
                 instr() = LLVMInstr::_Dmy;
-                type() = VarType::OTHER;
+                type() = _Type;
             }
 
             void setInstr(IInstr& is){
@@ -755,6 +778,24 @@ namespace CodeGen {
                 type() = _Type;
             }
 
+            const char* typeToString(VarType v){
+                switch(v){
+                    case VarType::CHAR:
+                        return "i8";
+                    case VarType::INT:
+                        return "i32";
+                    case VarType::BOOL:
+                        return "i1";
+                    case VarType::LONG:
+                        return "i64";
+                    case VarType::FLOAT:
+                        return "double";
+                    default:
+                        Global::specifyError("Invalid type.\n", __FILE__, __LINE__);
+                        throw Global::DeveloperError;
+                }
+            }
+
             unsigned int output(char* buf){
                 switch(instr()){
                     case LLVMInstr::_Br:
@@ -793,15 +834,15 @@ namespace CodeGen {
                     // write out a construction.
                     case LLVMInstr::_Asn:
                     {
-                        unsigned int len1 = IInstr(src1(), src2()).output(buf);
-                        buf[len1++] = '\n';
-                        return len1+IInstr(src2(), dest()).output(buf+len1);
+                        return assnOutput(buf);
                     }
                     case LLVMInstr::_Cast:
                         return castFmt(buf); 
                     case LLVMInstr::_Decl:
-                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, 
-                                        "alloca ", "alloca ", "alloca ", true);
+                    {
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "%%s%u = alloca %s",
+                                        dest().extractLbl(), typeToString(type()));
+                    }
                     case LLVMInstr::_Flp:
                     {
                         unsigned long long neg1 = OpUtils::genAllOne(type());
