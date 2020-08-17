@@ -60,7 +60,6 @@ static void parse(int offset, Lex::Token* begin, Lex::Token* end, Control* cntrl
                 throw Global::InvalidExpression;
             }
             Expr* expr = parseExpr(begin, runner);
-            expr->print(80, std::cout);
             cntrl->seqAdd(expr);
             parse(offset + (runner-begin) + 1, runner + 1, end, cntrl);    
             break;

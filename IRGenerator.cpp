@@ -112,11 +112,15 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
  *
  * Structure:
  * 
- * L1: %s1..... my comparison
- * L2: loop ast....
+ * L1: %s1 = <res of expr>
+ *     br %s1 L2 L3  
+ * L2: ......
+ *     ......
  *     br L1
+ * L3: NextAST
  */
 unsigned int Parse::Loop::codeGen(IRProg& prog){
+    this->getPred()->codeGen(prog);
     return 0;    
 }
 
@@ -212,6 +216,7 @@ unsigned int polymorphExprCodeGen(Parse::Expr* expr, IRProg& prog){
     }
 }
 
+// enum class ExprId:char {_OP, _LIT, _VAR, _CAST};
 unsigned int exprRecur(Parse::Expr* expr, IRProg& prog){    
     using namespace Parse;
     // post order traversal.

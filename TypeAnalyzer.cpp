@@ -69,13 +69,12 @@ VarType Op::castType(){
                     } else if(dynamic_cast<Literal*>(this->getBinaryArg2()) == NULL
                                 || (arg1==VarType::FLOAT xor arg2==VarType::FLOAT)) {
                         // the other type is not a literal of the same class INT/FLOAT
-                        std::cout << (arg1==VarType::FLOAT xor arg2==VarType::FLOAT) << '\n';
                         cast = new Cast(this->getBinaryArg1(), ret.first);
                         this->setBinaryArg1(cast);
                     } else {
                         // since theres only one type of float.
-                        _in = arg2;
-                        return arg2;
+                        _in = arg1;
+                        return arg1;
                     }
                 } else {
                     if(lit = dynamic_cast<Literal*>(this->getBinaryArg2())){
@@ -85,8 +84,8 @@ VarType Op::castType(){
                         cast = new Cast(this->getBinaryArg2(), ret.first);
                         this->setBinaryArg2(cast);
                     } else {
-                       _in = arg1;
-                       return arg1;
+                       _in = arg2;
+                       return arg2;
                     }
                 }
                 _in = ret.first;

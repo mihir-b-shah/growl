@@ -1,4 +1,4 @@
-float x;
+int x;
 x = 7.6;
 int y;
 int z;

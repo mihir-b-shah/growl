@@ -1,5 +1,6 @@
 
 
+#include <cstring>
 #include <iostream>
 #include <cstdlib>
 
@@ -207,7 +208,10 @@ int main(int argc, char** argv) {
         std::perror("1 argument needed. Too few/many found.\n");
         return EXIT_FAILURE;
     }
-    std::FILE* file = std::fopen(argv[1], "r");
+    char buf[81] = {'\0'};
+    std::strncpy(buf, "testfiles/", 11);
+    std::strncat(buf, argv[1], 69);
+    std::FILE* file = std::fopen(buf, "r");
     std::fseek(file, 0L, SEEK_END);
     long size = std::ftell(file);
     
@@ -241,7 +245,16 @@ int main(int argc, char** argv) {
 
         CodeGen::IRProg irProg;
         CodeGen::genIR(irProg);
-        irProg.write(std::cout);
+        
+        constexpr unsigned int OUTFILE_LEN = 80;
+        char outFileBuf[1+OUTFILE_LEN] = {'\0'};
+        std::strncpy(outFileBuf, "llvmfiles/", 11);
+        std::strncat(outFileBuf, argv[1], std::strrchr(argv[1], '.')-argv[1]);
+        std::strncat(outFileBuf, ".ll", 4);
+        std::ofstream irFile(outFileBuf);
+        irProg.write(irFile);
+        irFile.flush();
+        irFile.close();
 
         return EXIT_SUCCESS;
     } catch (int exc) {
