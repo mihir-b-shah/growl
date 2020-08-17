@@ -111,7 +111,14 @@ VarType Literal::castType(){
     return _in;
 }
 
+
 VarType Variable::castType(){
+    std::cout << this->getHash() << '\n';
+    if(CodeGen::getVarPtr(this->getHash()).isNull()){
+        // not been added yet.
+        CodeGen::SSA ssa = CodeGen::nextSSA();
+        CodeGen::insertVarPtr(this->getHash(), ssa);
+    }
     _in = this->type;
     return this->type;
 }

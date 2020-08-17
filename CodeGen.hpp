@@ -13,7 +13,8 @@
 namespace CodeGen {
 
     enum class SType:char {FLT_LIT, SIGN_LIT, USIGN_LIT, REF};
-    
+    enum class MemAction:char {LOAD, STORE};
+
     /** Label is rep as L1 for instance */
     struct SSA {
 
@@ -104,6 +105,9 @@ namespace CodeGen {
     void insertVarSSA(unsigned int Var_Extr, SSA ssa);
     SSA getFromVar(unsigned int Var_Extract);
 
+    void insertVarPtr(unsigned int Var_Extr, SSA ssa);
+    SSA getVarPtr(unsigned int Var_Extract);
+
     Label getFromAST(unsigned int AST_Extract);
     void insertASTLbl(unsigned int AST_Extr, Label lbl);
     static const unsigned int INSTR_BUF_SIZE = 100;
@@ -184,7 +188,7 @@ namespace CodeGen {
     };    
 
     enum class LLVMInstr:char {_Br, _Add, _Sub, _Mul, _Div, _Mod, _Shl, _Shr, 
-            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg, _Decl, _Cast};
+            _And, _Or, _Xor, _Gr, _Ls, _Eq, _Dmy, _Asn, _Flp, _Neg, _Decl, _Cast, _Load, _Store};
 
     static constexpr LLVMInstr unusedLLVMInstr(){
         return LLVMInstr::_Dmy;
@@ -454,6 +458,35 @@ namespace CodeGen {
                 return 0;
             }
 
+            unsigned int loadInstrOutput(char* buf){
+                // treat as the unary operator.
+                return std::snprintf(buf, INSTR_BUF_SIZE, "%%s%1$u = load %2$s, %2$s* %%s%3$u",
+                              dest().extractLbl(), typeToString(type()), src1().extractLbl());
+            }
+
+            unsigned int storeInstrOutput(char* buf){
+                switch(src1().which){
+                    case SType::REF:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "store %1$s %%s%2$u, %1$s* %%s%3$u",
+                              typeToString(type()), src1().extractLbl(), dest().extractLbl());
+                    case SType::USIGN_LIT:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "store %1$s %2$llu, %1$s* %%s%3$u",
+                              typeToString(type()), src1().extractUnsignedInt(), dest().extractLbl());
+                    case SType::SIGN_LIT:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "store %1$s %2$lld, %1$s* %%s%3$u",
+                              typeToString(type()), src1().extractSignedInt(), dest().extractLbl());
+                    case SType::FLT_LIT:
+                        return std::snprintf(buf, INSTR_BUF_SIZE, "store %1$s %2$f, %1$s* %%s%3$u",
+                              typeToString(type()), src1().extractFlt(), dest().extractLbl());
+                }
+                return 0;
+            }
+
+            /** When an assignment happens
+             *  
+             * Store 
+             * Load (technically optimizable for literals but whatever...)
+             */
             unsigned int assnOutput(char* buf){
                 if(__builtin_expect(dest().which != SType::REF, false)){
                     Global::specifyError("Assignment to nonvar",
@@ -523,6 +556,8 @@ namespace CodeGen {
                     case LLVMInstr::_Cast:
                         return UOB::UNARY;
                     case LLVMInstr::_Br:
+                    case LLVMInstr::_Load:
+                    case LLVMInstr::_Store:
                         return UOB::OTHER;
                 }
                 return UOB::OTHER;
@@ -591,7 +626,7 @@ namespace CodeGen {
                                     throw Global::InvalidInstrInvocation;
                                 }
                                 // right now, floats in Growl are 64-bit floats in LLVM.    
-                                ret = printOpBinary(buf, fltInstr, fflg, dispFltType ? "float " : "", true, true);
+                                ret = printOpBinary(buf, fltInstr, fflg, dispFltType ? "double " : "", true, true);
                                 break;
                             case VarType::OTHER:
                                 ret = printOpBinary(buf, unsignInstr, iflg, "", false, false);
@@ -706,6 +741,34 @@ namespace CodeGen {
                 elsebr() = _Elsebr;
             }
 
+            IInstr(MemAction act, VarType _Type, SSA _Src, SSA _Dest){
+                switch(act){
+                    case MemAction::LOAD:
+                        instr() = LLVMInstr::_Load;
+                        break;
+                    case MemAction::STORE:
+                        instr() = LLVMInstr::_Store;
+                        break;
+                } 
+                type() = _Type;
+                src1() = _Src;
+                dest() = _Dest;
+            } 
+
+            void set(MemAction act, VarType _Type, SSA _Src, SSA _Dest){
+                switch(act){
+                    case MemAction::LOAD:
+                        instr() = LLVMInstr::_Load;
+                        break;
+                    case MemAction::STORE:
+                        instr() = LLVMInstr::_Store;
+                        break;
+                } 
+                type() = _Type;
+                src1() = _Src;
+                dest() = _Dest;
+            }
+
             // special for cast.
             IInstr(VarType _InType, VarType _OutType, SSA _Src, SSA _Dest){
                 instr() = LLVMInstr::_Cast;
@@ -801,15 +864,15 @@ namespace CodeGen {
                     case LLVMInstr::_Br:
                         return brOutput(buf);
                     case LLVMInstr::_Add:
-                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "add ", "add ", "fadd ", false);
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "add ", "add ", "fadd ", true);
                     case LLVMInstr::_Sub:
-                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "sub ", "sub ", "fsub ", false);    
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "sub ", "sub ", "fsub ", true);    
                     case LLVMInstr::_Mul:
-                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "mul ", "mul ", "fmul ", false);
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "mul ", "mul ", "fmul ", true);
                     case LLVMInstr::_Div: 
-                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "udiv ", "sdiv ", "fdiv ", false);
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "udiv ", "sdiv ", "fdiv ", true);
                     case LLVMInstr::_Mod:
-                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "urem ", "srem ", "frem ", false);    
+                        return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "urem ", "srem ", "frem ", true);    
                     case LLVMInstr::_Shl:
                         return outputHelp(buf, EMPTY_FLAG, EMPTY_FLAG, "shl ", "shl ", ERROR_INSTR, false);    
                     case LLVMInstr::_Shr:
@@ -843,6 +906,10 @@ namespace CodeGen {
                         return std::snprintf(buf, INSTR_BUF_SIZE, "%%s%u = alloca %s",
                                         dest().extractLbl(), typeToString(type()));
                     }
+                    case LLVMInstr::_Load:
+                        return loadInstrOutput(buf);
+                    case LLVMInstr::_Store:
+                        return storeInstrOutput(buf);
                     case LLVMInstr::_Flp:
                     {
                         unsigned long long neg1 = OpUtils::genAllOne(type());

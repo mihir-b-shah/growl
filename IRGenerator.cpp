@@ -177,16 +177,21 @@ unsigned int opCodeGen(Parse::Op* op, IRProg& prog){
             SSA ssa2 = polymorphGetSSA(op->getBinaryArg2());
            
             // i.e, its a literal where assignment ops need to be reversed. 
-            if(op->getIntrinsicOp() == IntrOps::ASSN && ssa2.which != SType::REF){
-                IInstr instr(op->getIntrinsicOp(), op->getType(),
-                           ssa2, ssa1, genSSA(op));
-                prog.addInstr(instr);
+            if(op->getIntrinsicOp() == IntrOps::ASSN){
+                IInstr store(MemAction::STORE, op->getType(), ssa2, 
+                                getVarPtr(op->getBinaryArg1()->getHash()));
+                IInstr load(MemAction::LOAD, op->getType(), 
+                                getVarPtr(op->getBinaryArg1()->getHash()), 
+                                genSSA(op->getBinaryArg2()));
+                prog.addInstr(store);
+                prog.addInstr(load);
+                return 2;
             } else {
                 IInstr instr(op->getIntrinsicOp(), op->getType(),
                            ssa1, ssa2, genSSA(op));
                 prog.addInstr(instr);
+                return 1;
             }
-            return 1;
         }
         default:
             // already handled by assert at top.
@@ -249,9 +254,15 @@ unsigned int Parse::Expr::codeGen(IRProg& prog){
 
 /** An alloca <type> */
 unsigned int Parse::Decl::codeGen(IRProg& prog){
-    IInstr instr(this->castType(), genSSA(this->getVar()));
+    SSA ssa;
+    IInstr instr(this->castType(), 
+                    ssa = CodeGen::getVarPtr(this->getVar()->getHash()));
     prog.addInstr(instr);
-    return 1;
+    // add a load for reference.
+    IInstr instr2(MemAction::LOAD, this->getVar()->getType(),
+                    ssa, genSSA(this->getVar()));
+    prog.addInstr(instr2);
+    return 2;
 }
 
 unsigned int CodeGen::genIR(IRProg& prog){

@@ -79,8 +79,41 @@ union SSALbl {
     CodeGen::SSA ssa;
     CodeGen::Label lbl;
 
-    SSALbl(){}
+    SSALbl(){
+        ssa = CodeGen::SSA::nullValue();
+    }
 };
+
+struct VarSSA {
+    int extr;
+    unsigned ssa;
+
+    VarSSA(){extr = 0;}
+
+    VarSSA(int e, unsigned s){
+        extr = e;
+        ssa = s;
+    }
+};
+
+template<>
+struct Utils::SetTraits<VarSSA> {
+    static VarSSA emptyVal(){return VarSSA(0,0);}
+    static VarSSA tombstoneVal(){return VarSSA(-1,0);}
+    static size_t hash(VarSSA x){return static_cast<size_t>(x.extr);}
+    static bool equal(VarSSA v1, VarSSA v2){return v1.extr == v2.extr;}
+};
+
+Utils::SmallSet<VarSSA,50> varPtrs;
+void CodeGen::insertVarPtr(unsigned int Var_Extr, SSA ssa){
+    varPtrs.insert(VarSSA(Var_Extr, ssa.extractLbl()));
+}
+
+CodeGen::SSA CodeGen::getVarPtr(unsigned int Var_Extr){
+    VarSSA* res = varPtrs.find(VarSSA(Var_Extr, 0));
+    return res == nullptr ? CodeGen::SSA::nullValue()
+            : CodeGen::SSA(res->ssa);
+}
 
 Utils::SmallVector<SSALbl,50> labels;
 CodeGen::Label CodeGen::getFromAST(unsigned AST_Extract){
@@ -121,7 +154,8 @@ void test(CodeGen::IInstr& node){
 int main(int argc, char** argv) {
     Global::Alloc alloc(0);
     allocator = &alloc;
-/*
+
+    /*
     CodeGen::SSA s1 = CodeGen::nextSSA();
     CodeGen::SSA s2 = CodeGen::nextSSA();
     CodeGen::SSA s3 = CodeGen::nextSSA(); 
@@ -160,6 +194,12 @@ int main(int argc, char** argv) {
     ins = CodeGen::IInstr(Parse::IntrOps::NEG, Parse::VarType::INT, s1, s2, s3); 
     test(ins);
     ins = CodeGen::IInstr(Parse::VarType::INT, s1); 
+    test(ins);
+    ins = CodeGen::IInstr(Parse::VarType::INT, s1); 
+    test(ins);
+    ins = CodeGen::IInstr(CodeGen::MemAction::LOAD, Parse::VarType::INT, s1, s3); 
+    test(ins);
+    ins = CodeGen::IInstr(CodeGen::MemAction::STORE, Parse::VarType::INT, s1, s3); 
     test(ins);
     */
     
