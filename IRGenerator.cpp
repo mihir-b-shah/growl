@@ -28,16 +28,6 @@ unsigned int Parse::Sequence::codeGen(CodeGen::IRProg& prog){
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
         accm += iter.get()->codeGen(prog);
     }
-    if(this != Parse::globScope()->getSeq()){
-        // unconditional branch
-        auto res = getLabel(this->getSequential());
-        IInstr uncondBr(SSA::nullValue(), res.first, Label::nullLabel());
-        if(!res.second) {
-            prog.addInstr(res.first, uncondBr); 
-            return accm+1;
-        }
-    }
-
     return accm;
 }
 
@@ -120,7 +110,27 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
  * L3: NextAST
  */
 unsigned int Parse::Loop::codeGen(IRProg& prog){
-    this->getPred()->codeGen(prog);
+    Label exprLbl = nextLabel();
+    unsigned exprPos = prog.size()-this->getPred()->codeGen(prog);
+    prog.associate(exprLbl, exprPos);
+    
+    Label astLbl = nextLabel();
+    prog.allocate(1);
+    unsigned astPos = prog.size()-this->getSeq()->codeGen(prog);
+    prog.associate(astLbl, astPos); 
+
+    /* THIS IS WRONG WE WANT TO POINT TO THE EXPR */
+    auto res = getLabel(this->getSeq()->getSequential());
+    if(__builtin_expect(!res.second,false)){
+        Global::specifyError("Loop body has already been labeled.\n", __FILE__, __LINE__);
+        throw Global::DeveloperError;
+    }
+
+    prog.getInstr(astPos-1)->setBranch(*(prog.getLastInstr()->getDest()), astLbl, res.first); 
+    IInstr uncondBr(SSA::nullValue(), exprLbl, Label::nullLabel());
+    prog.addInstr(uncondBr);
+
+    /* NEED TO HANDLE THE OUTBOUND CASE WITH L3 */
     return 0;    
 }
 
@@ -274,8 +284,15 @@ unsigned int CodeGen::genIR(IRProg& prog){
     Parse::globScope()->getSeq()->codeGen(prog);
     return 0;
 }
-/*
-unsigned int Parse::ControlNode::codeGen(IRProg& prog){
+
+unsigned int cntrlNodeCodeGen(Parse::ControlNode* node, IRProg& prog){
+    // unconditional branch
+    auto res = getLabel(node->getSequentialBase());
+    IInstr uncondBr(SSA::nullValue(), res.first, Label::nullLabel());
+    if(!res.second) {
+        prog.addInstr(res.first, uncondBr); 
+        return 1;
+    }
     return 0;
 }
-*/
+

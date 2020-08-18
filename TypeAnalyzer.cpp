@@ -29,6 +29,10 @@ static std::pair<VarType,unsigned> getNewType(VarType one, VarType two){
     return {comb, comb == one}; // gives 1 if need to change #2, 0 if need to fix #1.
 }
 
+static bool isCmp(IntrOps iop){
+    return iop == IntrOps::GREATER || iop == IntrOps::LESS || iop == IntrOps::EQUAL;
+}
+
 // Type analysis stuff.
 // RUN TOYPROG.GRR, see the lack of casting in assignment operation.
 VarType Op::castType(){
@@ -150,7 +154,10 @@ void Sequence::fixTypes(){
 template<typename T>
 static inline void handlePredicate(T* str){
     VarType outType = str->getPred()->castType();
-    if(outType != VarType::BOOL){
+    Op* aux;
+    if(!(str->getPred()->exprID() == ExprId::_OP 
+            && (aux = static_cast<Op*>(str->getPred()))->isIntrinsic()
+            && isCmp(aux->getIntrinsicOp())) && outType != VarType::BOOL){
         Cast* cast = new Cast(str->getPred(), VarType::BOOL);
         str->setPred(cast);
     }

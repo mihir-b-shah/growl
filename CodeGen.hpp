@@ -967,8 +967,7 @@ namespace CodeGen {
             }
 
             inline void addInstr(IInstr& instr){
-                list.allocate(1);
-                list.back()->setInstr(instr);
+                list.push_back(instr);
             }
 
             /** Only safe when not adding */
@@ -983,6 +982,10 @@ namespace CodeGen {
 
             void associate(Label lbl, unsigned idx){
                 map.ref(lbl.extract()) = map.ref(idx);
+            }
+
+            IInstr* getLastInstr(){
+                return list.back(); 
             }
 
             void write(std::ostream& out){

@@ -56,14 +56,13 @@ Control* Parse::globScope(){
     return &_globScope;
 }
 
-CodeGen::SSA _nextSSA = CodeGen::SSA(1);
+unsigned ssaLblCtr = 1;
 CodeGen::SSA CodeGen::nextSSA(){
-    return _nextSSA++;
+    return CodeGen::SSA(ssaLblCtr++);
 }
 
-CodeGen::Label _nextLbl = CodeGen::Label(1);
 CodeGen::Label CodeGen::nextLabel(){
-    return _nextLbl++;
+    return CodeGen::Label(ssaLblCtr++);
 }
 
 unsigned ASTCtr = 0;
