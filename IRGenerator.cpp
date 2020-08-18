@@ -95,6 +95,15 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
     return 0;
 }
 
+Label genLabel(unsigned Gen_Extract){
+    Label lbl;
+    if((lbl = CodeGen::getFromAST(Gen_Extract)) == Label::nullLabel()){
+        return CodeGen::nextLabel();
+    } else {
+        return lbl;
+    }
+}
+
 /** Compute the Expr, Setup a loop 
  *
  * 1. Do the branch at the top. If yes, continue to next line. If no, leave loop.
@@ -110,26 +119,31 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
  * L3: NextAST
  */
 unsigned int Parse::Loop::codeGen(IRProg& prog){
-    Label exprLbl = nextLabel();
+    // Generate expr code and label its start
+    Label exprLbl = genLabel(this->getHash());
     unsigned exprPos = prog.size()-this->getPred()->codeGen(prog);
     prog.associate(exprLbl, exprPos);
-    
-    Label astLbl = nextLabel();
+  
+    // Allocate the initial branch, we'll fill it in later. 
     prog.allocate(1);
+    
+    // Generate loop body's code and label its start. 
+    Label astLbl = nextLabel(); // guaranteed not to have been reached yet.
     unsigned astPos = prog.size()-this->getSeq()->codeGen(prog);
     prog.associate(astLbl, astPos); 
 
-    /* THIS IS WRONG WE WANT TO POINT TO THE EXPR */
-    auto res = getLabel(this->getSeq()->getSequential());
-    if(__builtin_expect(!res.second,false)){
-        Global::specifyError("Loop body has already been labeled.\n", __FILE__, __LINE__);
-        throw Global::DeveloperError;
-    }
-
-    prog.getInstr(astPos-1)->setBranch(*(prog.getLastInstr()->getDest()), astLbl, res.first); 
+    // Add an unconditional branch back to the expr.
     IInstr uncondBr(SSA::nullValue(), exprLbl, Label::nullLabel());
     prog.addInstr(uncondBr);
 
+    /* Fill in that initial branch.
+     * Notice, no one has actually filled the sequentially next thing,
+     * but it should still work. */
+    Parse::AST* next = this->getSeq()->getSequential();
+    Label seqNext = genLabel(next->getHash());
+    prog.getInstr(astPos-1)->setBranch(*(prog.getLastInstr()->getDest()), 
+                    astLbl, seqNext); 
+    
     /* NEED TO HANDLE THE OUTBOUND CASE WITH L3 */
     return 0;    
 }
