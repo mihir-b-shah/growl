@@ -95,15 +95,6 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
     return 0;
 }
 
-Label genLabel(unsigned Gen_Extract){
-    Label lbl;
-    if((lbl = CodeGen::getFromAST(Gen_Extract)) == Label::nullLabel()){
-        return CodeGen::nextLabel();
-    } else {
-        return lbl;
-    }
-}
-
 /** Compute the Expr, Setup a loop 
  *
  * 1. Do the branch at the top. If yes, continue to next line. If no, leave loop.
@@ -120,32 +111,58 @@ Label genLabel(unsigned Gen_Extract){
  */
 unsigned int Parse::Loop::codeGen(IRProg& prog){
     // Generate expr code and label its start
-    Label exprLbl = genLabel(this->getHash());
-    unsigned exprPos = prog.size()-this->getPred()->codeGen(prog);
+    unsigned accm = 0;
+    auto exprRes = getLabel(this);
+    Label exprLbl = exprRes.first;
+
+    if(exprRes.second){
+        /* we just inserted this label, we need to add an 
+         * unconditional branch to it to define it */
+        IInstr uncondBr(SSA::nullValue(), exprLbl, Label::nullLabel());
+        prog.addInstr(uncondBr);
+        ++accm;
+    }
+
+    unsigned exprPos = this->getPred()->codeGen(prog);
+    accm += exprPos;
+    exprPos = prog.size()-exprPos;
     prog.associate(exprLbl, exprPos);
   
     // Allocate the initial branch, we'll fill it in later. 
     prog.allocate(1);
+    accm += 1;
     
     // Generate loop body's code and label its start. 
     Label astLbl = nextLabel(); // guaranteed not to have been reached yet.
-    unsigned astPos = prog.size()-this->getSeq()->codeGen(prog);
+    unsigned astPos = this->getSeq()->codeGen(prog);
+    accm += astPos;
+    astPos = prog.size()-astPos;
     prog.associate(astLbl, astPos); 
 
     // Add an unconditional branch back to the expr.
     IInstr uncondBr(SSA::nullValue(), exprLbl, Label::nullLabel());
     prog.addInstr(uncondBr);
+    accm += 1;
 
     /* Fill in that initial branch.
      * Notice, no one has actually filled the sequentially next thing,
      * but it should still work. */
     Parse::AST* next = this->getSeq()->getSequential();
-    Label seqNext = genLabel(next->getHash());
-    prog.getInstr(astPos-1)->setBranch(*(prog.getLastInstr()->getDest()), 
+   
+    // It is guaranteed that 
+    auto nextRes = getLabel(next);
+    if(!nextRes.second){
+        Global::specifyError("Next AST in sequence already modified.\n",
+                        __FILE__, __LINE__);
+        throw Global::DeveloperError;
+    }
+    Label seqNext = nextRes.first;
+    prog.associate(seqNext, prog.size());
+    prog.getInstr(astPos-1)->setBranch(*(prog.getInstr(astPos-2)->getDest()), 
                     astLbl, seqNext); 
     
     /* NEED TO HANDLE THE OUTBOUND CASE WITH L3 */
-    return 0;    
+    return accm;    
 }
 
 CodeGen::SSA genSSALit(Parse::Literal* handle){

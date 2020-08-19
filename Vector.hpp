@@ -5,7 +5,6 @@
 #include "Error.h"
 #include <cstddef>
 #include <algorithm>
-#include "Allocator.h"
 
 namespace Utils {
     
@@ -24,11 +23,11 @@ namespace Utils {
                     Global::specifyError("Vector requested more than 1 << sizeof(size_t)-2 capacity.", __FILE__, __LINE__);
                     throw Global::MemoryRequestError;
                 }
-                T* aux = Global::getAllocator()->allocate<T>(length*2);
+                T* aux = new T[length*2]();
                 std::copy(front, front+capacity, aux); 
                 capacity = FLAG_SFT+length*2;
                 if(__builtin_expect((heap<<1)+leqc==HEAP_GROW,true)){
-                    Global::getAllocator()->deallocate<T>(front);
+                    delete front;
                 }
                 front = aux;
             }
@@ -126,13 +125,13 @@ namespace Utils {
     template<typename T, size_t N>
     class SmallVector : public Vector<T> {
         private:
-            T buffer[N];
+            T buffer[N] = {T()};
         public:
             SmallVector() : Vector<T> (buffer, 0, N) {
             }
             ~SmallVector(){
                 if(this->capacity > N){
-                    Global::getAllocator()->deallocate<T>(this->front);
+                    delete this->front;
                 }
             }
     };

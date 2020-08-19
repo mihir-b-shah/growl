@@ -512,20 +512,19 @@ namespace CodeGen {
 
             unsigned int brOutput(char* buf) {
                 if(pred().isNull()) { 
-                    return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", ifbr().extract());
+                    return std::snprintf(buf, INSTR_BUF_SIZE, "br label %%L%u", ifbr().extract());
                 } else {
+                    std::cout << "PRED WHICH: " << static_cast<unsigned>(pred().which) << '\n';
                     switch(pred().which){
                         case SType::FLT_LIT:
                             Global::specifyError("Float passed to branch predicate.\n", __FILE__, __LINE__);
                             throw Global::InvalidBranch;
                         case SType::SIGN_LIT:
-                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
-                                    pred().extractSignedInt() != 0 ? ifbr().extract() : elsebr().extract());
                         case SType::USIGN_LIT:
-                            return std::snprintf(buf, INSTR_BUF_SIZE, "br L%u", 
-                                    pred().extractUnsignedInt() != 0 ? ifbr().extract() : elsebr().extract());
+                            Global::specifyError("Literal not changed to assignment.\n", __FILE__, __LINE__);
+                            throw Global::DeveloperError;
                         case SType::REF:
-                            return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 s%u, label L%u, label L%u",
+                            return std::snprintf(buf, INSTR_BUF_SIZE, "br i1 %%s%u, label %%L%u, label %%L%u",
                                     pred().extractLbl(), ifbr().extract(), elsebr().extract()); 
                     }
                 }
@@ -981,20 +980,52 @@ namespace CodeGen {
             }
 
             void associate(Label lbl, unsigned idx){
-                map.ref(lbl.extract()) = map.ref(idx);
+                if(lbl.extract() >= map.size()){
+                    map.resize(lbl.extract()+1);
+                }
+                map.ref(lbl.extract()) = idx;
             }
 
             IInstr* getLastInstr(){
                 return list.back(); 
             }
 
-            void write(std::ostream& out){
-                char writeBuf[INSTR_BUF_SIZE+1];
-                for(auto iter = list.begin(); iter != list.end(); ++iter){
-                    iter->output(writeBuf);
-                    out << writeBuf;
-                    out << '\n';
+            static inline unsigned* advancePtrWhileNull(unsigned* ptr, unsigned* end){
+                while(ptr != end && *ptr == 0){
+                    ++ptr;
                 }
+                return ptr;
+            }
+
+            void write(std::ostream& out){
+                std::cout << "MAP: \n";
+                for(unsigned i = 0; i<map.size(); ++i){
+                    std::cout << map[i] << ' ';
+                } std::cout << '\n';
+
+                char writeBuf[INSTR_BUF_SIZE+1] = {'\0'};
+
+                auto mapIter = advancePtrWhileNull(map.begin(), map.end());
+                unsigned int listIdx = 0;
+
+                while(listIdx < list.size()){
+                    while(listIdx < list.size() && (mapIter == map.end() 
+                                            || listIdx < (*mapIter))){
+                        list[listIdx].output(writeBuf);
+                        out << writeBuf;
+                        out << '\n';
+                        ++listIdx; 
+                    }
+                    if(mapIter != map.end()){
+                        std::snprintf(writeBuf, INSTR_BUF_SIZE, "L%u:", 
+                                        static_cast<unsigned>(mapIter-map.begin()));
+                        out << writeBuf;
+                        out << '\n';
+                        ++mapIter;
+                        mapIter = advancePtrWhileNull(mapIter, map.end());
+                    }
+                }
+
                 out.flush();
             } 
     };
