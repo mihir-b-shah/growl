@@ -19,6 +19,12 @@ static std::pair<Label,bool> getLabel(Parse::AST* ast){
     }
 }
 
+static inline Label uncheckedGetLabel(Parse::AST* ast){
+    Label brOut = nextLabel();
+    insertASTLbl(ast->getHash(), brOut);
+    return brOut;
+}
+
 /**
  * We will target LLVM IR.
  */
@@ -56,41 +62,90 @@ unsigned int Parse::Sequence::codeGen(CodeGen::IRProg& prog){
  * whatever's next in the sequence.
  */
 unsigned int Parse::Branch::codeGen(IRProg& prog){
-    int ctr = 0;
-    Utils::SmallVector<
-            std::pair<unsigned int, Label>, 4> branches;
+    unsigned accm = 0;
+    // where I put the branches' indexes that need to be filled.
+    // 10 because its a pretty high upper bound.
+    Utils::SmallVector<unsigned,10> branches; 
+    Parse::AST* next = this->getSeq()->getSequential();
+
+    // Add the unconditional branch at the start.
+    auto topRes = getLabel(this);
+    if(topRes.second){
+        IInstr uncondBr(SSA::nullValue(), topRes.first, Label::nullLabel());
+        prog.addInstr(uncondBr);
+        ++accm;
+    }
+    
+    // Iterator stops one early, i.e. it ignores the else branch.
     for(auto iter = this->iterator(); !iter.done(); iter.next()){
-        // call codegen on the expr.
-        unsigned int before = branches.size();
+        /* we get each of the branches and do codegen on their predicates,
+         * and get their branches setup. These branches' pos are in lbls. */
         Branch* br = static_cast<Branch*>(iter.get());
-        static_cast<Branch*>(iter.get())->getPred()->codeGen(prog);
-        auto ret = getLabel(br->getPred());
-        Label next;
-        if(ret.second){
-            next = ret.first;
-        } else {
-            Global::specifyError("This branch was previously visited.\n", __FILE__, __LINE__);
-            throw Global::DeveloperError;
-        }
-        prog.associate(next, before);
-        prog.allocate(1); // for the branch
-        branches.push_back({before,next});
+        Label exprLbl = getLabel(br).first;
+        prog.associate(exprLbl, prog.size());
+        unsigned moveBack = br->getPred()->codeGen(prog);
+        accm += moveBack;
+        IInstr brInstr(*(prog.getLastInstr()->getDest()), 
+                        Label::nullLabel(), Label::nullLabel());
+        // pair: the index of the comparison, the index of the subseq. branch
+        branches.push_back(prog.size());
+        prog.addInstr(brInstr);
     }
 
-    // the iterator has the very nice property that it stops BEFORE
-    // the else condition.
-    
-    auto iter = this->iterator();
-    for(unsigned i = 0; i<branches.size(); ++i){
-        unsigned offset = static_cast<Branch*>(iter.get())->codeGen(prog);
-        IInstr* toSet = prog.getInstr(i);
-        unsigned ptr = prog.size()-offset;
-        Label nextLbl = nextLabel();
-        prog.associate(nextLbl, ptr);
+    // now time to get the labels from codegen on ASTs.
+    // this code tries to fill: br %c1 If1 %c2.
+ 
+    Utils::SmallVector<unsigned,11> seqBranches; 
+    // reuse this buffer.
+    auto iter = this->iterator(); 
+    int ctr = 0;
 
-        toSet->setBranch(*(prog.getInstr(branches[i].first)->getDest()), nextLbl, branches[i+1].second);
-        iter.next();
-    } 
+    for(; !iter.done(); iter.next()){
+        Branch* br = static_cast<Branch*>(iter.get());
+
+        // get the label for the sequence.
+        Label astLbl = getLabel(br->getSeq()).first;
+        prog.associate(astLbl, prog.size());
+
+        // set the if branch.
+        prog.getInstr(branches[ctr])->setIfBr(astLbl);
+        
+        // generate the code for the sequence. 
+        unsigned seqCodeLen = br->getSeq()->codeGen(prog);
+
+        // Set the else condition on each instruction-level branch.
+        Label nextPredLbl = getLabel(br->getNext()->getSeq()).first;
+        prog.associate(nextPredLbl, prog.size());
+        prog.getInstr(branches[ctr])->setElseBr(nextPredLbl);
+        
+        // the sequential element. Get the branch to it.
+        IInstr seqBr(SSA::nullValue(), Label::nullLabel(), Label::nullLabel());
+        branches.push_back(prog.size());
+        prog.addInstr(seqBr);
+
+        // Handle the else branch.
+        if(br->getNext()->getPred() == nullptr){
+            Label elseLbl = getLabel(br->getNext()->getSeq()).first;
+            prog.associate(elseLbl, prog.size());
+            prog.getInstr(branches[ctr+1])->setElseBr(elseLbl);
+            br->getNext()->getSeq()->codeGen(prog); 
+
+            // the sequential element for else. Get the branch to it.
+            IInstr eseqBr(SSA::nullValue(), Label::nullLabel(), Label::nullLabel());
+            branches.push_back(prog.size());
+            prog.addInstr(eseqBr);
+            
+            break; 
+        } 
+
+        ++ctr;
+    }
+
+    Label nextLbl = getLabel(next).first;
+    for(auto iter = branches.begin(); iter != branches.end(); ++iter){
+        prog.getInstr(*iter)->setIfBr(nextLbl);
+    }
+    prog.associate(nextLbl, prog.size());
 
     return 0;
 }
@@ -133,10 +188,12 @@ unsigned int Parse::Loop::codeGen(IRProg& prog){
     accm += 1;
     
     // Generate loop body's code and label its start. 
-    Label astLbl = nextLabel(); // guaranteed not to have been reached yet.
     unsigned astPos = this->getSeq()->codeGen(prog);
     accm += astPos;
-    astPos = prog.size()-astPos;
+    astPos = prog.size()-astPos; 
+
+    // guaranteed not to have been reached yet.
+    Label astLbl = uncheckedGetLabel(this->getSeq());
     prog.associate(astLbl, astPos); 
 
     // Add an unconditional branch back to the expr.
@@ -161,7 +218,6 @@ unsigned int Parse::Loop::codeGen(IRProg& prog){
     prog.getInstr(astPos-1)->setBranch(*(prog.getInstr(astPos-2)->getDest()), 
                     astLbl, seqNext); 
     
-    /* NEED TO HANDLE THE OUTBOUND CASE WITH L3 */
     return accm;    
 }
 

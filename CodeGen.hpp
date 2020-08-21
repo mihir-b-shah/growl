@@ -363,7 +363,6 @@ namespace CodeGen {
                 }
               
                 // example fsbuf later: "s%u = %s%s%s %lld %lld"
-                std::cout << "Swcode: " << (((src1().which == SType::REF) << 1) + flt) << '\n'; 
                 switch(((src1().which == SType::REF) << 1) + flt){
                     case LIT_INT:
                         chk = std::snprintf(buf, INSTR_BUF_SIZE, fsbuf, dest().extractLbl(), iinstr, flg, dType, 
@@ -514,7 +513,6 @@ namespace CodeGen {
                 if(pred().isNull()) { 
                     return std::snprintf(buf, INSTR_BUF_SIZE, "br label %%L%u", ifbr().extract());
                 } else {
-                    std::cout << "PRED WHICH: " << static_cast<unsigned>(pred().which) << '\n';
                     switch(pred().which){
                         case SType::FLT_LIT:
                             Global::specifyError("Float passed to branch predicate.\n", __FILE__, __LINE__);
@@ -737,6 +735,14 @@ namespace CodeGen {
                 instr() = LLVMInstr::_Br;
                 pred() = _Pred;
                 ifbr() = _Ifbr;
+                elsebr() = _Elsebr;
+            }
+
+            void setIfBr(Label _Ifbr){
+                ifbr() = _Ifbr;
+            }
+
+            void setElseBr(Label _Elsebr){
                 elsebr() = _Elsebr;
             }
 
@@ -998,11 +1004,6 @@ namespace CodeGen {
             }
 
             void write(std::ostream& out){
-                std::cout << "MAP: \n";
-                for(unsigned i = 0; i<map.size(); ++i){
-                    std::cout << map[i] << ' ';
-                } std::cout << '\n';
-
                 char writeBuf[INSTR_BUF_SIZE+1] = {'\0'};
 
                 auto mapIter = advancePtrWhileNull(map.begin(), map.end());

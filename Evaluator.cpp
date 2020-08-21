@@ -278,6 +278,5 @@ Expr* Parse::parseExpr(Lex::Token* begin, Lex::Token* end) {
     
     Expr* ret = output.eback();
     output.pop_back();
-    ret->print(80, std::cout);
     return ret;
 }

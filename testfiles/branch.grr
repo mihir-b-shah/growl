@@ -1,0 +1,7 @@
+int ctr;
+ctr = 0;
+if(ctr < 5){
+    ctr = ctr+1;
+} else if(ctr < 3){
+    ctr = ctr+2;
+}

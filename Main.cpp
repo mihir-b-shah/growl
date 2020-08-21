@@ -245,6 +245,7 @@ int main(int argc, char** argv) {
         CodeGen::IRProg irProg;
         CodeGen::genIR(irProg);
         
+        /*
         constexpr unsigned int OUTFILE_LEN = 80;
         char outFileBuf[1+OUTFILE_LEN] = {'\0'};
         std::strncpy(outFileBuf, "llvmfiles/", 11);
@@ -254,7 +255,8 @@ int main(int argc, char** argv) {
         irProg.write(irFile);
         irFile.flush();
         irFile.close();
-
+        */
+        irProg.write(std::cout);
         return EXIT_SUCCESS;
     } catch (int exc) {
         char buffer[Global::ERROR_BUFFER_SIZE];

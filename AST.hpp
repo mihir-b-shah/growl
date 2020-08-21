@@ -219,6 +219,7 @@ namespace Parse {
                 next->setBackTrace(getBackTrace());
                 return next;
             }
+            Branch* getNext(){return next;}
             void setPred(Expr* _pred){
                 pred = _pred;
             }    
