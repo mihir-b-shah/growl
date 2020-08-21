@@ -66,7 +66,6 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
     // where I put the branches' indexes that need to be filled.
     // 10 because its a pretty high upper bound.
     Utils::SmallVector<unsigned,10> branches; 
-    Parse::AST* next = this->getSeq()->getSequential();
 
     // Add the unconditional branch at the start.
     auto topRes = getLabel(this);
@@ -114,25 +113,23 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
         unsigned seqCodeLen = br->getSeq()->codeGen(prog);
 
         // Set the else condition on each instruction-level branch.
-        Label nextPredLbl = getLabel(br->getNext()->getSeq()).first;
-        prog.associate(nextPredLbl, prog.size());
+        Label nextPredLbl = getLabel(br->getNext()).first;
         prog.getInstr(branches[ctr])->setElseBr(nextPredLbl);
         
         // the sequential element. Get the branch to it.
         IInstr seqBr(SSA::nullValue(), Label::nullLabel(), Label::nullLabel());
-        branches.push_back(prog.size());
+        seqBranches.push_back(prog.size());
         prog.addInstr(seqBr);
 
         // Handle the else branch.
         if(br->getNext()->getPred() == nullptr){
-            Label elseLbl = getLabel(br->getNext()->getSeq()).first;
-            prog.associate(elseLbl, prog.size());
-            prog.getInstr(branches[ctr+1])->setElseBr(elseLbl);
+            prog.associate(nextPredLbl, prog.size());
+            prog.getInstr(branches[ctr+1])->setElseBr(nextPredLbl);
             br->getNext()->getSeq()->codeGen(prog); 
 
             // the sequential element for else. Get the branch to it.
             IInstr eseqBr(SSA::nullValue(), Label::nullLabel(), Label::nullLabel());
-            branches.push_back(prog.size());
+            seqBranches.push_back(prog.size());
             prog.addInstr(eseqBr);
             
             break; 
@@ -141,8 +138,8 @@ unsigned int Parse::Branch::codeGen(IRProg& prog){
         ++ctr;
     }
 
-    Label nextLbl = getLabel(next).first;
-    for(auto iter = branches.begin(); iter != branches.end(); ++iter){
+    Label nextLbl = getLabel(this->getSeq()->getSequential()).first;
+    for(auto iter = seqBranches.begin(); iter != seqBranches.end(); ++iter){
         prog.getInstr(*iter)->setIfBr(nextLbl);
     }
     prog.associate(nextLbl, prog.size());
